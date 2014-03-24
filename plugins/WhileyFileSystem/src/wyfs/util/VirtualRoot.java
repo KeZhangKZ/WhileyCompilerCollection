@@ -1,4 +1,4 @@
-package wycc.util;
+package wyfs.util;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -8,10 +8,10 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-import wycc.lang.Content;
-import wycc.lang.Path;
-import wycc.lang.Path.ID;
-import wycc.util.DirectoryRoot.Folder;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.lang.Path.ID;
+import wyfs.util.DirectoryRoot.Folder;
 
 /**
  * <p>

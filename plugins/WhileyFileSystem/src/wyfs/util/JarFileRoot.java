@@ -23,15 +23,15 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycc.util;
+package wyfs.util;
 
 import java.io.*;
 import java.util.*;
 import java.util.jar.*;
 
-import wycc.lang.Content;
-import wycc.lang.Path;
-import wycc.lang.Content.Type;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.lang.Content.Type;
 
 /**
  * Provides an implementation of <code>Path.Root</code> for representing the
@@ -138,7 +138,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 		}
 
 		@Override
-		public <T> wycc.lang.Path.Entry<T> create(Path.ID id, Content.Type<T> ct, Path.Entry<?>... sources) {
+		public <T> wyfs.lang.Path.Entry<T> create(Path.ID id, Content.Type<T> ct, Path.Entry<?>... sources) {
 			throw new UnsupportedOperationException();
 		}
 	}

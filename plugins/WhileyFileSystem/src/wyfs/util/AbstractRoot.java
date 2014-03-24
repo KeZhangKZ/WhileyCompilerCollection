@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycc.util;
+package wyfs.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,12 +31,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import wycc.lang.Content;
-import wycc.lang.Path;
-import wycc.lang.Path.Entry;
-import wycc.lang.Path.Folder;
-import wycc.lang.Path.ID;
-import wycc.lang.Path.Root;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.Folder;
+import wyfs.lang.Path.ID;
+import wyfs.lang.Path.Root;
 
 /**
  * Provides a simple implementation of <code>Path.Root</code>. This maintains a

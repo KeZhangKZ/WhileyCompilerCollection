@@ -23,11 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycc.lang;
+package wyfs.lang;
 
 import java.util.List;
 import java.util.Set;
 
+import wycc.lang.Path;
+import wycc.lang.Path.Entry;
 import wycc.lang.Path.Filter;
 import wycc.lang.Path.ID;
 

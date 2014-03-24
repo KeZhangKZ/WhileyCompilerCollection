@@ -29,6 +29,9 @@ import java.io.IOException;
 import java.util.*;
 
 import wycc.lang.*;
+import wyfs.lang.Content;
+import wyfs.lang.NameSpace;
+import wyfs.lang.Path;
 
 /**
  * <p>

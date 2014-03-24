@@ -28,6 +28,8 @@ package wycc.lang;
 import java.util.*;
 
 import wycc.util.Pair;
+import wyfs.lang.NameSpace;
+import wyfs.lang.Path;
 
 /**
  * <p>
