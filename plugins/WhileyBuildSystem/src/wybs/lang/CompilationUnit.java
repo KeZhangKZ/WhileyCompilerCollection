@@ -1,4 +1,4 @@
-package wycc.lang;
+package wybs.lang;
 
 public interface CompilationUnit {
 

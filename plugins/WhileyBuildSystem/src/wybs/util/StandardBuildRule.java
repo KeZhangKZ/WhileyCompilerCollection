@@ -22,7 +22,7 @@
 // ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-package wycc.util;
+package wybs.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -31,7 +31,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import wybs.lang.BuildRule;
+import wybs.lang.Builder;
 import wycc.lang.*;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 

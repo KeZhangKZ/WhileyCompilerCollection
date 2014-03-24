@@ -29,8 +29,8 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycc.lang.Pipeline;
-import static wycc.lang.Pipeline.*;
+import wybs.lang.Pipeline;
+import static wybs.lang.Pipeline.*;
 
 /**
  * A small utility for parsing command-line options. It helps to take some of

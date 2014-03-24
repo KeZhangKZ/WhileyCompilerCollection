@@ -23,11 +23,12 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycc.util;
+package wybs.util;
 
 import java.io.IOException;
 import java.util.*;
 
+import wybs.lang.BuildRule;
 import wycc.lang.*;
 import wyfs.lang.Content;
 import wyfs.lang.NameSpace;

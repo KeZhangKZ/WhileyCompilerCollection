@@ -28,10 +28,10 @@ package wyfs.lang;
 import java.util.List;
 import java.util.Set;
 
-import wycc.lang.Path;
-import wycc.lang.Path.Entry;
-import wycc.lang.Path.Filter;
-import wycc.lang.Path.ID;
+import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.Filter;
+import wyfs.lang.Path.ID;
 
 /**
  * <p>
