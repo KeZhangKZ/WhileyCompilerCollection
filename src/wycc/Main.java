@@ -10,11 +10,15 @@ import java.util.Arrays;
 
 public class Main {
 	
+	/**
+	 * Identifies the location where plugins are stored.
+	 */
+	public static final String PLUGINS_DIR = "lib/plugins/";
 	
 	public static void main(String[] args) {
 		ArrayList<URL> plugins = new ArrayList<URL>();
 		
-		File pluginDir = new File("plugins/");
+		File pluginDir = new File(PLUGINS_DIR);
 		for(String n : pluginDir.list()) {
 			if(n.endsWith(".jar")) {
 				try {
