@@ -1,6 +1,7 @@
 package wycc.lang;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,22 +20,10 @@ public class Plugin {
 	private String id;
 	
 	/**
-	 * The major version number of this plugin. Plugins with the same identifier
-	 * and identical major versions may not be backwards compatible,
+	 * The version number of this plugin, which is a triple of the form
+	 * (major,minor,micro) and usually written major.minor.micro (e.g. 1.0.3).
 	 */
-	private int major;
-	
-	/**
-	 * The minor version number of this plugin. Plugins with the same identifier
-	 * and identical major versions should be backwards compatible,
-	 */
-	private int minor;
-	
-	/**
-	 * The micro version number of this plugin. Plugins with the same identifier
-	 * and identical major versions should be backwards compatible,
-	 */
-	private int micro;
+	private Version version;
 	
 	/**
 	 * The name of the class responsible for activating this plugin.
@@ -47,17 +36,72 @@ public class Plugin {
 	 */	
 	private ArrayList<Dependency> dependencies;	
 	
-	public Plugin(String id, int major, int minor, int micro,
+	public Plugin(String id, Version version,
 			String activator, List<Dependency> dependencies) {
 		this.id = id;
-		this.major = major;
-		this.minor = minor;
-		this.micro = micro;
+		this.version = version;
 		this.activator = activator;
 		this.dependencies = new ArrayList<Dependency>(dependencies);
+	}
+			
+	/**
+	 * Get the name of the activator class for this plugin. This class is
+	 * instantiated when the plugin begins and used to control the start-up and
+	 * shutdown of the plugin.
+	 * 
+	 * @return
+	 */
+	public String getActivator() {
+		return activator;
+	}
+	
+	/**
+	 * Get the list of dependencies for this plugin.
+	 * @return
+	 */
+	public List<Dependency> getDependencies() {
+		return Collections.unmodifiableList(dependencies);
+	}
+	
+	public static final class Version implements Comparable<Version> {
+		/**
+		 * The major version number of this plugin. Plugins with the same identifier
+		 * and identical major versions may not be backwards compatible,
+		 */
+		private int major;
+		
+		/**
+		 * The minor version number of this plugin. Plugins with the same identifier
+		 * and identical major versions should be backwards compatible,
+		 */
+		private int minor;
+		
+		/**
+		 * The micro version number of this plugin. Plugins with the same identifier
+		 * and identical major versions should be backwards compatible,
+		 */
+		private int micro;
+
+		public boolean equals(Object o) {
+			if (o instanceof Version) {
+				Version v = (Version) o;
+				return major == v.major && minor == v.minor && micro == v.micro;
+			}
+			return false;
+		}
+
+		public int hashCode() {
+			return major ^ minor ^ micro;
+		}
+
+		@Override
+		public int compareTo(Version o) {
+			// TODO Auto-generated method stub
+			return 0;
+		}		
 	}
 	
 	public static class Dependency {
 		private String id;		
-	}
+	}	
 }
