@@ -1,0 +1,63 @@
+<project name="wyfs" default="build">
+  <property name="version" value="0.3.22"/>
+
+  <target name="compile-wyfs">
+    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true">
+      <src path="src"/>
+      <include name="*/**"/>
+      <exclude name="*/**/package-info.java"/> 
+    </javac>
+  </target>
+
+  <target name="build" depends="compile-wyfs">
+    <mkdir dir="tmp"/>
+
+    <!-- Create Plugin Metadata -->
+  
+    <echoxml file="tmp/plugin.xml">
+      <plugin>
+      </plugin>
+    </echoxml>
+
+    <jar destfile="../../lib/plugins/wyfs-v${version}.jar">
+      <fileset dir="src" includes="*/**/*.class"/>
+      <fileset dir="tmp" includes="plugin.xml"/>
+    </jar>
+
+    <delete dir="tmp"/>
+
+    <echo message="============================================="/>
+    <echo message="BUILT: lib/plugins/${ant.project.name}-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+  
+  <target name="dist">
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wyfs-v${version}.jar"/>
+    </manifest>
+    <jar destfile="../../dist/wyfs-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="src">
+	<include name="wyfs/**/*.class"/>
+	<include name="wybs/**/*.class"/>
+	<include name="wycc/**/*.class"/>
+      </fileset>
+    </jar>
+    <delete dir="tmp"/>
+    <echo message="============================================="/>
+    <echo message="BUILT: dist/${ant.project.name}-all-v${version}.jar"/>
+    <echo message="============================================="/>
+  </target>
+
+ <target name="clean">
+   <delete includeEmptyDirs="true" failonerror="false">
+     <fileset dir="." includes="**/*.class,**/*.wyil,**/*.wyasm"/>
+   </delete>
+    <echo message="============================================="/>
+    <echo message="CLEANED: ${ant.project.name}"/>
+    <echo message="============================================="/>
+ </target>
+
+</project>
