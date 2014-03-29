@@ -4,14 +4,24 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
+import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
 
 import wycc.lang.Logger;
 import wycc.lang.Plugin;
@@ -23,6 +33,10 @@ public class Main {
 	 */
 	public static final String PLUGINS_DIR = "lib/plugins/";
 	
+	/**
+	 * Identifies the name of metadata file stored in the plugin jar that will
+	 * be searched for.
+	 */
 	public static final String METADATA_FILE = "plugin.xml";
 	
 	public static void main(String[] args) {
@@ -83,17 +97,36 @@ public class Main {
 	 */
 	private static Plugin extractMetaData(URL pluginURL) {
 		try {
-			JarInputStream jarIn = new JarInputStream(new FileInputStream(
-					pluginURL.getFile()));
-			JarEntry entry;
-			while((entry = jarIn.getNextJarEntry()) != null) {
-				if(entry.getName().equals(METADATA_FILE)) {
-					System.out.println("GOT HERE");
+			JarFile jarFile = new JarFile(pluginURL.getFile());
+			Enumeration<JarEntry> entries = jarFile.entries();
+
+			while (entries.hasMoreElements()) {
+				JarEntry entry = entries.nextElement();
+				if (entry.getName().equals(METADATA_FILE)) {
+					return parsePluginMetadata(jarFile.getInputStream(entry));
 				}
-			}			
+			}
 		} catch (IOException e) {
 			// Just ignore this jar file ... something is wrong.
 		}
 		return null;
+	}
+	
+	private static Plugin parsePluginMetadata(InputStream data) {
+		try {
+			DocumentBuilderFactory dbFactory = DocumentBuilderFactory
+					.newInstance();
+			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+			Document doc = dBuilder.parse(data);
+			doc.getDocumentElement().normalize();
+
+			// At this point, we need to extract the useful data!!
+		} catch (ParserConfigurationException e) {
+			return null;
+		} catch (SAXException e) {
+			return null;
+		} catch (IOException e) {
+			return null;
+		}
 	}
 }
