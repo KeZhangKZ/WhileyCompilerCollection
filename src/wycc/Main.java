@@ -21,6 +21,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
 
 import wycc.lang.Logger;
@@ -117,10 +118,13 @@ public class Main {
 			DocumentBuilderFactory dbFactory = DocumentBuilderFactory
 					.newInstance();
 			DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
-			Document doc = dBuilder.parse(data);
-			doc.getDocumentElement().normalize();
+			Document xmldoc = dBuilder.parse(data);
+			xmldoc.getDocumentElement().normalize();
 
 			// At this point, we need to extract the useful data!!
+			Node root = xmldoc.getFirstChild();
+			Node pluginID = root.getAttributes().getNamedItem(
+					"id");
 		} catch (ParserConfigurationException e) {
 			return null;
 		} catch (SAXException e) {
