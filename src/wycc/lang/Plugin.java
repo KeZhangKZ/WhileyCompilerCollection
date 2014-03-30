@@ -1,5 +1,6 @@
 package wycc.lang;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -14,21 +15,32 @@ import java.util.List;
  */
 public class Plugin {
 	/**
+	 * The plugin name, which should provide a human-readable descriptive name
+	 * for this plugin.
+	 */
+	private String name;
+	
+	/**
 	 * The plugin identifier, which should be unique for this plugin (upto
 	 * versioning).
 	 */
-	private String id;
+	private final String id;	
 	
 	/**
 	 * The version number of this plugin, which is a triple of the form
 	 * (major,minor,micro) and usually written major.minor.micro (e.g. 1.0.3).
 	 */
-	private Version version;
+	private final Version version;
+	
+	/**
+	 * The location of the plugin jar file.
+	 */
+	private final URL location;
 	
 	/**
 	 * The name of the class responsible for activating this plugin.
 	 */
-	private String activator;
+	private final String activator;
 	
 	/**
 	 * The list of other plugins that this plugin depends upon. These plugins
@@ -36,10 +48,12 @@ public class Plugin {
 	 */	
 	private ArrayList<Dependency> dependencies;	
 	
-	public Plugin(String id, Version version,
+	public Plugin(String name, String id, Version version, URL location,
 			String activator, List<Dependency> dependencies) {
+		this.name = name;
 		this.id = id;
 		this.version = version;
+		this.location = location;
 		this.activator = activator;
 		this.dependencies = new ArrayList<Dependency>(dependencies);
 	}
@@ -53,6 +67,14 @@ public class Plugin {
 	 */
 	public String getActivator() {
 		return activator;
+	}
+	
+	/**
+	 * Return the location of the plugin jar.
+	 * @return
+	 */
+	public URL getLocation() {
+		return location;
 	}
 	
 	/**
@@ -82,6 +104,23 @@ public class Plugin {
 		 */
 		private int micro;
 
+		/**
+		 * Construct a version from a string in the format "xxx.yyy.zzz", where
+		 * "xxx" is the major number, "yyy" the minor number and "zzz" the micro
+		 * number.
+		 * 
+		 * @param versionString
+		 */
+		public Version(String versionString) {
+			String[] components = versionString.split("\\.");
+			if(components.length != 3) {
+				throw new IllegalArgumentException("Invalid version string \"" + versionString + "\"");
+			}
+			this.major = Integer.parseInt(components[0]);
+			this.minor = Integer.parseInt(components[1]);
+			this.micro = Integer.parseInt(components[2]);
+		}
+		
 		public boolean equals(Object o) {
 			if (o instanceof Version) {
 				Version v = (Version) o;
@@ -96,9 +135,26 @@ public class Plugin {
 
 		@Override
 		public int compareTo(Version o) {
-			// TODO Auto-generated method stub
-			return 0;
-		}		
+			if(major < o.major) {
+				return -1;
+			} else if(major > o.major) {
+				return 1;
+			} else if(minor < o.minor) {
+				return -1;
+			} else if(minor > o.minor) {
+				return 1;
+			} else if(micro < o.micro) {
+				return -1;
+			} else if(micro > o.micro) {
+				return 1;
+			} else {
+				return 0;
+			}
+		}
+		
+		public String toString() {
+			return major + "." + minor + "." + micro;
+		}
 	}
 	
 	public static class Dependency {

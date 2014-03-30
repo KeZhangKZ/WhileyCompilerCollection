@@ -2,7 +2,7 @@
   <property name="version" value="0.3.22"/>
 
   <target name="compile-wyfs">
-    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true">
+    <javac memoryMaximumSize="2048m" fork="true" debug="true" debuglevel="vars,lines,source" source="1.6" includeantruntime="true"  classpath="../../src">
       <src path="src"/>
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/> 
@@ -12,14 +12,20 @@
   <target name="build" depends="compile-wyfs">
     <mkdir dir="tmp"/>
 
+    <mkdir dir="tmp"/>
+    <manifest file="tmp/MANIFEST.MF">
+      <attribute name="Built-By" value="${user.name}"/>
+      <attribute name="Implementation-Version" value="${version}"/>
+      <attribute name="Implementation-Title" value="wyfs-v${version}.jar"/>
+      <attribute name="Bundle-Name" value="Whiley File System"/>      
+      <attribute name="Bundle-SymbolicName" value="wyfs"/>      
+      <attribute name="Bundle-Version" value="0.3.23"/>      
+      <attribute name="Bundle-Activator" value="wyfs.Activator"/>      
+    </manifest>
+
     <!-- Create Plugin Metadata -->
   
-    <echoxml file="tmp/plugin.xml">
-      <plugin>
-      </plugin>
-    </echoxml>
-
-    <jar destfile="../../lib/plugins/wyfs-v${version}.jar">
+    <jar destfile="../../lib/plugins/wyfs-v${version}.jar"  manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
       <fileset dir="tmp" includes="plugin.xml"/>
     </jar>
