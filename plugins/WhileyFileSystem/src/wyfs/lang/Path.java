@@ -30,7 +30,6 @@ import java.io.OutputStream;
 import java.io.IOException;
 import java.util.*;
 
-
 public class Path {
 	
 	/**
@@ -275,9 +274,6 @@ public class Path {
 		 * 
 		 * @param id
 		 *            --- id of module to lookup.
-		 * @return
-		 * @throws ResolveError
-		 *             if id is not found.
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
 		 */
@@ -335,8 +331,7 @@ public class Path {
 		 * 
 		 * @param entry
 		 */		
-		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct,
-				Path.Entry<?>... sources) throws IOException;		
+		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws IOException;		
 	}
 	
 	/**
@@ -373,9 +368,6 @@ public class Path {
 		 * 
 		 * @param id
 		 *            --- id of module to lookup.
-		 * @return
-		 * @throws ResolveError
-		 *             if id is not found.
 		 * @throws IOException
 		 *             --- in case of some I/O failure.
 		 */
@@ -410,21 +402,17 @@ public class Path {
 				throws IOException;
 
 		/**
-		 * Create an entry of a given content type at a given path, derived from
-		 * zero or more entries. If the entry already exists, then it is just
-		 * returned. An entry is derived from another entry if it is, in some
-		 * way, generated from that entry (e.g. it is compiled from that file).
+		 * Create an entry of a given content type at a given path. If the entry
+		 * already exists, then it is just returned.
 		 * 
 		 * @param id
 		 *            --- Path.ID for the new entry
 		 * @param ct
 		 *            --- content type of the new entry
-		 * @param sources
-		 *            --- entries from which this entry is derived.
 		 * @return
 		 * @throws IOException
 		 */
-		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct, Path.Entry<?> ...sources)
+		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct)
 				throws IOException;
 		
 		/**
