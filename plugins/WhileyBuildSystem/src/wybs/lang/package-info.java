@@ -23,22 +23,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.util;
-
 /**
- * A resolve error is thrown by the ModuleLoader, when it was unable to resolve
- * a given class or package. This generally indicates some kind of compile time
- * error (e.g. trying to import from module that doesn't exist). However, it
- * could also indicate that the WHILEYPATH is not configured correctly.
+ * Provides core interfaces for describing content, namespaces, builders and build rules.
  * 
  * @author David J. Pearce
- * 
  */
-public class ResolveError extends Exception {
-	public ResolveError(String msg) {
-		super(msg);
-	}
-	public ResolveError(String msg, Throwable ex) {
-		super(msg,ex);
-	}
-}
+package wybs.lang;

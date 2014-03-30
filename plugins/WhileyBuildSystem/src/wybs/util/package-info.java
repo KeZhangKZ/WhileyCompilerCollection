@@ -23,54 +23,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.lang;
-
-import java.io.IOException;
-import java.util.*;
-
-import wyfs.lang.Path;
-
 /**
- * The fundamental building block of the build system. A BuildRule identifies a set of
- * target entries and their corresponding dependents.
+ * Provides instantiations of the build system interfaces which cover the common cases. 
  * 
  * @author David J. Pearce
- * 
  */
-public interface BuildRule {
-
-	/**
-	 * Determine the target entries that are dependent on a given source, as
-	 * determined by this rule. If the given source is not matched by this rule
-	 * then it just returns the empty set (i.e. no dependents).
-	 * 
-	 * @param source
-	 *            --- entry to determine dependents of.
-	 * @return
-	 */
-	public Set<Path.Entry<?>> dependentsOf(Path.Entry<?> source) throws IOException;
-	
-	/**
-	 * <p>
-	 * Given a complete list of targets scheduled for recompilation, apply this
-	 * rule. This will compile all targets in the list which are matched by this
-	 * rule, and which do not depend on other schedule targets not not matched
-	 * by this rule.
-	 * </p>
-	 * 
-	 * <p>
-	 * An entry should only be rebuilt if one or more of its dependents have a
-	 * modification date after their corresponding target (as defined by this
-	 * rule). If at least such one dependent, then it must be recompiled to
-	 * produce an updated target.
-	 * </p>
-	 * 
-	 * <p>
-	 * <b>NOTE:</b> this rule must remove any entries from the
-	 * <code>targets</code> list that it has rebuilt.
-	 * </p>
-	 * 
-	 * @throws IOException
-	 */
-	public void apply(Set<Path.Entry<?>> targets) throws Exception;
-}
+package wybs.util;
