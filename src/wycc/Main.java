@@ -37,7 +37,7 @@ public class Main {
 			try {
 				System.out.println(Arrays.toString(urls));
 				Class c = loader.loadClass(plugin.getActivator());
-				Method m = c.getMethod("activate");
+				Method m = c.getMethod("start");
 				Object self = c.newInstance();
 				m.invoke(self);
 			} catch (Exception e) {
