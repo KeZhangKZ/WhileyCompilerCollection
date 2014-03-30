@@ -1,4 +1,4 @@
-<project name="wyfs" default="build">
+<project name="wybs" default="build">
   <property name="version" value="0.3.22"/>
 
   <target name="compile-wyfs">
@@ -16,16 +16,16 @@
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
       <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wyfs-v${version}.jar"/>
-      <attribute name="Bundle-Name" value="Whiley File System"/>      
-      <attribute name="Bundle-SymbolicName" value="wyfs"/>      
+      <attribute name="Implementation-Title" value="wybs-v${version}.jar"/>
+      <attribute name="Bundle-Name" value="Whiley Build System"/>      
+      <attribute name="Bundle-SymbolicName" value="wybs"/>      
       <attribute name="Bundle-Version" value="0.3.23"/>      
-      <attribute name="Bundle-Activator" value="wyfs.Activator"/>      
+      <attribute name="Bundle-Activator" value="wybs.Activator"/>      
     </manifest>
 
     <!-- Create Plugin Metadata -->
   
-    <jar destfile="../../lib/plugins/wyfs-v${version}.jar"  manifest="tmp/MANIFEST.MF">
+    <jar destfile="../../lib/plugins/wybs-v${version}.jar"  manifest="tmp/MANIFEST.MF">
       <fileset dir="src" includes="*/**/*.class"/>
       <fileset dir="tmp" includes="plugin.xml"/>
     </jar>
@@ -44,11 +44,9 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wyfs-v${version}.jar"/>
     </manifest>
-    <jar destfile="../../dist/wyfs-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
+    <jar destfile="../../dist/wybs-all-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="src">
-	<include name="wyfs/**/*.class"/>
 	<include name="wybs/**/*.class"/>
-	<include name="wycc/**/*.class"/>
       </fileset>
     </jar>
     <delete dir="tmp"/>
