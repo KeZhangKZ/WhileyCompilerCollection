@@ -11,6 +11,7 @@ import java.util.jar.*;
 
 import wycc.lang.Logger;
 import wycc.lang.Plugin;
+import wycc.lang.PluginActivator;
 
 public class Main {
 
@@ -36,10 +37,9 @@ public class Main {
 		for (Plugin plugin : plugins) {
 			try {
 				System.out.println(Arrays.toString(urls));
-				Class c = loader.loadClass(plugin.getActivator());
-				Method m = c.getMethod("start");
-				Object self = c.newInstance();
-				m.invoke(self);
+				Class c = loader.loadClass(plugin.getActivator());				
+				PluginActivator self = (PluginActivator) c.newInstance();
+				self.start();				
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
