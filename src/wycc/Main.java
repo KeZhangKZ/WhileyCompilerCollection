@@ -2,6 +2,7 @@ package wycc;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -12,43 +13,78 @@ import java.util.jar.*;
 import wycc.lang.Logger;
 import wycc.lang.Plugin;
 import wycc.lang.PluginActivator;
+import wycc.lang.PluginContext;
 
-public class Main {
-
+public class Main implements PluginContext {
+	
+	public static PrintStream errout;
+	
+	public static final int MAJOR_VERSION;
+	public static final int MINOR_VERSION;
+	public static final int MINOR_REVISION;
+	
 	/**
 	 * Identifies the location where plugins are stored.
 	 */
 	public static final String PLUGINS_DIR = "lib/plugins/";
 
-	public static void main(String[] args) {
-		ArrayList<Plugin> plugins = new ArrayList<Plugin>();
-
-		// First, scan for any plugins
-		scanForPlugins(PLUGINS_DIR, plugins);
-
-		// Second, construct the URLClassLoader
-		URL[] urls = new URL[plugins.size()];
-		for(int i=0;i!=plugins.size();++i) {
-			urls[i] = plugins.get(i).getLocation();
+	/**
+	 * Initialise the error output stream so as to ensure it will display
+	 * unicode characters (when possible). Additionally, extract version
+	 * information from the enclosing jar file.
+	 */
+	static {
+		try {
+			errout = new PrintStream(System.err, true, "UTF-8");
+		} catch (Exception e) {
+			errout = System.err;
+			System.err.println("Warning: terminal does not support unicode");
 		}
-		URLClassLoader loader = new URLClassLoader(urls);
-		
-		// Third, active the plugins!!
-		for (Plugin plugin : plugins) {
-			try {
-				System.out.println(Arrays.toString(urls));
-				Class c = loader.loadClass(plugin.getActivator());				
-				PluginActivator self = (PluginActivator) c.newInstance();
-				self.start();				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+
+		// determine version numbering from the MANIFEST attributes
+		String versionStr = Main.class.getPackage()
+				.getImplementationVersion();
+		if (versionStr != null) {
+			String[] pts = versionStr.split("\\.");
+			MAJOR_VERSION = Integer.parseInt(pts[0]);
+			MINOR_VERSION = Integer.parseInt(pts[1]);
+			MINOR_REVISION = Integer.parseInt(pts[2]);
+		} else {
+			System.err.println("WARNING: version numbering unavailable");
+			MAJOR_VERSION = 0;
+			MINOR_VERSION = 0;
+			MINOR_REVISION = 0;
 		}
-		
-		// Fourth, do something ??
 	}
 
+	// ==================================================================
+	// Instance Fields
+	// ==================================================================
+
 	/**
+	 * The extension points represent registered implementations of interfaces.
+	 * Each extension point represents a class that will be instantiated and
+	 * configured, and will contribute to some function within the compiler. The
+	 * main extension points are: <i>Routes</i>, <i>Builders</i> and
+	 * <i>ContentTypes</i>.
+	 */
+	public final HashMap<String,ArrayList<Class<?>>> extensionPoints = new HashMap<String,ArrayList<Class<?>>>(); 
+	
+	// ==================================================================
+	// Methods
+	// ==================================================================
+	
+	@Override
+	public void registerExtension(String extension, Class<?> implementation) {
+		ArrayList<Class<?>> currentExtensions = extensionPoints.get(extension);
+		if(currentExtensions == null) {
+			currentExtensions = new ArrayList<Class<?>>();
+			extensionPoints.put(extension,currentExtensions);
+		}
+		currentExtensions.add(implementation);
+	}
+
+		/**
 	 * Scan a given directory for plugins. A plugin is a jar file which contains
 	 * an appropriate plugin.xml file. This method does not start any plugins,
 	 * it simply extracts the appropriate meta-data from their plugin.xml file.
@@ -105,4 +141,37 @@ public class Main {
 		}
 		return null;
 	}
+
+	// ==================================================================
+		// Main Method
+		// ==================================================================
+		
+		public static void main(String[] args) {
+			ArrayList<Plugin> plugins = new ArrayList<Plugin>();
+
+			// First, scan for any plugins
+			scanForPlugins(PLUGINS_DIR, plugins);
+
+			// Second, construct the URLClassLoader
+			URL[] urls = new URL[plugins.size()];
+			for(int i=0;i!=plugins.size();++i) {
+				urls[i] = plugins.get(i).getLocation();
+			}
+			URLClassLoader loader = new URLClassLoader(urls);
+			PluginContext context = new Main();
+			
+			// Third, active the plugins!!
+			for (Plugin plugin : plugins) {
+				try {
+					System.out.println(Arrays.toString(urls));
+					Class c = loader.loadClass(plugin.getActivator());				
+					PluginActivator self = (PluginActivator) c.newInstance();
+					self.start(context);				
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+			
+			// Fourth, do something ??
+		}
 }
