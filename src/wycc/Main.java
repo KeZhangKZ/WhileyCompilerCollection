@@ -3,17 +3,17 @@ package wycc;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.jar.*;
 
-import wycc.lang.Logger;
 import wycc.lang.Plugin;
 import wycc.lang.PluginActivator;
 import wycc.lang.PluginContext;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
 
 public class Main implements PluginContext {
 	
@@ -57,6 +57,39 @@ public class Main implements PluginContext {
 		}
 	}
 
+	/**
+	 * Default implementation of a content registry. This associates a given set
+	 * of content types and suffixes. The intention is that plugins register new
+	 * content types and these will end up here.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public static class Registry implements Content.Registry {
+		private HashMap<String, Content.Type> contentTypes = new HashMap<String, Content.Type>();
+		
+		public void register(Content.Type contentType, String suffix) {
+			contentTypes.put(suffix, contentType);
+		}
+		
+		public void associate(Path.Entry e) {
+			String suffix = e.suffix();
+			Content.Type ct = contentTypes.get(suffix);
+			if (ct != null) {
+				e.associate(ct, null);
+			}
+		}
+		
+		public String suffix(Content.Type<?> t) {
+			for (Map.Entry<String, Content.Type> p : contentTypes.entrySet()) {
+				if (p.getValue() == t) {
+					return p.getKey();
+				}
+			}
+			// Couldn't find it!
+			return null;
+		}
+	}
 	// ==================================================================
 	// Instance Fields
 	// ==================================================================
@@ -68,8 +101,8 @@ public class Main implements PluginContext {
 	 * main extension points are: <i>Routes</i>, <i>Builders</i> and
 	 * <i>ContentTypes</i>.
 	 */
-	public final HashMap<String,ArrayList<Class<?>>> extensionPoints = new HashMap<String,ArrayList<Class<?>>>(); 
-	
+	public final HashMap<String, ArrayList<Class<?>>> extensionPoints = new HashMap<String, ArrayList<Class<?>>>();
+
 	// ==================================================================
 	// Methods
 	// ==================================================================
@@ -143,35 +176,42 @@ public class Main implements PluginContext {
 	}
 
 	// ==================================================================
-		// Main Method
-		// ==================================================================
-		
-		public static void main(String[] args) {
-			ArrayList<Plugin> plugins = new ArrayList<Plugin>();
+	// Main Method
+	// ==================================================================
 
-			// First, scan for any plugins
-			scanForPlugins(PLUGINS_DIR, plugins);
+	public static void main(String[] args) {
+		ArrayList<Plugin> plugins = new ArrayList<Plugin>();
 
-			// Second, construct the URLClassLoader
-			URL[] urls = new URL[plugins.size()];
-			for(int i=0;i!=plugins.size();++i) {
-				urls[i] = plugins.get(i).getLocation();
-			}
-			URLClassLoader loader = new URLClassLoader(urls);
-			PluginContext context = new Main();
-			
-			// Third, active the plugins!!
-			for (Plugin plugin : plugins) {
-				try {
-					System.out.println(Arrays.toString(urls));
-					Class c = loader.loadClass(plugin.getActivator());				
-					PluginActivator self = (PluginActivator) c.newInstance();
-					self.start(context);				
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-			
-			// Fourth, do something ??
+		// First, scan for any plugins in the given directory.
+		scanForPlugins(PLUGINS_DIR, plugins);
+
+		// Second, construct the URLClassLoader which will be used to load
+		// classes within the plugins.
+		URL[] urls = new URL[plugins.size()];
+		for(int i=0;i!=plugins.size();++i) {
+			urls[i] = plugins.get(i).getLocation();
 		}
+		URLClassLoader loader = new URLClassLoader(urls);
+		PluginContext context = new Main();
+
+		// Third, active the plugins. This will give them the opportunity to
+		// register whatever extensions they like.
+		for (Plugin plugin : plugins) {
+			try {
+				System.out.println(Arrays.toString(urls));
+				Class c = loader.loadClass(plugin.getActivator());				
+				PluginActivator self = (PluginActivator) c.newInstance();
+				self.start(context);				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+
+		// Fourth, do something ??
+		
+		// We need to build up and instantiate instances of Content.Type
+		// We need to instantiate and configure the builders / routes
+		// We need to construct the content directories (?)
+		// We need to construct various build rules and create a project!
+	}
 }
