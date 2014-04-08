@@ -137,16 +137,7 @@ public class Main {
 
 		// Third, active the plugins. This will give them the opportunity to
 		// register whatever extensions they like.
-		for (Plugin plugin : plugins) {
-			try {
-				System.out.println(Arrays.toString(urls));
-				Class c = loader.loadClass(plugin.getActivator());				
-				PluginActivator self = (PluginActivator) c.newInstance();
-				self.start(context);				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
+		activatePlugins(loader,context,plugins);
 
 		// Fourth, do something ??
 		
@@ -154,5 +145,60 @@ public class Main {
 		// We need to instantiate and configure the builders / routes
 		// We need to construct the content directories (?)
 		// We need to construct various build rules and create a project!
+		
+		// Finally, shutdown all plugins
+		deactivatePlugins(loader,context,plugins);		
+	}
+	
+	/**
+	 * Activate all plugins in the order of occurrence in the given list. It is
+	 * assumed that all dependencies are already resolved prior to this and all
+	 * plugins are topologically sorted.
+	 * 
+	 * @param loader
+	 *            --- Class loader to load plugins with
+	 * @param context
+	 *            --- Plugin Context to use for all plugins.
+	 * @param plugins
+	 *            --- List of plugins in topological order
+	 */
+	public static void activatePlugins(URLClassLoader loader,
+			PluginContext context, List<Plugin> plugins) {
+		for (int i=0;i!=plugins.size();++i) {
+			Plugin plugin = plugins.get(i);
+			try {
+				Class c = loader.loadClass(plugin.getActivator());				
+				PluginActivator self = (PluginActivator) c.newInstance();
+				self.start(context);				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	/**
+	 * Deactivate all plugins in the reverse order of occurrence in the given
+	 * list. It is assumed that all dependencies are already resolved prior to
+	 * this and all plugins are topologically sorted.
+	 * 
+	 * @param loader
+	 *            --- Class loader to load plugins with
+	 * @param context
+	 *            --- Plugin Context to use for all plugins.
+	 * @param plugins
+	 *            --- List of plugins in topological order
+	 */
+	public static void deactivatePlugins(URLClassLoader loader,
+			PluginContext context, List<Plugin> plugins) {
+		for (int i=plugins.size();i>0;i--) {
+			Plugin plugin = plugins.get(i-1);
+			try {
+				Class c = loader.loadClass(plugin.getActivator());				
+				PluginActivator self = (PluginActivator) c.newInstance();
+				self.stop(context);				
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	}
 }

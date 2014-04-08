@@ -30,5 +30,11 @@ public class DefaultPluginContext implements PluginContext {
 		currentExtensions.add(implementation);
 	}
 
+	@Override
+	public void create(String extension, ExtensionPoint ep) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
 }
