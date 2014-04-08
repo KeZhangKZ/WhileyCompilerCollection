@@ -12,6 +12,7 @@ import java.util.jar.*;
 import wycc.lang.Plugin;
 import wycc.lang.PluginActivator;
 import wycc.lang.PluginContext;
+import wycc.util.DefaultPluginContext;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
