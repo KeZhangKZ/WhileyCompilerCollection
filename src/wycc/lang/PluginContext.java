@@ -10,5 +10,11 @@ package wycc.lang;
  */
 public interface PluginContext {
 	
-	public void registerExtension(String extension, Class<?> implementation);
+	/**
+	 * Responsible for registering an extension within the system.
+	 * 
+	 * @param extension
+	 * @param implementation
+	 */
+	public void register(String extension, Class<?> implementation);
 }

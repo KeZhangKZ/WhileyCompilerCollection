@@ -15,7 +15,7 @@ import wycc.lang.PluginContext;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
-public class Main implements PluginContext {
+public class Main {
 	
 	public static PrintStream errout;
 	
@@ -58,66 +58,6 @@ public class Main implements PluginContext {
 	}
 
 	/**
-	 * Default implementation of a content registry. This associates a given set
-	 * of content types and suffixes. The intention is that plugins register new
-	 * content types and these will end up here.
-	 * 
-	 * @author David J. Pearce
-	 * 
-	 */
-	public static class Registry implements Content.Registry {
-		private HashMap<String, Content.Type> contentTypes = new HashMap<String, Content.Type>();
-		
-		public void register(Content.Type contentType, String suffix) {
-			contentTypes.put(suffix, contentType);
-		}
-		
-		public void associate(Path.Entry e) {
-			String suffix = e.suffix();
-			Content.Type ct = contentTypes.get(suffix);
-			if (ct != null) {
-				e.associate(ct, null);
-			}
-		}
-		
-		public String suffix(Content.Type<?> t) {
-			for (Map.Entry<String, Content.Type> p : contentTypes.entrySet()) {
-				if (p.getValue() == t) {
-					return p.getKey();
-				}
-			}
-			// Couldn't find it!
-			return null;
-		}
-	}
-	// ==================================================================
-	// Instance Fields
-	// ==================================================================
-
-	/**
-	 * The extension points represent registered implementations of interfaces.
-	 * Each extension point represents a class that will be instantiated and
-	 * configured, and will contribute to some function within the compiler. The
-	 * main extension points are: <i>Routes</i>, <i>Builders</i> and
-	 * <i>ContentTypes</i>.
-	 */
-	public final HashMap<String, ArrayList<Class<?>>> extensionPoints = new HashMap<String, ArrayList<Class<?>>>();
-
-	// ==================================================================
-	// Methods
-	// ==================================================================
-	
-	@Override
-	public void registerExtension(String extension, Class<?> implementation) {
-		ArrayList<Class<?>> currentExtensions = extensionPoints.get(extension);
-		if(currentExtensions == null) {
-			currentExtensions = new ArrayList<Class<?>>();
-			extensionPoints.put(extension,currentExtensions);
-		}
-		currentExtensions.add(implementation);
-	}
-
-		/**
 	 * Scan a given directory for plugins. A plugin is a jar file which contains
 	 * an appropriate plugin.xml file. This method does not start any plugins,
 	 * it simply extracts the appropriate meta-data from their plugin.xml file.
@@ -192,7 +132,7 @@ public class Main implements PluginContext {
 			urls[i] = plugins.get(i).getLocation();
 		}
 		URLClassLoader loader = new URLClassLoader(urls);
-		PluginContext context = new Main();
+		PluginContext context = new DefaultPluginContext();
 
 		// Third, active the plugins. This will give them the opportunity to
 		// register whatever extensions they like.
