@@ -9,10 +9,12 @@ import java.net.URLClassLoader;
 import java.util.*;
 import java.util.jar.*;
 
+import wycc.lang.Logger;
 import wycc.lang.Plugin;
 import wycc.lang.PluginActivator;
 import wycc.lang.PluginContext;
 import wycc.util.DefaultPluginContext;
+import wycc.util.DefaultPluginManager;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -28,6 +30,11 @@ public class Main {
 	 * Identifies the location where plugins are stored.
 	 */
 	public static final String PLUGINS_DIR = "lib/plugins/";
+
+	/**
+	 * Identifies the location where local plugins are stored.
+	 */
+	public static final String LOCAL_PLUGINS_DIR = ".wycc/plugins/";
 
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -58,147 +65,34 @@ public class Main {
 		}
 	}
 
-	/**
-	 * Scan a given directory for plugins. A plugin is a jar file which contains
-	 * an appropriate plugin.xml file. This method does not start any plugins,
-	 * it simply extracts the appropriate meta-data from their plugin.xml file.
-	 * 
-	 * @param directory
-	 *            Directory to scan for plugins.
-	 * @param plugins
-	 *            List of plugins to which any plugins found will be added.
-	 */
-	private static void scanForPlugins(String directory,
-			ArrayList<Plugin> plugins) {
-		File pluginDir = new File(directory);
-		for (String n : pluginDir.list()) {
-			if (n.endsWith(".jar")) {
-				try {
-					URL url = new File(directory + File.separator + n).toURI()
-							.toURL();
-					Plugin plugin = parsePluginManifest(url);
-					if (plugin != null) {
-						plugins.add(plugin);
-					}
-				} catch (MalformedURLException e) {
-					// This basically shouldn't happen, since we're constructing
-					// the URL directly from the directory name and the name of
-					// a located file.
-				}
-			}
-		}
-	}
-
-	/**
-	 * Open a given plugin Jar and attempt to extract the plugin meta-data from
-	 * the manifest. If the manifest doesn't contain the appropriate
-	 * information, then it's ignored an null is returned.
-	 * 
-	 * @param bundleURL
-	 * @return
-	 */
-	private static Plugin parsePluginManifest(URL bundleURL) {
-		try {
-			JarFile jarFile = new JarFile(bundleURL.getFile());
-			Manifest manifest = jarFile.getManifest();
-			Attributes attributes = manifest.getMainAttributes();
-			String bundleName = attributes.getValue("Bundle-Name");
-			String bundleId = attributes.getValue("Bundle-SymbolicName");
-			Plugin.Version bundleVersion = new Plugin.Version(
-					attributes.getValue("Bundle-Version"));
-			String bundleActivator = attributes.getValue("Bundle-Activator");
-			List<Plugin.Dependency> bundleDependencies = Collections.EMPTY_LIST;
-			return new Plugin(bundleName, bundleId, bundleVersion, bundleURL,
-					bundleActivator, bundleDependencies);
-		} catch (IOException e) {
-			// Just ignore this jar file ... something is wrong.
-		}
-		return null;
-	}
+	
 
 	// ==================================================================
 	// Main Method
 	// ==================================================================
 
 	public static void main(String[] args) {
-		ArrayList<Plugin> plugins = new ArrayList<Plugin>();
-
-		// First, scan for any plugins in the given directory.
-		scanForPlugins(PLUGINS_DIR, plugins);
-
-		// Second, construct the URLClassLoader which will be used to load
-		// classes within the plugins.
-		URL[] urls = new URL[plugins.size()];
-		for(int i=0;i!=plugins.size();++i) {
-			urls[i] = plugins.get(i).getLocation();
+		
+		// First, determine the set of plugin locations 
+		ArrayList<String> locations = new ArrayList<String>();
+		locations.add(PLUGINS_DIR);
+		String HOME = System.getenv("HOME");
+		if(HOME != null) {
+			locations.add(HOME + LOCAL_PLUGINS_DIR);
 		}
-		URLClassLoader loader = new URLClassLoader(urls);
+		
+		// Second, create the plugin manager
 		PluginContext context = new DefaultPluginContext();
-
-		// Third, active the plugins. This will give them the opportunity to
-		// register whatever extensions they like.
-		activatePlugins(loader,context,plugins);
-
-		// Fourth, do something ??
+		DefaultPluginManager manager = new DefaultPluginManager(context,
+				locations);
+		manager.setLogger(new Logger.Default(System.err));
 		
-		// We need to build up and instantiate instances of Content.Type
-		// We need to instantiate and configure the builders / routes
-		// We need to construct the content directories (?)
-		// We need to construct various build rules and create a project!
-		
-		// Finally, shutdown all plugins
-		deactivatePlugins(loader,context,plugins);		
+		// Third, activate all plugins
+		manager.start();
+
+		// Finally, deactivate all plugins
+		manager.stop();
 	}
 	
-	/**
-	 * Activate all plugins in the order of occurrence in the given list. It is
-	 * assumed that all dependencies are already resolved prior to this and all
-	 * plugins are topologically sorted.
-	 * 
-	 * @param loader
-	 *            --- Class loader to load plugins with
-	 * @param context
-	 *            --- Plugin Context to use for all plugins.
-	 * @param plugins
-	 *            --- List of plugins in topological order
-	 */
-	public static void activatePlugins(URLClassLoader loader,
-			PluginContext context, List<Plugin> plugins) {
-		for (int i=0;i!=plugins.size();++i) {
-			Plugin plugin = plugins.get(i);
-			try {
-				Class c = loader.loadClass(plugin.getActivator());				
-				PluginActivator self = (PluginActivator) c.newInstance();
-				self.start(context);				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
 	
-	/**
-	 * Deactivate all plugins in the reverse order of occurrence in the given
-	 * list. It is assumed that all dependencies are already resolved prior to
-	 * this and all plugins are topologically sorted.
-	 * 
-	 * @param loader
-	 *            --- Class loader to load plugins with
-	 * @param context
-	 *            --- Plugin Context to use for all plugins.
-	 * @param plugins
-	 *            --- List of plugins in topological order
-	 */
-	public static void deactivatePlugins(URLClassLoader loader,
-			PluginContext context, List<Plugin> plugins) {
-		for (int i=plugins.size();i>0;i--) {
-			Plugin plugin = plugins.get(i-1);
-			try {
-				Class c = loader.loadClass(plugin.getActivator());				
-				PluginActivator self = (PluginActivator) c.newInstance();
-				self.stop(context);				
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-		}
-	}
 }

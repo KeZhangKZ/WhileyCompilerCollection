@@ -57,7 +57,34 @@ public class Plugin {
 		this.activator = activator;
 		this.dependencies = new ArrayList<Dependency>(dependencies);
 	}
-			
+	
+	/**
+	 * Get the name of this plugin
+	 * 
+	 * @return
+	 */
+	public String getName() {
+		return name;
+	}
+	
+	/**
+	 * Get the id of this plugin
+	 * 
+	 * @return
+	 */
+	public String getId() {
+		return id;
+	}
+	
+	/**
+	 * Get the version of this plugin
+	 * 
+	 * @return
+	 */
+	public Version getVersion() {
+		return version;
+	}
+	
 	/**
 	 * Get the name of the activator class for this plugin. This class is
 	 * instantiated when the plugin begins and used to control the start-up and
