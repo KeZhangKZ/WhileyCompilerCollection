@@ -177,9 +177,6 @@ public final class OptArg {
 	public final static FILE FILE = new FILE();
 	public final static FILEDIR FILEDIR = new FILEDIR();
 	public final static FILELIST FILELIST = new FILELIST();		
-	public final static PIPELINEAPPEND PIPELINEAPPEND = new PIPELINEAPPEND();
-	public final static PIPELINECONFIGURE PIPELINECONFIGURE = new PIPELINECONFIGURE();
-	public final static PIPELINEREMOVE PIPELINEREMOVE = new PIPELINEREMOVE();
 	
 	private static final class STRING implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
