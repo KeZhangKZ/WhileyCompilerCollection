@@ -73,7 +73,9 @@ public class Main {
 
 	public static void main(String[] args) {
 		
-		// First, determine the set of plugin locations 
+		// --------------------------------------------------------------
+		// First, determine the set of plugin locations
+		// --------------------------------------------------------------
 		ArrayList<String> locations = new ArrayList<String>();
 		locations.add(PLUGINS_DIR);
 		String HOME = System.getenv("HOME");
@@ -81,16 +83,26 @@ public class Main {
 			locations.add(HOME + LOCAL_PLUGINS_DIR);
 		}
 		
+		// --------------------------------------------------------------
 		// Second, create the plugin manager
+		// --------------------------------------------------------------
 		PluginContext context = new DefaultPluginContext();
 		DefaultPluginManager manager = new DefaultPluginManager(context,
 				locations);
 		manager.setLogger(new Logger.Default(System.err));
 		
+		// --------------------------------------------------------------
 		// Third, activate all plugins
+		// --------------------------------------------------------------
 		manager.start();
 
+		// --------------------------------------------------------------
+		// Fourth, start the compilation process
+		// --------------------------------------------------------------
+		
+		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
+		// --------------------------------------------------------------
 		manager.stop();
 	}
 	
