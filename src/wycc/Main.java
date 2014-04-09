@@ -56,7 +56,6 @@ public class Main {
 		}
 	}
 
-
 	// ==================================================================
 	// Command-Line Options
 	// ==================================================================
@@ -65,8 +64,7 @@ public class Main {
 			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
-					"Print detailed information on what the compiler is doing")
-	};
+					"Print detailed information on what the compiler is doing") };
 
 	// ==================================================================
 	// Main Method
