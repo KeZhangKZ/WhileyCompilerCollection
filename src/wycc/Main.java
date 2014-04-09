@@ -1,22 +1,13 @@
 package wycc;
 
-import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
-import java.util.jar.*;
 
 import wycc.lang.Logger;
-import wycc.lang.Plugin;
-import wycc.lang.PluginActivator;
 import wycc.lang.PluginContext;
 import wycc.util.DefaultPluginContext;
 import wycc.util.DefaultPluginManager;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
+import wycc.util.OptArg;
 
 public class Main {
 	
@@ -65,16 +56,44 @@ public class Main {
 		}
 	}
 
+
+	// ==================================================================
+	// Command-Line Options
+	// ==================================================================
 	
+	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[] {
+			new OptArg("help", "Print this help information"),
+			new OptArg("version", "Print version information"),
+			new OptArg("verbose",
+					"Print detailed information on what the compiler is doing")
+	};
 
 	// ==================================================================
 	// Main Method
 	// ==================================================================
 
-	public static void main(String[] args) {
+	public static void main(String[] _args) {
 		
 		// --------------------------------------------------------------
-		// First, determine the set of plugin locations
+		// First, parse command-line options
+		// --------------------------------------------------------------
+		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
+		Map<String, Object> values = OptArg.parseOptions(args, DEFAULT_OPTIONS);
+
+		// Second, check if we're printing version
+		if (values.containsKey("version")) {
+			version();
+			System.exit(0);
+		}
+		// Otherwise, if no files to compile specified, then print usage
+		if (args.isEmpty() || values.containsKey("help")) {
+			usage();
+			System.exit(0);
+		}
+		boolean verbose = values.containsKey("verbose");
+		
+		// --------------------------------------------------------------
+		// Second, determine the set of plugin locations
 		// --------------------------------------------------------------
 		ArrayList<String> locations = new ArrayList<String>();
 		locations.add(PLUGINS_DIR);
@@ -84,20 +103,22 @@ public class Main {
 		}
 		
 		// --------------------------------------------------------------
-		// Second, create the plugin manager
+		// Third, create the plugin manager
 		// --------------------------------------------------------------
 		PluginContext context = new DefaultPluginContext();
 		DefaultPluginManager manager = new DefaultPluginManager(context,
 				locations);
-		manager.setLogger(new Logger.Default(System.err));
+		if(verbose) {
+			manager.setLogger(new Logger.Default(System.err));
+		}
 		
 		// --------------------------------------------------------------
-		// Third, activate all plugins
+		// Fourth, activate all plugins
 		// --------------------------------------------------------------
 		manager.start();
 
 		// --------------------------------------------------------------
-		// Fourth, start the compilation process
+		// Fifth, start the compilation process
 		// --------------------------------------------------------------
 		
 		// --------------------------------------------------------------
@@ -106,5 +127,14 @@ public class Main {
 		manager.stop();
 	}
 	
+	protected static void version() {
+		System.out.println("Whiley Compiler Collection version "
+				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
+				+ MINOR_REVISION);		
+	}
 	
+	protected static void usage() {
+		System.out.println("usage: jasm <options> <files>");
+		OptArg.usage(System.out, DEFAULT_OPTIONS);
+	}
 }

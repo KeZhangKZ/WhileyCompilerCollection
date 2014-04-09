@@ -35,12 +35,49 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wyc wyil wycs wybs wyrl"
+LIBS="wycc"
 
-. $DIR/bin/wy_common.bash
+# check for running under cywin
+cygwin=false
+case "`uname`" in
+  CYGWIN*) cygwin=true ;;
+esac
+
+######################
+# CONSTRUCT CLASSPATH
+######################
+
+if $cygwin; then
+    # under cygwin the classpath separator must be ";"
+    LIBDIR=`cygpath -m "$LIBDIR"`
+    PATHSEP=";"
+else
+    # under UNIX the classpath separator must be ":"
+    PATHSEP=":"
+fi
+
+WYCC_CLASSPATH=$CLASSPATH
+
+# as there may more than one version of the jar files
+# it is important to first use the * expansion, and then
+# use the last one via the "##* " expansion.
+
+for lib in $LIBS
+do
+    tmp=$(echo $LIBDIR/${lib}-v*.jar)
+    JAR=${tmp##* }
+    case "$JAR" in 
+    *\**)
+        echo "Library '$lib' not found"
+        exit 2
+        ;;
+    esac
+    WYCC_CLASSPATH="$JAR$PATHSEP$WYCC_CLASSPATH"
+done
+
 
 ######################
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WHILEY_CLASSPATH" wyc.WycMain -bp "$WHILEY_BOOTPATH" "$@"
+java -server -Xmx128M -cp "$WYCC_CLASSPATH" wycc.Main "$@"
