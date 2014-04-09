@@ -25,7 +25,7 @@ public class Main {
 	/**
 	 * Identifies the location where local plugins are stored.
 	 */
-	public static final String LOCAL_PLUGINS_DIR = ".wycc/plugins/";
+	public static final String LOCAL_PLUGINS_DIR = "/.wycc/plugins/";
 
 	/**
 	 * Initialise the error output stream so as to ensure it will display
