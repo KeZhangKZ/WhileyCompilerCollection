@@ -63,7 +63,7 @@ public class DefaultPluginManager {
 		scan();
 		
 		// Second, arrange plugins in a topological order to resolve dependencies
-		sortPlugins();
+		pluginToplogicalSort();
 		
 		// Second, construct the URLClassLoader which will be used to load
 		// classes within the plugins.		
@@ -98,7 +98,7 @@ public class DefaultPluginManager {
 				PluginActivator self = (PluginActivator) c.newInstance();
 				self.start(context);	
 				logger.logTimedMessage("Activated plugin " + plugin.getId()
-						+ " v" + plugin.getVersion() , 0, 0);
+						+ " (v" + plugin.getVersion() + ")" , 0, 0);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -229,40 +229,43 @@ public class DefaultPluginManager {
 		return new Pair<Plugin.Version, Plugin.Version>(minVersion, maxVersion);
 	}
 	
-	private void sortPlugins() {
-		HashMap<String,Plugin> map = new HashMap<String,Plugin>();
+	private void pluginToplogicalSort() {
+		HashMap<String, Plugin> map = new HashMap<String, Plugin>();
 		HashSet<String> visited = new HashSet<String>();
 		ArrayList<Plugin> sorted = new ArrayList<Plugin>();
-		
-		for(int i=0;i!=plugins.size();++i) {
+
+		for (int i = 0; i != plugins.size(); ++i) {
 			Plugin p = plugins.get(i);
-			map.put(p.getName(),p);
+			map.put(p.getId(), p);
 		}
-		
-		for(int i=0;i!=plugins.size();++i) {
+
+		for (int i = 0; i != plugins.size(); ++i) {
 			Plugin p = plugins.get(i);
-			if(!visited.contains(p.getName())) {
-				sortPlugin(p,visited,sorted,map);
+			if (!visited.contains(p.getName())) {
+				visit(p, visited, sorted, map);
 			}
 		}
-		
-		//Collections.reverse(sorted);
+
 		plugins.clear();
 		plugins.addAll(sorted);
 	}
 	
-	private static void sortPlugin(Plugin p, HashSet<String> visited,
+	private static void visit(Plugin p, HashSet<String> visited,
 			ArrayList<Plugin> sorted, HashMap<String, Plugin> map) {
-		visited.add(p.getName());
-		sorted.add(p);
-		for(Plugin.Dependency d : p.getDependencies()) {
+
+		// FIXME: this needs to detect cycles, which it currently doesn't do.
+
+		visited.add(p.getId());
+		for (Plugin.Dependency d : p.getDependencies()) {
 			Plugin pd = map.get(d.getId());
 			// FIXME: implement version checking
-			if(pd == null) {
-				throw new RuntimeException("MISSING DEPENDENCY: " + d.getId());
-			} else if(!visited.contains(pd.getName())) {
-				sortPlugin(pd,visited,sorted,map);
+			if (pd == null) {
+				throw new RuntimeException("missing dependency: " + d.getId());
+			} else if (!visited.contains(pd.getId())) {
+				visit(pd, visited, sorted, map);
 			}
 		}
+		
+		sorted.add(p);
 	}
 }
