@@ -29,6 +29,9 @@ public class Activator implements PluginActivator 	{
 			@Override
 			public void register(Object implementation) {
 				Content.Type contentType = (Content.Type) implementation;
+				
+				// TODO: need to get the suffix out of the content type!!
+				
 				registry.register(contentType, null);
 				context.logTimedMessage("Registered "
 						+ contentType, 0, 0);
