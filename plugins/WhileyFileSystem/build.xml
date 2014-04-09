@@ -23,7 +23,7 @@
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
       <attribute name="Bundle-Name" value="Whiley File System"/>
-      <attribute name="Bundle-SymbolicName" value="wyfs"/>
+      <attribute name="Bundle-SymbolicName" value="org.whiley.wyfs"/>
       <attribute name="Bundle-Version" value="${version}"/>
       <attribute name="Bundle-Activator" value="wyfs.Activator"/>
     </manifest>    
