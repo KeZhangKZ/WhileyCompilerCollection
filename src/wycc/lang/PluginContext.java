@@ -1,5 +1,7 @@
 package wycc.lang;
 
+import wycc.util.Logger;
+
 /**
  * A PluginContext provides a mechanism for plugins to interact with their
  * environment. In particular, it allows them to register extension points which
@@ -8,7 +10,7 @@ package wycc.lang;
  * @author David J. Pearce
  * 
  */
-public interface PluginContext {
+public interface PluginContext extends Logger {
 	
 	/**
 	 * Responsible for registering an extension within the system.

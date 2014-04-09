@@ -3,10 +3,10 @@ package wycc;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycc.lang.Logger;
 import wycc.lang.PluginContext;
 import wycc.util.DefaultPluginContext;
 import wycc.util.DefaultPluginManager;
+import wycc.util.Logger;
 import wycc.util.OptArg;
 
 public class Main {
@@ -103,11 +103,12 @@ public class Main {
 		// --------------------------------------------------------------
 		// Third, create the plugin manager
 		// --------------------------------------------------------------
-		PluginContext context = new DefaultPluginContext();
+		DefaultPluginContext context = new DefaultPluginContext();
 		DefaultPluginManager manager = new DefaultPluginManager(context,
 				locations);
 		if(verbose) {
 			manager.setLogger(new Logger.Default(System.err));
+			context.setLogger(new Logger.Default(System.err));
 		}
 		
 		// --------------------------------------------------------------

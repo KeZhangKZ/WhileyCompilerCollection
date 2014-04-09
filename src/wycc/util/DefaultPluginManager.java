@@ -15,7 +15,6 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import wycc.lang.Logger;
 import wycc.lang.Plugin;
 import wycc.lang.PluginActivator;
 import wycc.lang.PluginContext;
@@ -51,7 +50,7 @@ public class DefaultPluginManager {
 	}
 	
 	public void setLogger(Logger logger) {
-		this.logger = logger;
+		this.logger = logger;		
 	}
 	
 	/**

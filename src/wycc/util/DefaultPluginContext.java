@@ -6,6 +6,11 @@ import wycc.lang.PluginContext;
 public class DefaultPluginContext implements PluginContext {
 
 	/**
+	 * Logging stream, which is null by default.
+	 */
+	private Logger logger = Logger.NULL;
+	
+	/**
 	 * The extension points represent registered implementations of interfaces.
 	 * Each extension point represents a class that will be instantiated and
 	 * configured, and will contribute to some function within the compiler. The
@@ -17,6 +22,10 @@ public class DefaultPluginContext implements PluginContext {
 	// ==================================================================
 	// Methods
 	// ==================================================================
+	
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
 	
 	@Override
 	public void register(String extension, Object implementation) {
@@ -35,5 +44,10 @@ public class DefaultPluginContext implements PluginContext {
 		} else {
 			extensionPoints.put(extension, ep);
 		}
-	}	
+	}
+
+	@Override
+	public void logTimedMessage(String msg, long time, long memory) {
+		logger.logTimedMessage(msg, time, memory);
+	}
 }

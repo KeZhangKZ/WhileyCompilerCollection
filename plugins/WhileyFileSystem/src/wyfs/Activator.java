@@ -2,6 +2,8 @@ package wyfs;
 
 import wycc.lang.PluginActivator;
 import wycc.lang.PluginContext;
+import wyfs.lang.Content;
+import wyfs.util.DefaultContentRegistry;
 
 /**
  * The activator for the Whiley FIle System plugin. This doesn't really do much!
@@ -10,13 +12,15 @@ import wycc.lang.PluginContext;
  * 
  */
 public class Activator implements PluginActivator 	{
-		
+	
+	private DefaultContentRegistry registry = new DefaultContentRegistry();
+	
 	public Activator() {
 		
 	}
 	
-	public void start(PluginContext context) {
-		
+	public void start(final PluginContext context) {
+
 		// ==================================================================
 		// Create ContentType extension point
 		// ==================================================================
@@ -24,7 +28,10 @@ public class Activator implements PluginActivator 	{
 
 			@Override
 			public void register(Object implementation) {
-				System.out.println("NEW CONTENT TYPE REGISTERED");
+				Content.Type contentType = (Content.Type) implementation;
+				registry.register(contentType, null);
+				context.logTimedMessage("Registered "
+						+ contentType, 0, 0);
 			}
 
 		});
