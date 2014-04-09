@@ -8,6 +8,8 @@ import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
@@ -59,6 +61,9 @@ public class DefaultPluginManager {
 	public void start() {
 		// First, scan for any plugins in the given directory.
 		scan();
+		
+		// Second, arrange plugins in a topological order to resolve dependencies
+		sortPlugins();
 		
 		// Second, construct the URLClassLoader which will be used to load
 		// classes within the plugins.		
@@ -222,5 +227,42 @@ public class DefaultPluginManager {
 			minVersion = new Plugin.Version(range);
 		}
 		return new Pair<Plugin.Version, Plugin.Version>(minVersion, maxVersion);
+	}
+	
+	private void sortPlugins() {
+		HashMap<String,Plugin> map = new HashMap<String,Plugin>();
+		HashSet<String> visited = new HashSet<String>();
+		ArrayList<Plugin> sorted = new ArrayList<Plugin>();
+		
+		for(int i=0;i!=plugins.size();++i) {
+			Plugin p = plugins.get(i);
+			map.put(p.getName(),p);
+		}
+		
+		for(int i=0;i!=plugins.size();++i) {
+			Plugin p = plugins.get(i);
+			if(!visited.contains(p.getName())) {
+				sortPlugin(p,visited,sorted,map);
+			}
+		}
+		
+		//Collections.reverse(sorted);
+		plugins.clear();
+		plugins.addAll(sorted);
+	}
+	
+	private static void sortPlugin(Plugin p, HashSet<String> visited,
+			ArrayList<Plugin> sorted, HashMap<String, Plugin> map) {
+		visited.add(p.getName());
+		sorted.add(p);
+		for(Plugin.Dependency d : p.getDependencies()) {
+			Plugin pd = map.get(d.getId());
+			// FIXME: implement version checking
+			if(pd == null) {
+				throw new RuntimeException("MISSING DEPENDENCY: " + d.getId());
+			} else if(!visited.contains(pd.getName())) {
+				sortPlugin(pd,visited,sorted,map);
+			}
+		}
 	}
 }

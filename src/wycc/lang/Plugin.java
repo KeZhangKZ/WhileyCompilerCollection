@@ -227,6 +227,10 @@ public class Plugin {
 			this.maxVersion = max;
 		}
 		
+		public String getId() {
+			return id;
+		}
+		
 		public boolean matches(String id, Version version) {
 			return this.id.equals(id)
 					&& (this.minVersion == null || this.minVersion
