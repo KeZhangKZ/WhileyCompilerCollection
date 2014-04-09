@@ -1,5 +1,5 @@
 <project name="wycc" default="jarfile">  
-  <property name="version" value="0.1.0"/>
+  <import file="config.xml"/>
 
   <!-- ============================================== -->
   <!-- Build Commands -->
@@ -12,6 +12,14 @@
       <exclude name="wycc/testing/**"/> 
       <exclude name="*/**/package-info.java"/> 
     </javac>
+  </target>
+
+  <target name="build-plugins">
+    <subant failonerror="true" target="plugin">
+      <property name="plugin.dir" value="${plugin.dir}"/>
+      <fileset dir="plugins" includes="WhileyFileSystem/build.xml"/>
+      <fileset dir="plugins" includes="WhileyBuildSystem/build.xml"/>
+    </subant>
   </target>
 
   <!-- ============================================== -->
@@ -38,7 +46,7 @@
   <!-- Distribution -->
   <!-- ============================================== -->
 
-  <target name="jarfile" depends="build">
+  <target name="jarfile" depends="build,build-plugins">
     <mkdir dir="lib"/>
     <mkdir dir="tmp"/>
     <manifest file="tmp/MANIFEST.MF">

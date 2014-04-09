@@ -38,6 +38,14 @@
     <echo message="============================================="/>
   </target>
 
+  <target name="plugin" depends="jarfile">
+    <copy todir="../../${plugin.dir}">
+      <fileset dir="lib/">
+	<include name="wyfs-v${version}.jar"/>
+      </fileset>
+    </copy>
+  </target>
+
   <!-- ============================================== -->
   <!-- Misc Commands -->
   <!-- ============================================== -->
