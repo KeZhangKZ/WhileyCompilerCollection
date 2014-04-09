@@ -1,8 +1,6 @@
 package wycc.util;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-
 import wycc.lang.PluginContext;
 
 public class DefaultPluginContext implements PluginContext {
@@ -14,7 +12,7 @@ public class DefaultPluginContext implements PluginContext {
 	 * main extension points are: <i>Routes</i>, <i>Builders</i> and
 	 * <i>ContentTypes</i>.
 	 */
-	public final HashMap<String, ArrayList<Class<?>>> extensionPoints = new HashMap<String, ArrayList<Class<?>>>();
+	public final HashMap<String, ExtensionPoint> extensionPoints = new HashMap<String, ExtensionPoint>();
 
 	// ==================================================================
 	// Methods
@@ -22,18 +20,21 @@ public class DefaultPluginContext implements PluginContext {
 	
 	@Override
 	public void register(String extension, Class<?> implementation) {
-		ArrayList<Class<?>> currentExtensions = extensionPoints.get(extension);
-		if(currentExtensions == null) {
+		ExtensionPoint ep = extensionPoints.get(extension);
+		if(ep == null) {
 			throw new RuntimeException("Missing extension point: " + extension);
 		} else {
-			currentExtensions.add(implementation);
+			ep.register(implementation);
 		}
 	}
 
 	@Override
-	public void create(String extension, ExtensionPoint ep) {
-		// TODO Auto-generated method stub
-		
+	public void create(String extension, ExtensionPoint ep) {		
+		if(extensionPoints.containsKey(extension)) {
+			throw new RuntimeException("Extension point already exists: " + extension);
+		} else {
+			extensionPoints.put(extension, ep);
+		}
 	}
 
 	

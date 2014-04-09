@@ -16,10 +16,10 @@ public class Activator implements PluginActivator {
 	}
 	
 	public void start(PluginContext context) {
-		System.out.println("WYBS Activator.start() called");
+		
 	}
 	
 	public void stop(PluginContext context) {
-		System.out.println("WYBS Activator.stop() called");
+		
 	}
 }

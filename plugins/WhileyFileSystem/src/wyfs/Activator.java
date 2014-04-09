@@ -16,10 +16,23 @@ public class Activator implements PluginActivator 	{
 	}
 	
 	public void start(PluginContext context) {
-		System.out.println("WYFS Activator.start() called");
+		
+		// ==================================================================
+		// Create ContentType extension point
+		// ==================================================================
+		context.create("wyfs.ContentType", new PluginContext.ExtensionPoint() {
+
+			@Override
+			public void register(Class<?> implementation) {
+				System.out.println("NEW CONTENT TYPE REGISTERED");
+			}
+
+		});
+		
+		
 	}
 	
 	public void stop(PluginContext context) {
-		System.out.println("WYFS Activator.stop() called");
+		
 	}
 }
