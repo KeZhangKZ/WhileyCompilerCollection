@@ -1,4 +1,4 @@
-package wycc.util;
+package wyfs.util;
 
 import java.util.HashMap;
 import java.util.Map;
