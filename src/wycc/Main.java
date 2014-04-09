@@ -134,7 +134,7 @@ public class Main {
 	}
 	
 	protected static void usage() {
-		System.out.println("usage: jasm <options> <files>");
+		System.out.println("usage: wycc <options> <files>");
 		OptArg.usage(System.out, DEFAULT_OPTIONS);
 	}
 }
