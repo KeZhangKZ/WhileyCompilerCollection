@@ -19,35 +19,35 @@ public class Plugin {
 	 * for this plugin.
 	 */
 	private String name;
-	
+
 	/**
 	 * The plugin identifier, which should be unique for this plugin (upto
 	 * versioning).
 	 */
-	private final String id;	
-	
+	private final String id;
+
 	/**
 	 * The version number of this plugin, which is a triple of the form
 	 * (major,minor,micro) and usually written major.minor.micro (e.g. 1.0.3).
 	 */
 	private final Version version;
-	
+
 	/**
 	 * The location of the plugin jar file.
 	 */
 	private final URL location;
-	
+
 	/**
 	 * The name of the class responsible for activating this plugin.
 	 */
 	private final String activator;
-	
+
 	/**
 	 * The list of other plugins that this plugin depends upon. These plugins
 	 * must be loaded before this plugin can be loaded.
-	 */	
-	private ArrayList<Dependency> dependencies;	
-	
+	 */
+	private ArrayList<Dependency> dependencies;
+
 	public Plugin(String name, String id, Version version, URL location,
 			String activator, List<Dependency> dependencies) {
 		this.name = name;
@@ -57,7 +57,7 @@ public class Plugin {
 		this.activator = activator;
 		this.dependencies = new ArrayList<Dependency>(dependencies);
 	}
-	
+
 	/**
 	 * Get the name of this plugin
 	 * 
@@ -66,7 +66,7 @@ public class Plugin {
 	public String getName() {
 		return name;
 	}
-	
+
 	/**
 	 * Get the id of this plugin
 	 * 
@@ -75,7 +75,7 @@ public class Plugin {
 	public String getId() {
 		return id;
 	}
-	
+
 	/**
 	 * Get the version of this plugin
 	 * 
@@ -84,7 +84,7 @@ public class Plugin {
 	public Version getVersion() {
 		return version;
 	}
-	
+
 	/**
 	 * Get the name of the activator class for this plugin. This class is
 	 * instantiated when the plugin begins and used to control the start-up and
@@ -95,39 +95,53 @@ public class Plugin {
 	public String getActivator() {
 		return activator;
 	}
-	
+
 	/**
 	 * Return the location of the plugin jar.
+	 * 
 	 * @return
 	 */
 	public URL getLocation() {
 		return location;
 	}
-	
+
 	/**
 	 * Get the list of dependencies for this plugin.
+	 * 
 	 * @return
 	 */
 	public List<Dependency> getDependencies() {
 		return Collections.unmodifiableList(dependencies);
 	}
-	
+
+	/**
+	 * Represents a version number with three components: the major component;
+	 * the minor component; and, the micro component. For example, "1.0.3" is a
+	 * version number whose major component is "1", whose minor component is "0"
+	 * and whose micro component is "3".
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static final class Version implements Comparable<Version> {
 		/**
-		 * The major version number of this plugin. Plugins with the same identifier
-		 * and identical major versions may not be backwards compatible,
+		 * The major version number of this plugin. Plugins with the same
+		 * identifier and identical major versions may not be backwards
+		 * compatible,
 		 */
 		private int major;
-		
+
 		/**
-		 * The minor version number of this plugin. Plugins with the same identifier
-		 * and identical major versions should be backwards compatible,
+		 * The minor version number of this plugin. Plugins with the same
+		 * identifier and identical major versions should be backwards
+		 * compatible,
 		 */
 		private int minor;
-		
+
 		/**
-		 * The micro version number of this plugin. Plugins with the same identifier
-		 * and identical major versions should be backwards compatible,
+		 * The micro version number of this plugin. Plugins with the same
+		 * identifier and identical major versions should be backwards
+		 * compatible,
 		 */
 		private int micro;
 
@@ -140,14 +154,15 @@ public class Plugin {
 		 */
 		public Version(String versionString) {
 			String[] components = versionString.split("\\.");
-			if(components.length != 3) {
-				throw new IllegalArgumentException("Invalid version string \"" + versionString + "\"");
+			if (components.length != 3) {
+				throw new IllegalArgumentException("Invalid version string \""
+						+ versionString + "\"");
 			}
 			this.major = Integer.parseInt(components[0]);
 			this.minor = Integer.parseInt(components[1]);
 			this.micro = Integer.parseInt(components[2]);
 		}
-		
+
 		public boolean equals(Object o) {
 			if (o instanceof Version) {
 				Version v = (Version) o;
@@ -162,29 +177,68 @@ public class Plugin {
 
 		@Override
 		public int compareTo(Version o) {
-			if(major < o.major) {
+			if (major < o.major) {
 				return -1;
-			} else if(major > o.major) {
+			} else if (major > o.major) {
 				return 1;
-			} else if(minor < o.minor) {
+			} else if (minor < o.minor) {
 				return -1;
-			} else if(minor > o.minor) {
+			} else if (minor > o.minor) {
 				return 1;
-			} else if(micro < o.micro) {
+			} else if (micro < o.micro) {
 				return -1;
-			} else if(micro > o.micro) {
+			} else if (micro > o.micro) {
 				return 1;
 			} else {
 				return 0;
 			}
 		}
-		
+
 		public String toString() {
 			return major + "." + minor + "." + micro;
 		}
 	}
-	
+
+	/**
+	 * Represents a dependency from one plugin to another.  
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
 	public static class Dependency {
-		private String id;		
-	}	
+		/**
+		 * The unique plugin identifier.
+		 */
+		private String id;
+		
+		/**
+		 * The minimum version number permitted, or null if no lower bound.
+		 */
+		private Version minVersion;
+		
+		/**
+		 * The maximum version number permitted, or null if no upper bound.
+		 */
+		private Version maxVersion;
+		
+		public Dependency(String id, Version min, Version max) {
+			this.id = id;
+			this.minVersion = min;
+			this.maxVersion = max;
+		}
+		
+		public boolean matches(String id, Version version) {
+			return this.id.equals(id)
+					&& (this.minVersion == null || this.minVersion
+							.compareTo(version) <= 0)
+					&& (this.maxVersion == null || this.maxVersion
+							.compareTo(version) >= 0);
+		}
+		
+		public String toString() {
+			String min = minVersion != null ? minVersion.toString() : "_";
+			String max = maxVersion != null ? maxVersion.toString() : "_";			
+			return id + "[" + min + "," + max + "]";
+		}
+	}
 }

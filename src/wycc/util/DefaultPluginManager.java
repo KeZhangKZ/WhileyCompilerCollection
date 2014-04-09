@@ -161,12 +161,66 @@ public class DefaultPluginManager {
 			Plugin.Version bundleVersion = new Plugin.Version(
 					attributes.getValue("Bundle-Version"));
 			String bundleActivator = attributes.getValue("Bundle-Activator");
+			String requireBundle = attributes.getValue("Require-Bundle");
 			List<Plugin.Dependency> bundleDependencies = Collections.EMPTY_LIST;
+			if(requireBundle != null) {
+				bundleDependencies = parsePluginDependencies(requireBundle);
+			}
 			return new Plugin(bundleName, bundleId, bundleVersion, bundleURL,
 					bundleActivator, bundleDependencies);
 		} catch (IOException e) {
 			// Just ignore this jar file ... something is wrong.
 		}
 		return null;
+	}
+	
+	/**
+	 * Parse the Require-Bundle string to generate a list of plugin
+	 * dependencies.  
+	 * 
+	 * @param requireBundle
+	 * @return
+	 */
+	private static List<Plugin.Dependency> parsePluginDependencies(String requireBundle) {
+		String[] deps = requireBundle.split(",");
+		ArrayList<Plugin.Dependency> dependencies = new ArrayList<Plugin.Dependency>();
+		for(int i=0;i!=deps.length;++i) {
+			Plugin.Dependency dep = parsePluginDependency(deps[i]);
+			dependencies.add(parsePluginDependency(deps[i]));
+		}		
+		return dependencies;
+	}
+	
+	private static Plugin.Dependency parsePluginDependency(String dependency) {
+		String[] components = dependency.split(";");
+		Plugin.Version minVersion = null;
+		Plugin.Version maxVersion = null;
+		for (int i = 1; i != components.length; ++i) {
+			String c = components[1];
+			if (c.startsWith("bundle-version=\"")) {
+				c = c.substring(16,c.length()-1);
+				Pair<Plugin.Version, Plugin.Version> p = parsePluginDependencyRange(c);
+				minVersion = p.first();
+				maxVersion = p.second();
+			}
+		}
+		return new Plugin.Dependency(components[0], minVersion, maxVersion);
+	}
+		
+	private static Pair<Plugin.Version, Plugin.Version> parsePluginDependencyRange(
+			String range) {
+		Plugin.Version minVersion = null;
+		Plugin.Version maxVersion = null;
+		if (range.startsWith("(")) {
+			// Indicates a range
+			String inner = range.substring(1, range.length() - 1);
+			String[] versions = inner.split(",");
+			minVersion = new Plugin.Version(versions[0]);
+			maxVersion = new Plugin.Version(versions[1]);
+		} else {
+			// single version
+			minVersion = new Plugin.Version(range);
+		}
+		return new Pair<Plugin.Version, Plugin.Version>(minVersion, maxVersion);
 	}
 }
