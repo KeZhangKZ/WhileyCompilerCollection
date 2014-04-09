@@ -23,7 +23,7 @@ public class Activator implements PluginActivator 	{
 		context.create("wyfs.ContentType", new PluginContext.ExtensionPoint() {
 
 			@Override
-			public void register(Class<?> implementation) {
+			public void register(Object implementation) {
 				System.out.println("NEW CONTENT TYPE REGISTERED");
 			}
 

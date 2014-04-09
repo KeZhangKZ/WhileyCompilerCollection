@@ -14,9 +14,12 @@ public interface PluginContext {
 	 * Responsible for registering an extension within the system.
 	 * 
 	 * @param extension
+	 *            The unique name of the extension point (e.g.
+	 *            "wyfs.ContentType").
 	 * @param implementation
+	 *            The implementation of the given extension point.
 	 */
-	public void register(String extension, Class<?> implementation);
+	public void register(String extension, Object implementation);
 	
 	/**
 	 * Create a new extension point which subsequent plugins can register
@@ -42,6 +45,6 @@ public interface PluginContext {
 		 * 
 		 * @param implementation
 		 */
-		public void register(Class<?> implementation);
+		public void register(Object implementation);
 	}
 }

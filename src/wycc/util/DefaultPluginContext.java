@@ -19,7 +19,7 @@ public class DefaultPluginContext implements PluginContext {
 	// ==================================================================
 	
 	@Override
-	public void register(String extension, Class<?> implementation) {
+	public void register(String extension, Object implementation) {
 		ExtensionPoint ep = extensionPoints.get(extension);
 		if(ep == null) {
 			throw new RuntimeException("Missing extension point: " + extension);
@@ -35,7 +35,5 @@ public class DefaultPluginContext implements PluginContext {
 		} else {
 			extensionPoints.put(extension, ep);
 		}
-	}
-
-	
+	}	
 }
