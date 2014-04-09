@@ -24,10 +24,10 @@ public class DefaultPluginContext implements PluginContext {
 	public void register(String extension, Class<?> implementation) {
 		ArrayList<Class<?>> currentExtensions = extensionPoints.get(extension);
 		if(currentExtensions == null) {
-			currentExtensions = new ArrayList<Class<?>>();
-			extensionPoints.put(extension,currentExtensions);
+			throw new RuntimeException("Missing extension point: " + extension);
+		} else {
+			currentExtensions.add(implementation);
 		}
-		currentExtensions.add(implementation);
 	}
 
 	@Override
