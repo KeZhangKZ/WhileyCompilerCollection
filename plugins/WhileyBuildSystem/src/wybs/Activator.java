@@ -3,7 +3,6 @@ package wybs;
 import wybs.lang.Builder;
 import wycc.lang.PluginActivator;
 import wycc.lang.PluginContext;
-import wyfs.lang.Content;
 
 /**
  * The activator for the Whiley Build System plugin. This doesn't really do much!
@@ -24,12 +23,11 @@ public class Activator implements PluginActivator {
 		context.create("wybs.Builder", new PluginContext.ExtensionPoint() {
 
 			@Override
-			public void register(Object implementation) {
+			public void register(PluginContext.Extension extension) {
 				// Should this accept a builder class, or something else?
-				Builder builder = (Builder) implementation;
-
+				Builder builder = (Builder) extension.data();
+				
 			}
-
 		});
 	}
 	

@@ -27,8 +27,9 @@ public class Activator implements PluginActivator 	{
 		context.create("wyfs.ContentType", new PluginContext.ExtensionPoint() {
 
 			@Override
-			public void register(Object implementation) {
-				Content.Type contentType = (Content.Type) implementation;
+			public void register(PluginContext.Extension extension) {
+				Content.Type contentType = (Content.Type) extension
+						.data();
 				
 				// TODO: need to get the suffix out of the content type!!
 				

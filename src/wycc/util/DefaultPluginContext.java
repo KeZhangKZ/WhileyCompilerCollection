@@ -28,12 +28,12 @@ public class DefaultPluginContext implements PluginContext {
 	}
 	
 	@Override
-	public void register(String extension, Object implementation) {
-		ExtensionPoint ep = extensionPoints.get(extension);
+	public void register(String id, PluginContext.Extension extension) {
+		ExtensionPoint ep = extensionPoints.get(id);
 		if(ep == null) {
-			throw new RuntimeException("Missing extension point: " + extension);
+			throw new RuntimeException("Missing extension point: " + id);
 		} else {
-			ep.register(implementation);
+			ep.register(extension);
 		}
 	}
 
