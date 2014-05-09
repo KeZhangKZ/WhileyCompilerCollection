@@ -64,7 +64,7 @@ public class Main {
 			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
-					"Print detailed information on what the compiler is doing") };
+					"Print detailed information on what the system is doing") };
 
 	// ==================================================================
 	// Main Method
@@ -119,6 +119,7 @@ public class Main {
 		// --------------------------------------------------------------
 		// Fifth, start the compilation process
 		// --------------------------------------------------------------
+		new Application(context).run(args);
 		
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
