@@ -53,24 +53,7 @@ public class DefaultPluginManager {
 	public void setLogger(Logger logger) {
 		this.logger = logger;		
 	}
-	
-	/**
-	 * Configure a plugin using a map from attribute names to appropriate
-	 * values.
-	 * 
-	 * @param id
-	 *            Plugin id to be configured
-	 * @param values
-	 *            Attributes and their values to configure
-	 */
-	public void configure(String id, Map<String,Object> values) {
-		for(Plugin plugin : plugins) {
-			if(plugin.getId().equals(id)) {
-				//plugin.configure(values);
-			}
-		}
-	}
-	
+		
 	/**
 	 * Scan and activate all plugins on the search path. As part of this, all
 	 * plugin dependencies will be checked.
