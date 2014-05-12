@@ -4,7 +4,7 @@ import java.util.List;
 
 import wycc.lang.PluginContext;
 
-public class Application {
+public class Application extends Main {
 	private final PluginContext context;
 	
 	public Application(PluginContext context) {
