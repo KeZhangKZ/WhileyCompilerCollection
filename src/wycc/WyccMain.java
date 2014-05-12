@@ -1,22 +1,55 @@
 package wycc;
 
 import java.io.PrintStream;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
-import wycc.lang.PluginContext;
-import wycc.util.DefaultPluginContext;
-import wycc.util.DefaultPluginManager;
+import wycc.util.*;
 import wycc.util.Logger;
 import wycc.util.OptArg;
 
-public class Main {
+/**
+ * Provides a command-line interface to the Whiley Compiler Collection. This
+ * supports loading and configuring plugins, as well as compiling files.
+ * 
+ * @author David J. Pearce
+ * 
+ */
+public class WyccMain {
+
+	/**
+	 * A default error output stream. This is configured separately from
+	 * System.err in order to enable Unicode to be displayed.
+	 */
+	private static PrintStream errout;
 	
-	public static PrintStream errout;
-	
+	/**
+	 * The major version for this plugin application
+	 */
 	public static final int MAJOR_VERSION;
-	public static final int MINOR_VERSION;
-	public static final int MINOR_REVISION;
 	
+	/**
+	 * The minor version for this plugin application
+	 */
+	public static final int MINOR_VERSION;
+	
+	/**
+	 * The minor revision for this plugin application
+	 */
+	public static final int MINOR_REVISION;	
+	
+	/**
+	 * The list of recognised command-line options. This list needs to be
+	 * appended by applications which build on this.
+	 */
+	protected static OptArg[] COMMAND_LINE_OPTIONS = new OptArg[] {
+			new OptArg("help", "Print this help information"),
+			new OptArg("version", "Print version information"),
+			new OptArg("verbose",
+					"Print detailed information on what the system is doing") };
+
 	/**
 	 * Identifies the location where plugins are stored.
 	 */
@@ -26,6 +59,27 @@ public class Main {
 	 * Identifies the location where local plugins are stored.
 	 */
 	public static final String LOCAL_PLUGINS_DIR = "/.wycc/plugins/";
+		
+	// ==================================================================
+	// Helpers
+	// ==================================================================
+			
+	/**
+	 * Print versioning information to the console.
+	 */
+	protected static void version() {
+		System.out.println("Whiley Compiler Collection version "
+				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
+				+ MINOR_REVISION);		
+	}
+	
+	/**
+	 * Print usage information to the console.
+	 */
+	protected static void usage() {
+		System.out.println("usage: wycc <options> <files>");
+		OptArg.usage(System.out, COMMAND_LINE_OPTIONS);
+	}
 
 	/**
 	 * Initialise the error output stream so as to ensure it will display
@@ -41,7 +95,7 @@ public class Main {
 		}
 
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = Main.class.getPackage()
+		String versionStr = DefaultApplication.class.getPackage()
 				.getImplementationVersion();
 		if (versionStr != null) {
 			String[] pts = versionStr.split("\\.");
@@ -57,28 +111,18 @@ public class Main {
 	}
 
 	// ==================================================================
-	// Command-Line Options
-	// ==================================================================
-	
-	public static final OptArg[] DEFAULT_OPTIONS = new OptArg[] {
-			new OptArg("help", "Print this help information"),
-			new OptArg("version", "Print version information"),
-			new OptArg("verbose",
-					"Print detailed information on what the system is doing") };
-
-	// ==================================================================
 	// Main Method
 	// ==================================================================
 
 	public static void main(String[] _args) {
-		
 		// --------------------------------------------------------------
 		// First, parse command-line options
 		// --------------------------------------------------------------
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
-		Map<String, Object> values = OptArg.parseOptions(args, DEFAULT_OPTIONS);
+		Map<String, Object> values = OptArg.parseOptions(args,
+				COMMAND_LINE_OPTIONS);
 
-		// Second, check if we're printing version
+		// Check if we're printing version
 		if (values.containsKey("version")) {
 			version();
 			System.exit(0);
@@ -89,7 +133,7 @@ public class Main {
 			System.exit(0);
 		}
 		boolean verbose = values.containsKey("verbose");
-		
+
 		// --------------------------------------------------------------
 		// Second, determine the set of plugin locations
 		// --------------------------------------------------------------
@@ -106,11 +150,12 @@ public class Main {
 		DefaultPluginContext context = new DefaultPluginContext();
 		DefaultPluginManager manager = new DefaultPluginManager(context,
 				locations);
-		if(verbose) {
+
+		if (verbose) {
 			manager.setLogger(new Logger.Default(System.err));
 			context.setLogger(new Logger.Default(System.err));
 		}
-		
+
 		// --------------------------------------------------------------
 		// Fourth, activate all plugins
 		// --------------------------------------------------------------
@@ -119,22 +164,12 @@ public class Main {
 		// --------------------------------------------------------------
 		// Fifth, start the compilation process
 		// --------------------------------------------------------------
-		new Application(context).run(args);
 		
+
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
 		manager.stop();
-	}
-	
-	protected static void version() {
-		System.out.println("Whiley Compiler Collection version "
-				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
-				+ MINOR_REVISION);		
-	}
-	
-	protected static void usage() {
-		System.out.println("usage: wycc <options> <files>");
-		OptArg.usage(System.out, DEFAULT_OPTIONS);
-	}
+		WyccMain app = new WyccMain();			
+	}	
 }
