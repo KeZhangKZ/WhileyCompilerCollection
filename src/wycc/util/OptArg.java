@@ -251,7 +251,7 @@ public final class OptArg {
 			Map<String,Object> attributes = values.get(name[0]);
 			
 			if(attributes == null) {				
-				values.put(arg, config);
+				values.put(name[0], config);
 			} else {
 				attributes.putAll(config);
 			}						

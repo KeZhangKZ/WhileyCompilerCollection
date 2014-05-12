@@ -50,7 +50,12 @@ public class WyccMain {
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
 					"Print detailed information on what the system is doing"),
-			new OptArg("X", OptArg.OPTIONSMAP, "Configure plugin") };
+			new OptArg("L", OptArg.FILELIST,
+					"Specify external libraries to include"),
+			new OptArg("D", OptArg.FILEDIR,
+					"Specify output directory for generated files"),
+			new OptArg("T", OptArg.STRING, "Specify target platform"),
+			new OptArg("X", OptArg.OPTIONSMAP, "Configure system component") };
 
 	/**
 	 * Identifies the location where plugins are stored.
