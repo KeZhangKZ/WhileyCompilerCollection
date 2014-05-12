@@ -177,6 +177,7 @@ public final class OptArg {
 	public final static FILE FILE = new FILE();
 	public final static FILEDIR FILEDIR = new FILEDIR();
 	public final static FILELIST FILELIST = new FILELIST();		
+	public final static OPTIONSMAP OPTIONSMAP = new OPTIONSMAP();
 	
 	private static final class STRING implements Kind {
 		public void process(String arg, String option, Map<String,Object> options) {
@@ -231,6 +232,33 @@ public final class OptArg {
 		public String toString() {
 			return "<filelist>";
 		}
+	}
+	
+	private static final class OPTIONSMAP implements Kind {
+		public void process(String arg, String option, Map<String,Object> options) {
+			String[] name = option.split(":");
+			Map<String, Object> config = Collections.EMPTY_MAP;
+			if (name.length > 1) {
+				config = splitConfig(name[1]);
+			}			
+			Map<String,Map<String,Object>> values = (Map<String,Map<String,Object>>) options.get(arg);
+			
+			if(values == null) {
+				values = new HashMap<String,Map<String,Object>>();
+				options.put(arg, values);
+			}
+			
+			Map<String,Object> attributes = values.get(name[0]);
+			
+			if(attributes == null) {				
+				values.put(arg, config);
+			} else {
+				attributes.putAll(config);
+			}						
+		}
+		public String toString() {
+			return "name:[attribute=value]+";
+		}		
 	}
 	
 	/**
@@ -333,11 +361,7 @@ public final class OptArg {
 		String[] splits = str.split(",");
 		for (String s : splits) {
 			String[] p = s.split("=");
-			if (p.length == 1) {
-				options.put(p[0], Boolean.TRUE);
-			} else {
-				options.put(p[0], parseValue(p[1]));
-			}
+			options.put(p[0], parseValue(p[1]));
 		}
 		return options;
 	}

@@ -41,14 +41,16 @@ public class WyccMain {
 	public static final int MINOR_REVISION;	
 	
 	/**
-	 * The list of recognised command-line options. This list needs to be
-	 * appended by applications which build on this.
+	 * The base list of recognised command-line options. These will be appended
+	 * with additional arguments, as determined by the available activated
+	 * plugins.
 	 */
-	protected static OptArg[] COMMAND_LINE_OPTIONS = new OptArg[] {
+	private static OptArg[] COMMANDLINE_OPTIONS = new OptArg[] {
 			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
 			new OptArg("verbose",
-					"Print detailed information on what the system is doing") };
+					"Print detailed information on what the system is doing"),
+			new OptArg("X", OptArg.OPTIONSMAP, "Configure plugin") };
 
 	/**
 	 * Identifies the location where plugins are stored.
@@ -78,7 +80,7 @@ public class WyccMain {
 	 */
 	protected static void usage() {
 		System.out.println("usage: wycc <options> <files>");
-		OptArg.usage(System.out, COMMAND_LINE_OPTIONS);
+		OptArg.usage(System.out, COMMANDLINE_OPTIONS);
 	}
 
 	/**
@@ -95,7 +97,7 @@ public class WyccMain {
 		}
 
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = DefaultApplication.class.getPackage()
+		String versionStr = WyccMain.class.getPackage()
 				.getImplementationVersion();
 		if (versionStr != null) {
 			String[] pts = versionStr.split("\\.");
@@ -116,11 +118,45 @@ public class WyccMain {
 
 	public static void main(String[] _args) {
 		// --------------------------------------------------------------
-		// First, parse command-line options
+		// First, preprocess command-line arguments
 		// --------------------------------------------------------------
+
+		boolean verbose = false;
+		for(String arg : _args) {
+			verbose |= arg.equals("-verbose");
+		}
+		
+		// --------------------------------------------------------------
+		// Second, determine plugin locations
+		// --------------------------------------------------------------
+		ArrayList<String> locations = new ArrayList<String>();
+		locations.add(PLUGINS_DIR);
+		String HOME = System.getenv("HOME");
+		if(HOME != null) {
+			locations.add(HOME + LOCAL_PLUGINS_DIR);
+		}
+		
+		// --------------------------------------------------------------
+		// Third, activate plugin system
+		// --------------------------------------------------------------
+		DefaultPluginContext context = new DefaultPluginContext();
+		DefaultPluginManager manager = new DefaultPluginManager(context,
+				locations);
+
+		if (verbose) {
+			manager.setLogger(new Logger.Default(System.err));
+			context.setLogger(new Logger.Default(System.err));
+		}
+		
+		manager.start();
+		
+		// --------------------------------------------------------------
+		// Fourth, parse command-line options
+		// --------------------------------------------------------------
+		
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 		Map<String, Object> values = OptArg.parseOptions(args,
-				COMMAND_LINE_OPTIONS);
+				COMMANDLINE_OPTIONS);
 
 		// Check if we're printing version
 		if (values.containsKey("version")) {
@@ -132,44 +168,20 @@ public class WyccMain {
 			usage();
 			System.exit(0);
 		}
-		boolean verbose = values.containsKey("verbose");
-
-		// --------------------------------------------------------------
-		// Second, determine the set of plugin locations
-		// --------------------------------------------------------------
-		ArrayList<String> locations = new ArrayList<String>();
-		locations.add(PLUGINS_DIR);
-		String HOME = System.getenv("HOME");
-		if(HOME != null) {
-			locations.add(HOME + LOCAL_PLUGINS_DIR);
-		}
 		
 		// --------------------------------------------------------------
-		// Third, create the plugin manager
+		// Fifth, configure plugin system
 		// --------------------------------------------------------------
-		DefaultPluginContext context = new DefaultPluginContext();
-		DefaultPluginManager manager = new DefaultPluginManager(context,
-				locations);
-
-		if (verbose) {
-			manager.setLogger(new Logger.Default(System.err));
-			context.setLogger(new Logger.Default(System.err));
-		}
-
-		// --------------------------------------------------------------
-		// Fourth, activate all plugins
-		// --------------------------------------------------------------
-		manager.start();
-
-		// --------------------------------------------------------------
-		// Fifth, start the compilation process
-		// --------------------------------------------------------------
+		Map<String,Map<String,Object>> attributes = (Map<String,Map<String,Object>>) values.get("X");
 		
-
+		if(attributes != null) {
+			System.out.println("LOOKING TO CONFIGURE: " + attributes);
+		}
+		
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
 		manager.stop();
-		WyccMain app = new WyccMain();			
+			
 	}	
 }

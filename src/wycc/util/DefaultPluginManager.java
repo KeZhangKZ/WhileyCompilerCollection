@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -51,6 +52,23 @@ public class DefaultPluginManager {
 	
 	public void setLogger(Logger logger) {
 		this.logger = logger;		
+	}
+	
+	/**
+	 * Configure a plugin using a map from attribute names to appropriate
+	 * values.
+	 * 
+	 * @param id
+	 *            Plugin id to be configured
+	 * @param values
+	 *            Attributes and their values to configure
+	 */
+	public void configure(String id, Map<String,Object> values) {
+		for(Plugin plugin : plugins) {
+			if(plugin.getId().equals(id)) {
+				//plugin.configure(values);
+			}
+		}
 	}
 	
 	/**
