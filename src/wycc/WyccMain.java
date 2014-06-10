@@ -192,7 +192,9 @@ public class WyccMain {
 		// as command-line arguments.
 		//
 		// This could be done by indirecting into a plugin created specifically
-		// to implement this functionality which depends on e.g. wybs.
+		// to implement this functionality which depends on e.g. wybs;
+		// alternatively, providing a function in wybs which creates a "default"
+		// project or similar.
 		
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
