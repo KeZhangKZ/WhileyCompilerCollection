@@ -184,6 +184,17 @@ public class WyccMain {
 		}
 		
 		// --------------------------------------------------------------
+		// Sixth, construct project and build all targets
+		// --------------------------------------------------------------
+		
+		// Create an instanceof wybs.lang.Build.Project; add
+		// appropriate build rules and then call build with all files provided
+		// as command-line arguments.
+		//
+		// This could be done by indirecting into a plugin created specifically
+		// to implement this functionality which depends on e.g. wybs.
+		
+		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
 		manager.stop();
