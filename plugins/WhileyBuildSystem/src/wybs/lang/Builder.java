@@ -28,7 +28,8 @@ package wybs.lang;
 import java.io.IOException;
 import java.util.*;
 
-import wycc.util.Pair;
+import jplug.util.Pair;
+
 import wyfs.lang.Path;
 
 /**

@@ -6,9 +6,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import wycc.util.*;
-import wycc.util.Logger;
 import wycc.util.OptArg;
+
+import jplug.util.*;
+
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This

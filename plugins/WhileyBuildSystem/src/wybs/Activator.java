@@ -1,8 +1,8 @@
 package wybs;
 
+import jplug.lang.PluginActivator;
+import jplug.lang.PluginContext;
 import wybs.lang.Builder;
-import wycc.lang.PluginActivator;
-import wycc.lang.PluginContext;
 
 /**
  * The activator for the Whiley Build System plugin. This doesn't really do much!

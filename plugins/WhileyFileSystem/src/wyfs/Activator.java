@@ -1,7 +1,7 @@
 package wyfs;
 
-import wycc.lang.PluginActivator;
-import wycc.lang.PluginContext;
+import jplug.lang.PluginActivator;
+import jplug.lang.PluginContext;
 import wyfs.lang.Content;
 import wyfs.util.DefaultContentRegistry;
 

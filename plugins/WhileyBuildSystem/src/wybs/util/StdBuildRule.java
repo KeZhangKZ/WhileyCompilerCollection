@@ -6,9 +6,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
+import jplug.util.Pair;
+
 import wybs.lang.Build;
 import wybs.lang.Builder;
-import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
