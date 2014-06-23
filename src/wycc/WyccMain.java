@@ -6,10 +6,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import wybs.util.StdBuildRule;
+import wybs.util.StdProject;
 import wycc.util.OptArg;
-
+import wyfs.lang.Path;
 import jplug.util.*;
-
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This
@@ -188,6 +189,10 @@ public class WyccMain {
 		// Sixth, construct project and build all targets
 		// --------------------------------------------------------------
 		
+		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
+		StdProject project = new StdProject(roots);
+		addBuildRules(project);
+		
 		// Create an instanceof wybs.lang.Build.Project; add
 		// appropriate build rules and then call build with all files provided
 		// as command-line arguments.
@@ -200,7 +205,17 @@ public class WyccMain {
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
-		manager.stop();
-			
+		manager.stop();			
 	}	
+	
+	/**
+	 * Add all build rules to the project. By default, this adds a standard
+	 * build rule for compiling whiley files to wyil files using the
+	 * <code>Whiley2WyilBuilder</code>.
+	 * 
+	 * @param project
+	 */
+	private static void addBuildRules(StdProject project) {
+		// what do we do here? 
+	}
 }
