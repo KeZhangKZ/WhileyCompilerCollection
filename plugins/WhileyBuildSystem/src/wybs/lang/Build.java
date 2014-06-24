@@ -169,5 +169,5 @@ public interface Build {
 		 */
 		public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group)
 				throws IOException;
-	}
+	}	
 }
