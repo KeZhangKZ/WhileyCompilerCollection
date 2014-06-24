@@ -8,8 +8,8 @@ import java.util.Set;
 
 import jplug.util.Pair;
 
-import wybs.lang.Build;
-import wybs.lang.Builder;
+import wybs.lang.BuildTask;
+import wybs.lang.BuildRule;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -28,11 +28,11 @@ import wyfs.lang.Path;
  * @author David J. Pearce
  * 
  */
-public class StdBuildRule implements Build.Rule {
+public class StdBuildRule implements BuildRule {
 	/**
 	 * The builder used to build files using this rule.
 	 */
-	private final Builder builder;
+	private final BuildTask builder;
 	
 	/**
 	 * The source root containing all files which might be built using this
@@ -79,7 +79,7 @@ public class StdBuildRule implements Build.Rule {
 	 *            The destination root into which all files built using this
 	 *            rule are placed.
 	 */
-	public StdBuildRule(Builder builder, Path.Root srcRoot,
+	public StdBuildRule(BuildTask builder, Path.Root srcRoot,
 			Content.Filter<?> includes, Content.Filter<?> excludes,
 			Path.Root targetRoot) {
 		this.builder = builder;

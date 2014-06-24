@@ -51,7 +51,7 @@ import wyfs.lang.Path;
  * 
  * @author David J. Pearce
  */
-public class StdProject implements Build.Project {
+public class StdProject implements BuildProject {
 	
 	/**
 	 * The roots of all entries known to the system which form the global
@@ -64,16 +64,16 @@ public class StdProject implements Build.Project {
 	 * assumed that for any given transformation there is only one possible
 	 * pathway described.
 	 */
-	protected final ArrayList<Build.Rule> rules;
+	protected final ArrayList<BuildRule> rules;
 	
 	
 	public StdProject(Collection<Path.Root> roots) {
 		this.roots = new ArrayList<Path.Root>(roots);
-		this.rules = new ArrayList<Build.Rule>();
+		this.rules = new ArrayList<BuildRule>();
 	}
 	
 	public StdProject(Collection<Path.Root>... roots) {
-		this.rules = new ArrayList<Build.Rule>();
+		this.rules = new ArrayList<BuildRule>();
 		this.roots = new ArrayList<Path.Root>();
 		for(Collection<Path.Root> root : roots) {
 			this.roots.addAll(root);		
@@ -89,7 +89,7 @@ public class StdProject implements Build.Project {
 	 * 
 	 * @param data.builder
 	 */
-	public void add(Build.Rule rule) {
+	public void add(BuildRule rule) {
 		rules.add(rule);
 	}
 	
@@ -107,7 +107,7 @@ public class StdProject implements Build.Project {
 	 * 
 	 * @return
 	 */
-	public List<Build.Rule> rules() {
+	public List<BuildRule> rules() {
 		return rules;
 	}
 	
@@ -274,7 +274,7 @@ public class StdProject implements Build.Project {
 		// need for staging dependencies.
 		do {
 			HashSet<Path.Entry<?>> generated = new HashSet<Path.Entry<?>>();
-			for (Build.Rule r : rules) {
+			for (BuildRule r : rules) {
 				generated.addAll(r.apply(sources));
 			}
 			sources = generated;

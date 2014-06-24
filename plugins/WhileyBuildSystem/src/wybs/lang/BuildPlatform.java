@@ -6,14 +6,36 @@ import java.util.Set;
 import wyfs.lang.Content;
 
 /**
- * A build task provides a schema for transforming files of one type into
- * files of another type. This is distinct from a "builder", in that it may
- * involve multiple intermediate steps.
+ * <p>
+ * Provides a high-level schema for transforming files of a source type into
+ * files of a target type. This may involved multiple tasks which can produce a
+ * series of intermediate files.
+ * </p>
+ * 
+ * <p>
+ * Build platforms are not associated with projects per se; rather, they are
+ * used to ensure the appropriate build rules are added to a given project. In
+ * some sense, they are template for constructing appropriate build projects.
+ * </p>
+ * 
+ * <p>
+ * One build platform may depend on another. What this means is that, to
+ * instantiate this platform on a given project, the dependent platforms must
+ * also be instantiated. The build system is responsible for ensuring this
+ * happens. Note, however, that the notion of source, target and intermediate
+ * file is determined by the outer platform. Typically, this means the targets
+ * for dependent platforms are treated as intermediate files.
+ * </p>
+ * <p>
+ * A build platform is instantiated exactly once on a given project. This is
+ * important when two or more platforms depend on the same platform to prevent
+ * duplicate instantations.
+ * </p>
  * 
  * @author David J. Pearce
  * 
  */
-public interface Platform {
+public interface BuildPlatform {
 
 	/**
 	 * The unique identifier for this platform through which it can be referred.

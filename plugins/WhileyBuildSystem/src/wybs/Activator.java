@@ -2,7 +2,7 @@ package wybs;
 
 import jplug.lang.PluginActivator;
 import jplug.lang.PluginContext;
-import wybs.lang.Builder;
+import wybs.lang.BuildTask;
 
 /**
  * The activator for the Whiley Build System plugin. This doesn't really do much!
@@ -25,7 +25,7 @@ public class Activator implements PluginActivator {
 			@Override
 			public void register(PluginContext.Extension extension) {
 				// Should this accept a builder class, or something else?
-				Builder builder = (Builder) extension.data();
+				BuildTask builder = (BuildTask) extension.data();
 				
 			}
 		});

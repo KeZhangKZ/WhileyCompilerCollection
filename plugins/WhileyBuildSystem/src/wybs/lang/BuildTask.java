@@ -34,23 +34,35 @@ import wyfs.lang.Path;
 
 /**
  * <p>
- * Responsible for transforming files from one content type to another.
+ * Represents a single atomic action within the context of a larger build
+ * project. A given task transforming files from one content type to another.
  * Typically this revolves around compiling a source file into one or more
  * binary files, although other kinds of transformations are possible (e.g.
  * source-to-source translations, etc).
+ * </p>
+ * <p>
+ * Every build task is associated with a given build project. There will be at
+ * most one instance of each build task for a given project. Different projects
+ * will not share task instances. This means that per-project caching within a
+ * given task is possible, though care must be taken.
+ * </p>
+ * <p>
+ * Every build task has a unique name which identifies the task. This allows the
+ * task to be configured and/or to ensure required platform dependencies are
+ * met.
  * </p>
  * 
  * @author David J. Pearce
  * 
  */
-public interface Builder {
+public interface BuildTask {
 
 	/**
 	 * Get the project this builder is operating on.
 	 * 
 	 * @return
 	 */
-	public Build.Project project();
+	public BuildProject project();
 
 	/**
 	 * Build a given set of source files to produce target files in specified
