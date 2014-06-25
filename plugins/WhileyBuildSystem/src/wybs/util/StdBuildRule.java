@@ -32,7 +32,7 @@ public class StdBuildRule implements BuildRule {
 	/**
 	 * The builder used to build files using this rule.
 	 */
-	private final BuildTask builder;
+	private final BuildTask.Instance task;
 	
 	/**
 	 * The source root containing all files which might be built using this
@@ -62,8 +62,8 @@ public class StdBuildRule implements BuildRule {
 	/**
 	 * Construct a standard build rule.
 	 * 
-	 * @param builder
-	 *            The builder used to build files using this rule.
+	 * @param task
+	 *            The task instance used to build files using this rule.
 	 * @param srcRoot
 	 *            The source root containing all files which might be built
 	 *            using this rule. However, whether or not files contained in
@@ -79,10 +79,10 @@ public class StdBuildRule implements BuildRule {
 	 *            The destination root into which all files built using this
 	 *            rule are placed.
 	 */
-	public StdBuildRule(BuildTask builder, Path.Root srcRoot,
+	public StdBuildRule(BuildTask.Instance task, Path.Root srcRoot,
 			Content.Filter<?> includes, Content.Filter<?> excludes,
 			Path.Root targetRoot) {
-		this.builder = builder;
+		this.task = task;
 		this.source = srcRoot;
 		this.target = targetRoot;
 		this.includes = includes;
@@ -107,7 +107,7 @@ public class StdBuildRule implements BuildRule {
 
 		// Second, build all matching files
 		if (matches.size() > 0) {
-			return builder.build(matches);
+			return task.build(matches);
 		} else {
 			return Collections.EMPTY_SET;
 		}

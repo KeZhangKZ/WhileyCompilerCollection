@@ -1,5 +1,7 @@
 package wybs;
 
+import java.util.HashMap;
+
 import jplug.lang.PluginActivator;
 import jplug.lang.PluginContext;
 import wybs.lang.BuildTask;
@@ -11,22 +13,27 @@ import wybs.lang.BuildTask;
  * 
  */
 public class Activator implements PluginActivator {
-		
+	
+	private HashMap<String,BuildTask> tasks = new HashMap<String,BuildTask>();
+	
 	public Activator() {
 		
 	}
 	
-	public void start(PluginContext context) {
+	public void start(final PluginContext context) {
 		// ==================================================================
 		// Create Builder extension point
 		// ==================================================================
-		context.create("wybs.Builder", new PluginContext.ExtensionPoint() {
+		context.create("wybs.BuildTask", new PluginContext.ExtensionPoint() {
 
 			@Override
 			public void register(PluginContext.Extension extension) {
 				// Should this accept a builder class, or something else?
-				BuildTask builder = (BuildTask) extension.data();
+				BuildTask task = (BuildTask) extension.data();
+				tasks.put(task.id(),task);
 				
+				context.logTimedMessage("Registered build task: "
+						+ task.id(), 0, 0);
 			}
 		});
 	}

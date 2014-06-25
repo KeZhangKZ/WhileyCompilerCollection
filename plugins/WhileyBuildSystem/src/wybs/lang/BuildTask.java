@@ -41,10 +41,10 @@ import wyfs.lang.Path;
  * source-to-source translations, etc).
  * </p>
  * <p>
- * Every build task is associated with a given build project. There will be at
- * most one instance of each build task for a given project. Different projects
- * will not share task instances. This means that per-project caching within a
- * given task is possible, though care must be taken.
+ * Every build task instance is associated with a given build project. There
+ * will be at most one instance of each build task for a given project.
+ * Different projects will not share task instances. This means that per-project
+ * caching within a given task is possible, though care must be taken.
  * </p>
  * <p>
  * Every build task has a unique name which identifies the task. This allows the
@@ -58,23 +58,48 @@ import wyfs.lang.Path;
 public interface BuildTask {
 
 	/**
-	 * Get the project this builder is operating on.
+	 * The unique identifier for this task through which it can be referred.
 	 * 
 	 * @return
 	 */
-	public BuildProject project();
-
+	public String id();
+	
 	/**
-	 * Build a given set of source files to produce target files in specified
-	 * locations. A delta represents a list of pairs (s,t), where s is a source
-	 * file and t is the destination root for all generated files. Each file may
-	 * be associated with a different destination directory, in order to support
-	 * e.g. multiple output directories.
+	 * Instantiate a given build task within the context of a given build
+	 * project to produce a build task instance.
 	 * 
-	 * @param delta
-	 *            --- the set of files to be built.
-	 * @return --- the set of files generated or modified.
+	 * @param project
+	 * @return
 	 */
-	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta) throws IOException;
+	public BuildTask.Instance instantiate(BuildProject project);
+	
+	/**
+	 * A build task instance; that is, an active instanceof the build task which
+	 * has been associated to a build project.
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public interface Instance {
+		/**
+		 * Get the project this builder is operating on.
+		 * 
+		 * @return
+		 */
+		public BuildProject project();
+
+		/**
+		 * Build a given set of source files to produce target files in specified
+		 * locations. A delta represents a list of pairs (s,t), where s is a source
+		 * file and t is the destination root for all generated files. Each file may
+		 * be associated with a different destination directory, in order to support
+		 * e.g. multiple output directories.
+		 * 
+		 * @param delta
+		 *            --- the set of files to be built.
+		 * @return --- the set of files generated or modified.
+		 */
+		public Set<Path.Entry<?>> build(
+				Collection<Pair<Path.Entry<?>, Path.Root>> delta) throws IOException;
+	}
 }

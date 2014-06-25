@@ -34,7 +34,7 @@ public class Activator implements PluginActivator 	{
 				// TODO: need to get the suffix out of the content type!!
 				
 				registry.register(contentType, null);
-				context.logTimedMessage("Registered "
+				context.logTimedMessage("Registered content type:"
 						+ contentType, 0, 0);
 			}
 
