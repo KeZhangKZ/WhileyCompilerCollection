@@ -69,7 +69,7 @@ public interface BuildPlatform {
 	
 	/**
 	 * The set of builders used by this platform. These are identifiers
-	 * referring to specific instances of the wybs.Builder extension point.
+	 * referring to specific instances of the wybs.BuildTask extension point.
 	 * 
 	 * @return
 	 */
@@ -77,7 +77,7 @@ public interface BuildPlatform {
 
 	/**
 	 * The set of platforms on which this platform depends. These are
-	 * identifiers referring to specific instances of the wybs.Platform
+	 * identifiers referring to specific instances of the wybs.BuildPlatform
 	 * extension point.
 	 * 
 	 * @return
