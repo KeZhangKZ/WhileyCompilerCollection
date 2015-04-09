@@ -17,8 +17,7 @@
   <target name="build-plugins">
     <subant failonerror="true" target="plugin">
       <property name="plugin.dir" value="${plugin.dir}"/>
-      <fileset dir="plugins" includes="WhileyFileSystem/build.xml"/>
-      <fileset dir="plugins" includes="WhileyBuildSystem/build.xml"/>
+      <fileset dir="plugins" includes="*/build.xml"/>
     </subant>
   </target>
 

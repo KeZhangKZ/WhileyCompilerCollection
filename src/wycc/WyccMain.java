@@ -127,7 +127,6 @@ public class WyccMain {
 		// --------------------------------------------------------------
 		// First, preprocess command-line arguments
 		// --------------------------------------------------------------
-
 		boolean verbose = false;
 		for(String arg : _args) {
 			verbose |= arg.equals("-verbose");
@@ -159,8 +158,7 @@ public class WyccMain {
 		
 		// --------------------------------------------------------------
 		// Fourth, parse command-line options
-		// --------------------------------------------------------------
-		
+		// --------------------------------------------------------------		
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 		Map<String, Object> values = OptArg.parseOptions(args,
 				COMMANDLINE_OPTIONS);
@@ -187,8 +185,7 @@ public class WyccMain {
 		
 		// --------------------------------------------------------------
 		// Sixth, construct project and build all targets
-		// --------------------------------------------------------------
-		
+		// --------------------------------------------------------------		
 		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
 		StdProject project = new StdProject(roots);
 		addBuildRules(project);
