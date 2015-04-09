@@ -1,15 +1,18 @@
 package wycc;
 
+import java.io.File;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import wybs.util.StdBuildRule;
-import wybs.util.StdProject;
 import wycc.util.OptArg;
-import wyfs.lang.Path;
+import jplug.lang.PluginContext;
+import jplug.lang.PluginContext.Extension;
 import jplug.util.*;
 
 /**
@@ -153,6 +156,16 @@ public class WyccMain {
 			manager.setLogger(new Logger.Default(System.err));
 			context.setLogger(new Logger.Default(System.err));
 		}
+				
+		// Create the global functions list, which allows plugins to provide
+		// functionality to be called directly from here.
+		final ArrayList<Method> functions = new ArrayList<Method>();
+		context.create("wycc.functions", new PluginContext.ExtensionPoint() {
+			@Override
+			public void register(Extension extension) {				
+				functions.add((Method)extension.data());
+			}			
+		});
 		
 		manager.start();
 		
@@ -174,6 +187,14 @@ public class WyccMain {
 			System.exit(0);
 		}
 		
+		String target = (String) values.get("T");
+		File outputDirectory = (File) values.get("D");
+		List<File> libraries = (ArrayList<File>) values.get("L");
+		// Apply some defaults
+		if(target == null) { target = "wyil"; }
+		if(outputDirectory == null) { outputDirectory = new File("."); }
+		if(libraries == null) { libraries = Collections.EMPTY_LIST; }
+				
 		// --------------------------------------------------------------
 		// Fifth, configure plugin system
 		// --------------------------------------------------------------
@@ -184,35 +205,32 @@ public class WyccMain {
 		}
 		
 		// --------------------------------------------------------------
-		// Sixth, construct project and build all targets
-		// --------------------------------------------------------------		
-		ArrayList<Path.Root> roots = new ArrayList<Path.Root>();
-		StdProject project = new StdProject(roots);
-		addBuildRules(project);
-		
-		// Create an instanceof wybs.lang.Build.Project; add
-		// appropriate build rules and then call build with all files provided
-		// as command-line arguments.
-		//
-		// This could be done by indirecting into a plugin created specifically
-		// to implement this functionality which depends on e.g. wybs;
-		// alternatively, providing a function in wybs which creates a "default"
-		// project or similar.
+		// Sixth, find main function and invoke it
+		// --------------------------------------------------------------
+		Method builderMain = null;
+		for(Method m : functions) {
+			if(m.getName().equals("builderMain")) {
+				builderMain = m;
+				break;
+			}
+		}
+		if(builderMain != null) {
+			try {
+				builderMain.invoke(null, new Object[]{target,outputDirectory,libraries});
+			} catch(InvocationTargetException e) {
+				e.printStackTrace();
+			} catch(IllegalAccessException e) {
+				e.printStackTrace();
+			} catch(IllegalArgumentException e) {
+				e.printStackTrace();
+			}
+		} else {
+			System.out.println("Error: unable to find builder main method");
+		}
 		
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
 		manager.stop();			
-	}	
-	
-	/**
-	 * Add all build rules to the project. By default, this adds a standard
-	 * build rule for compiling whiley files to wyil files using the
-	 * <code>Whiley2WyilBuilder</code>.
-	 * 
-	 * @param project
-	 */
-	private static void addBuildRules(StdProject project) {
-		// what do we do here? 
-	}
+	}		
 }
