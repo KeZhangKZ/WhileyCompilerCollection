@@ -1,3 +1,28 @@
+// Copyright (c) 2014, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the <organization> nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL DAVID J. PEARCE BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 package wycc;
 
 import java.io.File;
@@ -18,9 +43,9 @@ import jplug.util.*;
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This
  * supports loading and configuring plugins, as well as compiling files.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class WyccMain {
 
@@ -29,22 +54,22 @@ public class WyccMain {
 	 * System.err in order to enable Unicode to be displayed.
 	 */
 	private static PrintStream errout;
-	
+
 	/**
 	 * The major version for this plugin application
 	 */
 	public static final int MAJOR_VERSION;
-	
+
 	/**
 	 * The minor version for this plugin application
 	 */
 	public static final int MINOR_VERSION;
-	
+
 	/**
 	 * The minor revision for this plugin application
 	 */
-	public static final int MINOR_REVISION;	
-	
+	public static final int MINOR_REVISION;
+
 	/**
 	 * The base list of recognised command-line options. These will be appended
 	 * with additional arguments, as determined by the available activated
@@ -71,20 +96,20 @@ public class WyccMain {
 	 * Identifies the location where local plugins are stored.
 	 */
 	public static final String LOCAL_PLUGINS_DIR = "/.wycc/plugins/";
-		
+
 	// ==================================================================
 	// Helpers
 	// ==================================================================
-			
+
 	/**
 	 * Print versioning information to the console.
 	 */
 	protected static void version() {
 		System.out.println("Whiley Compiler Collection version "
 				+ MAJOR_VERSION + "." + MINOR_VERSION + "."
-				+ MINOR_REVISION);		
+				+ MINOR_REVISION);
 	}
-	
+
 	/**
 	 * Print usage information to the console.
 	 */
@@ -134,7 +159,7 @@ public class WyccMain {
 		for(String arg : _args) {
 			verbose |= arg.equals("-verbose");
 		}
-		
+
 		// --------------------------------------------------------------
 		// Second, determine plugin locations
 		// --------------------------------------------------------------
@@ -144,7 +169,7 @@ public class WyccMain {
 		if(HOME != null) {
 			locations.add(HOME + LOCAL_PLUGINS_DIR);
 		}
-		
+
 		// --------------------------------------------------------------
 		// Third, activate plugin system
 		// --------------------------------------------------------------
@@ -156,22 +181,22 @@ public class WyccMain {
 			manager.setLogger(new Logger.Default(System.err));
 			context.setLogger(new Logger.Default(System.err));
 		}
-				
+
 		// Create the global functions list, which allows plugins to provide
 		// functionality to be called directly from here.
 		final ArrayList<Method> functions = new ArrayList<Method>();
 		context.create("wycc.functions", new PluginContext.ExtensionPoint() {
 			@Override
-			public void register(Extension extension) {				
+			public void register(Extension extension) {
 				functions.add((Method)extension.data());
-			}			
+			}
 		});
-		
+
 		manager.start();
-		
+
 		// --------------------------------------------------------------
 		// Fourth, parse command-line options
-		// --------------------------------------------------------------		
+		// --------------------------------------------------------------
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
 		Map<String, Object> values = OptArg.parseOptions(args,
 				COMMANDLINE_OPTIONS);
@@ -186,7 +211,7 @@ public class WyccMain {
 			usage();
 			System.exit(0);
 		}
-		
+
 		String target = (String) values.get("T");
 		File outputDirectory = (File) values.get("D");
 		List<File> libraries = (ArrayList<File>) values.get("L");
@@ -194,16 +219,16 @@ public class WyccMain {
 		if(target == null) { target = "wyil"; }
 		if(outputDirectory == null) { outputDirectory = new File("."); }
 		if(libraries == null) { libraries = Collections.EMPTY_LIST; }
-				
+
 		// --------------------------------------------------------------
 		// Fifth, configure plugin system
 		// --------------------------------------------------------------
 		Map<String,Map<String,Object>> attributes = (Map<String,Map<String,Object>>) values.get("X");
-		
+
 		if(attributes != null) {
 			System.out.println("LOOKING TO CONFIGURE: " + attributes);
 		}
-		
+
 		// --------------------------------------------------------------
 		// Sixth, find main function and invoke it
 		// --------------------------------------------------------------
@@ -227,10 +252,10 @@ public class WyccMain {
 		} else {
 			System.out.println("Error: unable to find builder main method");
 		}
-		
+
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
-		manager.stop();			
-	}		
+		manager.stop();
+	}
 }
