@@ -160,39 +160,8 @@ public class WyccMain {
 			verbose |= arg.equals("-verbose");
 		}
 
-		// --------------------------------------------------------------
-		// Second, determine plugin locations
-		// --------------------------------------------------------------
-		ArrayList<String> locations = new ArrayList<String>();
-		locations.add(PLUGINS_DIR);
-		String HOME = System.getenv("HOME");
-		if(HOME != null) {
-			locations.add(HOME + LOCAL_PLUGINS_DIR);
-		}
-
-		// --------------------------------------------------------------
-		// Third, activate plugin system
-		// --------------------------------------------------------------
-		DefaultPluginContext context = new DefaultPluginContext();
-		DefaultPluginManager manager = new DefaultPluginManager(context,
-				locations);
-
-		if (verbose) {
-			manager.setLogger(new Logger.Default(System.err));
-			context.setLogger(new Logger.Default(System.err));
-		}
-
-		// Create the global functions list, which allows plugins to provide
-		// functionality to be called directly from here.
 		final ArrayList<Method> functions = new ArrayList<Method>();
-		context.create("wycc.functions", new PluginContext.ExtensionPoint() {
-			@Override
-			public void register(Extension extension) {
-				functions.add((Method)extension.data());
-			}
-		});
-
-		manager.start();
+		DefaultPluginManager manager = activatePluginSystem(verbose,functions);
 
 		// --------------------------------------------------------------
 		// Fourth, parse command-line options
@@ -229,33 +198,100 @@ public class WyccMain {
 			System.out.println("LOOKING TO CONFIGURE: " + attributes);
 		}
 
+		invokeBuilderMain(functions, target, outputDirectory, libraries);
+
 		// --------------------------------------------------------------
-		// Sixth, find main function and invoke it
+		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
+		manager.stop();
+	}
+
+	/**
+	 * Invoke the builder main function, which should have been registered by
+	 * the build system plugin.
+	 *
+	 * @param functions
+	 * @param target
+	 * @param outputDirectory
+	 * @param libraries
+	 */
+	public static void invokeBuilderMain(List<Method> functions, String target,
+			File outputDirectory, List<File> libraries) {
 		Method builderMain = null;
-		for(Method m : functions) {
-			if(m.getName().equals("builderMain")) {
+		for (Method m : functions) {
+			if (m.getName().equals("builderMain")) {
 				builderMain = m;
 				break;
 			}
 		}
-		if(builderMain != null) {
+		if (builderMain != null) {
 			try {
-				builderMain.invoke(null, new Object[]{target,outputDirectory,libraries});
-			} catch(InvocationTargetException e) {
+				builderMain.invoke(null, new Object[] { target,
+						outputDirectory, libraries });
+			} catch (InvocationTargetException e) {
 				e.printStackTrace();
-			} catch(IllegalAccessException e) {
+			} catch (IllegalAccessException e) {
 				e.printStackTrace();
-			} catch(IllegalArgumentException e) {
+			} catch (IllegalArgumentException e) {
 				e.printStackTrace();
 			}
 		} else {
 			System.out.println("Error: unable to find builder main method");
 		}
 
-		// --------------------------------------------------------------
-		// Finally, deactivate all plugins
-		// --------------------------------------------------------------
-		manager.stop();
+	}
+
+	/**
+	 * Activate the plugin system and create the plugin manager. A default
+	 * extension point is created for registering functions to be called from
+	 * here.
+	 *
+	 * @param verbose
+	 * @param locations
+	 * @return
+	 */
+	public static DefaultPluginManager activatePluginSystem(boolean verbose, final ArrayList<Method> functions) {
+
+		// Determine plugin locations
+		List<String> locations = getPluginLocations();
+
+		// create the context and manager
+		DefaultPluginContext context = new DefaultPluginContext();
+		DefaultPluginManager manager = new DefaultPluginManager(context,
+				locations);
+
+		if (verbose) {
+			manager.setLogger(new Logger.Default(System.err));
+			context.setLogger(new Logger.Default(System.err));
+		}
+
+		// Create the global functions list, which allows plugins to provide
+		// functionality to be called directly from here.
+		context.create("wycc.functions", new PluginContext.ExtensionPoint() {
+			@Override
+			public void register(Extension extension) {
+				functions.add((Method)extension.data());
+			}
+		});
+
+		manager.start();
+
+		return manager;
+	}
+
+	/**
+	 * Create the list of plugin locations. That is, locations on the filesystem
+	 * where the plugin system will look for plugins.
+	 *
+	 * @return
+	 */
+	public static List<String> getPluginLocations() {
+		ArrayList<String> locations = new ArrayList<String>();
+		locations.add(PLUGINS_DIR);
+		String HOME = System.getenv("HOME");
+		if(HOME != null) {
+			locations.add(HOME + LOCAL_PLUGINS_DIR);
+		}
+		return locations;
 	}
 }

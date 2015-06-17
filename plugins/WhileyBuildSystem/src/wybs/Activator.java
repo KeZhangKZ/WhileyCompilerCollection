@@ -12,20 +12,20 @@ import wybs.lang.BuildTask;
 
 /**
  * The activator for the Whiley Build System plugin. This doesn't really do much!
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class Activator implements PluginActivator {
-	
+
 	private HashMap<String,BuildTask> tasks = new HashMap<String,BuildTask>();
-	
+
 	private HashMap<String,BuildPlatform> platforms = new HashMap<String,BuildPlatform>();
-	
+
 	public Activator() {
-		
+
 	}
-	
+
 	public void start(final PluginContext context) {
 		// ==================================================================
 		// Create Builder extension point
@@ -42,7 +42,7 @@ public class Activator implements PluginActivator {
 						0, 0);
 			}
 		});
-		
+
 		// ==================================================================
 		// Create BuildPlatform extension point
 		// ==================================================================
@@ -61,7 +61,7 @@ public class Activator implements PluginActivator {
 						+ platform.id(), 0, 0);
 			}
 		});
-		
+
 		// ==================================================================
 		// Register builderMain entry point
 		// ==================================================================
@@ -72,16 +72,16 @@ public class Activator implements PluginActivator {
 			}
 		});
 	}
-	
+
 	public void stop(PluginContext context) {
-		
+
 	}
-	
+
 	/**
 	 * This is the entry point for the builder, and is called directly from the
 	 * WhileyCompilerCollection. The job of this function is to construct an
 	 * appropriate project, and entirely manage the compilation of that project.
-	 * 
+	 *
 	 * @param targetPlatform
 	 *            --- The name of the target platform to generate code for.
 	 * @param outputDirectory
@@ -91,16 +91,16 @@ public class Activator implements PluginActivator {
 	 * @param libraries
 	 *            --- Any additional libraries to include on the WhileyPath.
 	 */
-	public static void builderMain(String targetPlatform, File outputDirectory, List<File> libraries) {		
-		System.out.println(targetPlatform.getClass().toString());				
-		System.out.println(outputDirectory.getClass().toString());			
-		System.out.println(libraries.getClass().toString());
+	public static void builderMain(String targetPlatform, File outputDirectory, List<File> libraries) {
+		System.out.println(targetPlatform);
+		System.out.println(outputDirectory);
+		System.out.println(libraries);
 	}
-	
+
 	/**
 	 * This simply returns a reference to a given name. If the method doesn't
 	 * exist, then it will throw a runtime exception.
-	 * 
+	 *
 	 * @param name
 	 * @param paramTypes
 	 * @return
