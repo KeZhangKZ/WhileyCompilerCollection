@@ -2,6 +2,7 @@ package wybs;
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.HashMap;
 
@@ -9,6 +10,7 @@ import jplug.lang.PluginActivator;
 import jplug.lang.PluginContext;
 import wybs.lang.BuildPlatform;
 import wybs.lang.BuildTask;
+import wyfs.lang.Content;
 
 /**
  * The activator for the Whiley Build System plugin. This doesn't really do much!
@@ -71,10 +73,22 @@ public class Activator implements PluginActivator {
 						List.class);
 			}
 		});
+		context.register("wycc.functions", new PluginContext.Extension() {
+			public Object data() {
+				return getMethod("getBuildPlatforms");
+			}
+		});
 	}
 
 	public void stop(PluginContext context) {
 
+	}
+
+	/**
+	 * Get the set of currently registered build platforms.
+	 */
+	public List<BuildPlatform> getBuildPlatforms() {
+		return new ArrayList<BuildPlatform>(platforms.values());
 	}
 
 	/**

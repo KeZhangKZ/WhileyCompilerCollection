@@ -189,6 +189,8 @@ public class WyccMain {
 		if(outputDirectory == null) { outputDirectory = new File("."); }
 		if(libraries == null) { libraries = Collections.EMPTY_LIST; }
 
+		Object targetContentType = findContentType(target);
+
 		// --------------------------------------------------------------
 		// Fifth, configure plugin system
 		// --------------------------------------------------------------
@@ -198,7 +200,7 @@ public class WyccMain {
 			System.out.println("LOOKING TO CONFIGURE: " + attributes);
 		}
 
-		invokeBuilderMain(functions, target, outputDirectory, libraries);
+		invoke("builderMain",functions, target, outputDirectory, libraries);
 
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
@@ -215,18 +217,18 @@ public class WyccMain {
 	 * @param outputDirectory
 	 * @param libraries
 	 */
-	public static void invokeBuilderMain(List<Method> functions, String target,
+	public static void invoke(String name, List<Method> functions, String target,
 			File outputDirectory, List<File> libraries) {
-		Method builderMain = null;
+		Method method = null;
 		for (Method m : functions) {
-			if (m.getName().equals("builderMain")) {
-				builderMain = m;
+			if (m.getName().equals(name)) {
+				method = m;
 				break;
 			}
 		}
-		if (builderMain != null) {
+		if (method != null) {
 			try {
-				builderMain.invoke(null, new Object[] { target,
+				method.invoke(null, new Object[] { target,
 						outputDirectory, libraries });
 			} catch (InvocationTargetException e) {
 				e.printStackTrace();
@@ -236,7 +238,7 @@ public class WyccMain {
 				e.printStackTrace();
 			}
 		} else {
-			System.out.println("Error: unable to find builder main method");
+			System.out.println("Error: unable to find method \"" + name + "\"");
 		}
 
 	}
