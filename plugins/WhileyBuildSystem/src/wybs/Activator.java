@@ -9,7 +9,9 @@ import java.util.HashMap;
 import jplug.lang.PluginActivator;
 import jplug.lang.PluginContext;
 import wybs.lang.BuildPlatform;
+import wybs.lang.BuildProject;
 import wybs.lang.BuildTask;
+import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wycc.util.FunctionExtension;
 import wyfs.lang.Content;
@@ -77,7 +79,7 @@ public class Activator implements PluginActivator {
 				return new FunctionExtension(this.getClass(),"builderMain", String.class, File.class,
 						List.class);
 			}
-		});		
+		});
 	}
 
 	public void stop(PluginContext context) {
@@ -109,8 +111,28 @@ public class Activator implements PluginActivator {
 		for(File lib : libraries) {
 			libraryRoots.add(new JarFileRoot(lib,registry));
 		}
+		// Create the build project
+		BuildProject project = createBuildProject(platform, outputRoot, outputRoot, libraryRoots);
+	}
+
+	public static BuildProject createBuildProject(BuildPlatform platform,
+			Path.Root srcRoot, Path.Root binRoot, List<Path.Root> roots) {
+		roots.add(srcRoot);
+		roots.add(binRoot);
+		// TODO: add virtual roots here for intermediate file formats
 		// Construct the project
-		StdProject project = new StdProject(libraryRoots);
+		StdProject project = new StdProject(roots);
+		// Include allf files
+		Content.Filter includes = Content.filter("**", platform.sourceType());
+		Content.Filter excludes = null;
 		// Add all necessary build rules
+		for (String buiderName : platform.builders()) {
+			// TODO --- get instance
+			BuildTask.Instance buildInstance;
+			StdBuildRule rule = new StdBuildRule(buildInstance,srcRoot,includes,excludes,binRoot);
+			project.add(rule);
+		}
+		// Done
+		return project;
 	}
 }
