@@ -6,6 +6,7 @@ import java.util.List;
 
 import jplug.lang.PluginActivator;
 import jplug.lang.PluginContext;
+import wycc.util.FunctionExtension;
 import wyfs.lang.Content;
 import wyfs.util.DefaultContentRegistry;
 
@@ -49,7 +50,7 @@ public class Activator implements PluginActivator 	{
 		// ==================================================================
 		context.register("wycc.functions", new PluginContext.Extension() {
 			public Object data() {
-				return getMethod("getContentRegistry");
+				return new FunctionExtension(this.getClass(),"getContentType",String.class);
 			}
 		});
 	}
@@ -63,23 +64,7 @@ public class Activator implements PluginActivator 	{
 	 *
 	 * @return
 	 */
-	public Content.Registry getContentRegistry() {
-		return registry;
-	}
-
-	/**
-	 * This simply returns a reference to a given name. If the method doesn't
-	 * exist, then it will throw a runtime exception.
-	 *
-	 * @param name
-	 * @param paramTypes
-	 * @return
-	 */
-	public Method getMethod(String name, Class... paramTypes) {
-		try {
-			return this.getClass().getMethod(name, paramTypes);
-		} catch (Exception e) {
-			throw new RuntimeException("No such method: " + name, e);
-		}
+	public Content.Type getContentType(String extension) {
+		return null;
 	}
 }

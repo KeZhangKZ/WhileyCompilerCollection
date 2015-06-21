@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import wycc.util.FunctionExtension;
 import wycc.util.OptArg;
 import jplug.lang.PluginContext;
 import jplug.lang.PluginContext.Extension;
@@ -160,8 +161,7 @@ public class WyccMain {
 			verbose |= arg.equals("-verbose");
 		}
 
-		final ArrayList<Method> functions = new ArrayList<Method>();
-		DefaultPluginManager manager = activatePluginSystem(verbose,functions);
+		DefaultPluginManager manager = activatePluginSystem(verbose);
 
 		// --------------------------------------------------------------
 		// Fourth, parse command-line options
@@ -189,8 +189,6 @@ public class WyccMain {
 		if(outputDirectory == null) { outputDirectory = new File("."); }
 		if(libraries == null) { libraries = Collections.EMPTY_LIST; }
 
-		Object targetContentType = findContentType(target);
-
 		// --------------------------------------------------------------
 		// Fifth, configure plugin system
 		// --------------------------------------------------------------
@@ -200,47 +198,12 @@ public class WyccMain {
 			System.out.println("LOOKING TO CONFIGURE: " + attributes);
 		}
 
-		invoke("builderMain",functions, target, outputDirectory, libraries);
+		FunctionExtension.invoke("builderMain", outputDirectory, libraries, args);
 
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
 		manager.stop();
-	}
-
-	/**
-	 * Invoke the builder main function, which should have been registered by
-	 * the build system plugin.
-	 *
-	 * @param functions
-	 * @param target
-	 * @param outputDirectory
-	 * @param libraries
-	 */
-	public static void invoke(String name, List<Method> functions, String target,
-			File outputDirectory, List<File> libraries) {
-		Method method = null;
-		for (Method m : functions) {
-			if (m.getName().equals(name)) {
-				method = m;
-				break;
-			}
-		}
-		if (method != null) {
-			try {
-				method.invoke(null, new Object[] { target,
-						outputDirectory, libraries });
-			} catch (InvocationTargetException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			}
-		} else {
-			System.out.println("Error: unable to find method \"" + name + "\"");
-		}
-
 	}
 
 	/**
@@ -252,7 +215,7 @@ public class WyccMain {
 	 * @param locations
 	 * @return
 	 */
-	public static DefaultPluginManager activatePluginSystem(boolean verbose, final ArrayList<Method> functions) {
+	public static DefaultPluginManager activatePluginSystem(boolean verbose) {
 
 		// Determine plugin locations
 		List<String> locations = getPluginLocations();
@@ -272,7 +235,7 @@ public class WyccMain {
 		context.create("wycc.functions", new PluginContext.ExtensionPoint() {
 			@Override
 			public void register(Extension extension) {
-				functions.add((Method)extension.data());
+				FunctionExtension.register((FunctionExtension)extension);
 			}
 		});
 
@@ -295,5 +258,5 @@ public class WyccMain {
 			locations.add(HOME + LOCAL_PLUGINS_DIR);
 		}
 		return locations;
-	}
+	}	
 }

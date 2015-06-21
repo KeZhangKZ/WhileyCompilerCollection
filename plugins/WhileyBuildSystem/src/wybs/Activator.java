@@ -10,7 +10,12 @@ import jplug.lang.PluginActivator;
 import jplug.lang.PluginContext;
 import wybs.lang.BuildPlatform;
 import wybs.lang.BuildTask;
+import wybs.util.StdProject;
+import wycc.util.FunctionExtension;
 import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.JarFileRoot;
 
 /**
  * The activator for the Whiley Build System plugin. This doesn't really do much!
@@ -20,9 +25,9 @@ import wyfs.lang.Content;
  */
 public class Activator implements PluginActivator {
 
-	private HashMap<String,BuildTask> tasks = new HashMap<String,BuildTask>();
+	private static HashMap<String,BuildTask> tasks = new HashMap<String,BuildTask>();
 
-	private HashMap<String,BuildPlatform> platforms = new HashMap<String,BuildPlatform>();
+	private static HashMap<String,BuildPlatform> platforms = new HashMap<String,BuildPlatform>();
 
 	public Activator() {
 
@@ -69,26 +74,14 @@ public class Activator implements PluginActivator {
 		// ==================================================================
 		context.register("wycc.functions", new PluginContext.Extension() {
 			public Object data() {
-				return getMethod("builderMain", String.class, File.class,
+				return new FunctionExtension(this.getClass(),"builderMain", String.class, File.class,
 						List.class);
 			}
-		});
-		context.register("wycc.functions", new PluginContext.Extension() {
-			public Object data() {
-				return getMethod("getBuildPlatforms");
-			}
-		});
+		});		
 	}
 
 	public void stop(PluginContext context) {
 
-	}
-
-	/**
-	 * Get the set of currently registered build platforms.
-	 */
-	public List<BuildPlatform> getBuildPlatforms() {
-		return new ArrayList<BuildPlatform>(platforms.values());
 	}
 
 	/**
@@ -105,25 +98,19 @@ public class Activator implements PluginActivator {
 	 * @param libraries
 	 *            --- Any additional libraries to include on the WhileyPath.
 	 */
-	public static void builderMain(String targetPlatform, File outputDirectory, List<File> libraries) {
-		System.out.println(targetPlatform);
-		System.out.println(outputDirectory);
-		System.out.println(libraries);
-	}
-
-	/**
-	 * This simply returns a reference to a given name. If the method doesn't
-	 * exist, then it will throw a runtime exception.
-	 *
-	 * @param name
-	 * @param paramTypes
-	 * @return
-	 */
-	public Method getMethod(String name, Class... paramTypes) {
-		try {
-			return this.getClass().getMethod(name, paramTypes);
-		} catch (Exception e) {
-			throw new RuntimeException("No such method: " + name, e);
+	public static void builderMain(String target, File outputDirectory,
+			List<File> libraries, List<File> sourceFiles) {
+		Content.Registry registry = wyfs.Activator.getContentRegistry();
+		BuildPlatform platform = platforms.get(target);
+		// The output root is the destination for all compiled files.
+		DirectoryRoot outputRoot = new DirectoryRoot(outputDirectory,registry);
+		// Construct the roots for every library supplied.
+		ArrayList<Path.Root> libraryRoots = new ArrayList<Path.Root>();
+		for(File lib : libraries) {
+			libraryRoots.add(new JarFileRoot(lib,registry));
 		}
+		// Construct the project
+		StdProject project = new StdProject(libraryRoots);
+		// Add all necessary build rules
 	}
 }
