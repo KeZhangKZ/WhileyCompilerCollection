@@ -18,7 +18,7 @@ import wyfs.util.DefaultContentRegistry;
  */
 public class Activator implements PluginActivator 	{
 
-	private DefaultContentRegistry registry = new DefaultContentRegistry();
+	private static DefaultContentRegistry registry = new DefaultContentRegistry();
 
 	public Activator() {
 
@@ -64,7 +64,7 @@ public class Activator implements PluginActivator 	{
 	 *
 	 * @return
 	 */
-	public Content.Type getContentType(String extension) {
-		return null;
+	public static Content.Registry getContentRegistry() {
+		return registry;
 	}
 }

@@ -1,6 +1,7 @@
 package wybs;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
@@ -100,11 +101,12 @@ public class Activator implements PluginActivator {
 	 * @param libraries
 	 *            --- Any additional libraries to include on the WhileyPath.
 	 */
-	public static void builderMain(String target, File outputDirectory,
-			List<File> libraries, List<File> sourceFiles) {
+	public static void builderMain(String targetPlatform, File outputDirectory,
+			List<File> libraries, List<File> sourceFiles) throws IOException {
 		Content.Registry registry = wyfs.Activator.getContentRegistry();
-		BuildPlatform platform = platforms.get(target);
-		// The output root is the destination for all compiled files.
+		System.out.println("Searching for build platform...");
+		BuildPlatform platform = platforms.get(targetPlatform);
+		// The output root is the destination for all compiled files.		
 		DirectoryRoot outputRoot = new DirectoryRoot(outputDirectory,registry);
 		// Construct the roots for every library supplied.
 		ArrayList<Path.Root> libraryRoots = new ArrayList<Path.Root>();
@@ -113,6 +115,7 @@ public class Activator implements PluginActivator {
 		}
 		// Create the build project
 		BuildProject project = createBuildProject(platform, outputRoot, outputRoot, libraryRoots);
+		System.out.println("Created build project...");
 	}
 
 	public static BuildProject createBuildProject(BuildPlatform platform,
@@ -122,13 +125,13 @@ public class Activator implements PluginActivator {
 		// TODO: add virtual roots here for intermediate file formats
 		// Construct the project
 		StdProject project = new StdProject(roots);
-		// Include allf files
+		// Include all files
 		Content.Filter includes = Content.filter("**", platform.sourceType());
 		Content.Filter excludes = null;
 		// Add all necessary build rules
-		for (String buiderName : platform.builders()) {
-			// TODO --- get instance
-			BuildTask.Instance buildInstance;
+		for (String taskName : platform.builders()) {
+			BuildTask task = tasks.get(taskName);
+			BuildTask.Instance buildInstance = task.instantiate(project);
 			StdBuildRule rule = new StdBuildRule(buildInstance,srcRoot,includes,excludes,binRoot);
 			project.add(rule);
 		}

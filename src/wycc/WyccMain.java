@@ -198,6 +198,8 @@ public class WyccMain {
 			System.out.println("LOOKING TO CONFIGURE: " + attributes);
 		}
 
+		System.out.println("INVOKING BUILDER MAIN");
+		
 		FunctionExtension.invoke("builderMain", outputDirectory, libraries, args);
 
 		// --------------------------------------------------------------
