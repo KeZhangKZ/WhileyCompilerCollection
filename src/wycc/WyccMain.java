@@ -37,8 +37,8 @@ import java.util.Map;
 
 import wycc.util.FunctionExtension;
 import wycc.util.OptArg;
-import jplug.lang.PluginContext;
-import jplug.lang.PluginContext.Extension;
+import jplug.lang.Feature;
+import jplug.lang.Plugin;
 import jplug.util.*;
 
 /**
@@ -199,7 +199,7 @@ public class WyccMain {
 		}
 
 		System.out.println("INVOKING BUILDER MAIN");
-		
+
 		FunctionExtension.invoke("builderMain", outputDirectory, libraries, args);
 
 		// --------------------------------------------------------------
@@ -234,9 +234,9 @@ public class WyccMain {
 
 		// Create the global functions list, which allows plugins to provide
 		// functionality to be called directly from here.
-		context.create("wycc.functions", new PluginContext.ExtensionPoint() {
+		context.create("wycc.functions", new Plugin.ExtensionPoint() {
 			@Override
-			public void register(Extension extension) {
+			public void register(Feature extension) {
 				FunctionExtension.register((FunctionExtension)extension);
 			}
 		});
@@ -260,5 +260,5 @@ public class WyccMain {
 			locations.add(HOME + LOCAL_PLUGINS_DIR);
 		}
 		return locations;
-	}	
+	}
 }

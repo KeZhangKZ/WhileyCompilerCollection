@@ -5,13 +5,13 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import jplug.lang.PluginContext;
+import jplug.lang.Feature;
 
-public class FunctionExtension implements PluginContext.Extension {
+public class FunctionExtension implements Feature {
 	private Method method;
-	
-	public FunctionExtension(Class receiver, String name, Class... parameters) {
-		
+
+	public FunctionExtension(java.lang.Class receiver, String name, java.lang.Class... parameters) {
+
 		try {
 			this.method = receiver.getMethod(name, parameters);
 		} catch (Exception e) {
@@ -20,16 +20,21 @@ public class FunctionExtension implements PluginContext.Extension {
 	}
 
 	@Override
-	public Object data() {
-		return method;
+	public String name() {
+		return method.getName();
 	}
-	
+
+	@Override
+	public String description() {
+		return null;
+	}
+
 	private static final ArrayList<Method> functions = new ArrayList<Method>();
-	
+
 	public static void register(FunctionExtension fe) {
 		functions.add(fe.method);
 	}
-	
+
 	/**
 	 * Invoke the builder main function, which should have been registered by
 	 * the build system plugin.
