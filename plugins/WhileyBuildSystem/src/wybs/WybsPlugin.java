@@ -38,6 +38,10 @@ public class WybsPlugin implements Plugin {
 	 */
 	private HashMap<String,Feature> features = new HashMap<String,Feature>();
 
+	// ========================================================================
+	// Accessors
+	// ========================================================================
+
 	@Override
 	public Feature get(String... id) {
 		return features.get(id);
@@ -60,7 +64,7 @@ public class WybsPlugin implements Plugin {
 	}
 
 	// ========================================================================
-	// Main Entry Point
+	// Function Features
 	// ========================================================================
 	
 	/**
@@ -119,7 +123,7 @@ public class WybsPlugin implements Plugin {
 	// Activation
 	// ========================================================================
 
-	private void registerFeatures(final Plugin.Context context) {
+	private void start(final Plugin.Context context) {
 		registerBuildTaskExtensionPoint(context);
 		registerBuildPlatformExtensionPoint(context);
 		registerMainFeature(context);
@@ -162,7 +166,7 @@ public class WybsPlugin implements Plugin {
 		
 		public Plugin start(final Plugin.Context context) {
 			final WybsPlugin thisPlugin = new WybsPlugin();			
-			thisPlugin.registerFeatures(context);			
+			thisPlugin.start(context);			
 			return thisPlugin;
 		}
 
