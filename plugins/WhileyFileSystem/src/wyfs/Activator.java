@@ -4,8 +4,8 @@ import java.io.File;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import jplug.lang.PluginActivator;
-import jplug.lang.PluginContext;
+import jplug.lang.Feature;
+import jplug.lang.Plugin;
 import wycc.util.FunctionExtension;
 import wyfs.lang.Content;
 import wyfs.util.DefaultContentRegistry;
@@ -16,7 +16,7 @@ import wyfs.util.DefaultContentRegistry;
  * @author David J. Pearce
  *
  */
-public class Activator implements PluginActivator 	{
+public class Activator implements Plugin.Activator {
 
 	private static DefaultContentRegistry registry = new DefaultContentRegistry();
 
@@ -24,17 +24,16 @@ public class Activator implements PluginActivator 	{
 
 	}
 
-	public void start(final PluginContext context) {
+	public Plugin start(final Plugin.Context context) {
 
 		// ==================================================================
 		// Create ContentType extension point
 		// ==================================================================
-		context.create("wyfs.ContentType", new PluginContext.ExtensionPoint() {
+		context.create("wyfs.ContentType", new Plugin.ExtensionPoint() {
 
 			@Override
-			public void register(PluginContext.Extension extension) {
-				Content.Type contentType = (Content.Type) extension
-						.data();
+			public void register(Feature extension) {
+				Content.Type contentType = (Content.Type) extension;
 
 				// TODO: need to get the suffix out of the content type!!
 
@@ -48,14 +47,12 @@ public class Activator implements PluginActivator 	{
 		// ==================================================================
 		// Register builderMain entry point
 		// ==================================================================
-		context.register("wycc.functions", new PluginContext.Extension() {
-			public Object data() {
-				return new FunctionExtension(this.getClass(),"getContentType",String.class);
-			}
-		});
+		context.register("wycc.functions",
+				new FunctionExtension(this.getClass(), "getContentType",
+						String.class));
 	}
 
-	public void stop(PluginContext context) {
+	public void stop(Plugin plugin, Plugin.Context context) {
 
 	}
 
