@@ -160,7 +160,7 @@ public class WybsPlugin implements Plugin {
 	
 	private void registerMainFeature(final Plugin.Context context) {
 		FunctionExtension mainFn = new FunctionExtension(this, "main",
-				String.class, File.class, List.class);
+				String.class, File.class, List.class, List.class);
 		features.put(mainFn.name(),mainFn);
 		context.register("wycc.functions",mainFn);
 	}

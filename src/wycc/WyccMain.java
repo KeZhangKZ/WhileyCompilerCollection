@@ -198,9 +198,7 @@ public class WyccMain {
 			System.out.println("LOOKING TO CONFIGURE: " + attributes);
 		}
 
-		System.out.println("INVOKING BUILDER MAIN");
-
-		FunctionExtension.invoke("builderMain", outputDirectory, libraries, args);
+		FunctionExtension.invoke("main", target, outputDirectory, libraries, args);
 
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
