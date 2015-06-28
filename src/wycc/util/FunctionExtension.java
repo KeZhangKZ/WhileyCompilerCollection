@@ -6,14 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jplug.lang.Feature;
+import jplug.lang.Plugin;
 
 public class FunctionExtension implements Feature {
+	private Plugin receiver;
 	private Method method;
 
-	public FunctionExtension(java.lang.Class receiver, String name, java.lang.Class... parameters) {
-
+	public FunctionExtension(Plugin receiver, String name, java.lang.Class... parameters) {
+		this.receiver = receiver;
 		try {
-			this.method = receiver.getMethod(name, parameters);
+			this.method = receiver.getClass().getMethod(name, parameters);
 		} catch (Exception e) {
 			throw new RuntimeException("No such method: " + name, e);
 		}
@@ -29,10 +31,10 @@ public class FunctionExtension implements Feature {
 		return null;
 	}
 
-	private static final ArrayList<Method> functions = new ArrayList<Method>();
+	private static final ArrayList<FunctionExtension> functions = new ArrayList<FunctionExtension>();
 
 	public static void register(FunctionExtension fe) {
-		functions.add(fe.method);
+		functions.add(fe);
 	}
 
 	/**
@@ -45,16 +47,16 @@ public class FunctionExtension implements Feature {
 	 * @param libraries
 	 */
 	public static Object invoke(String name, Object... arguments) {
-		Method method = null;
-		for (Method m : functions) {
-			if (m.getName().equals(name)) {
-				method = m;
+		FunctionExtension fn = null;
+		for (FunctionExtension f : functions) {
+			if (f.method.getName().equals(name)) {
+				fn = f;
 				break;
 			}
 		}
-		if (method != null) {
+		if (fn != null) {
 			try {
-				return method.invoke(null, arguments);
+				return fn.method.invoke(fn.receiver, arguments);
 			} catch (InvocationTargetException e) {
 				e.printStackTrace();
 			} catch (IllegalAccessException e) {

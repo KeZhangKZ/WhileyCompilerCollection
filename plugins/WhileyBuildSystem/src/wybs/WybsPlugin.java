@@ -83,8 +83,10 @@ public class WybsPlugin implements Plugin {
 	 */
 	public void main(String targetPlatform, File outputDirectory,
 			List<File> libraries, List<File> sourceFiles) throws IOException {
-		Content.Registry registry = wyfs.Activator.getContentRegistry();
+		Content.Registry registry = (Content.Registry) FunctionExtension.invoke("getContentRegistry");
+		System.out.println("Found registry : " + registry);
 		System.out.println("Searching for build platform...");
+		/*
 		BuildPlatform platform = platforms.get(targetPlatform);
 		// The output root is the destination for all compiled files.		
 		DirectoryRoot outputRoot = new DirectoryRoot(outputDirectory,registry);
@@ -96,6 +98,7 @@ public class WybsPlugin implements Plugin {
 		// Create the build project
 		BuildProject project = createBuildProject(platform, outputRoot, outputRoot, libraryRoots);
 		System.out.println("Created build project...");
+		*/
 	}
 
 	public BuildProject createBuildProject(BuildPlatform platform,
@@ -156,8 +159,8 @@ public class WybsPlugin implements Plugin {
 	}
 	
 	private void registerMainFeature(final Plugin.Context context) {
-		FunctionExtension mainFn = new FunctionExtension(this.getClass(), "main",
-				String.class, File.class, List.class); 
+		FunctionExtension mainFn = new FunctionExtension(this, "main",
+				String.class, File.class, List.class);
 		features.put(mainFn.name(),mainFn);
 		context.register("wycc.functions",mainFn);
 	}
