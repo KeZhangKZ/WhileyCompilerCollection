@@ -23,79 +23,47 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyfs.util;
+package wybs.lang;
 
 import java.io.IOException;
 import java.util.*;
 
-import wyfs.lang.Content;
+import wycc.util.Pair;
 import wyfs.lang.Path;
 
 /**
- * Provides a simple implementation of <code>Path.Entry</code>. This caches
- * content in a field and employs a <code>modifies</code> bit to determine if
- * that content needs to be written to permanent storage.
+ * <p>
+ * Responsible for transforming files from one content type to another.
+ * Typically this revolves around compiling a source file into one or more
+ * binary files, although other kinds of transformations are possible (e.g.
+ * source-to-source translations, etc).
+ * </p>
  *
  * @author David J. Pearce
  *
- * @param <T>
  */
-public abstract class AbstractEntry<T> implements Path.Entry<T> {
-	protected final Path.ID id;
-	protected Content.Type<T> contentType;
-	protected T contents = null;
-	protected boolean modified = false;
+public interface Builder {
 
-	public AbstractEntry(Path.ID mid) {
-		this.id = mid;
-	}
+	/**
+	 * Get the project this builder is operating on.
+	 *
+	 * @return
+	 */
+	public Build.Project project();
 
-	public Path.ID id() {
-		return id;
-	}
-
-	public void touch() {
-		this.modified = true;
-	}
-
-	public boolean isModified() {
-		return modified;
-	}
-
-	public Content.Type<T> contentType() {
-		return contentType;
-	}
-
-	public void refresh() throws IOException {
-		if(!modified) {
-			contents = null; // reset contents
-		}
-	}
-
-	public void flush() throws IOException {
-		if(modified && contents != null) {
-			contentType.write(outputStream(), contents);
-			this.modified = false;
-		}
-	}
-
-	public T read() throws IOException {
-		if (contents == null) {
-			contents = contentType.read(this,inputStream());
-		}
-		return contents;
-	}
-
-	public void write(T contents) throws IOException {
-		this.modified = true;
-		this.contents = contents;
-	}
-
-	public void associate(Content.Type<T> contentType, T contents) {
-		if(this.contentType != null) {
-			throw new IllegalArgumentException("content type already associated with this entry");
-		}
-		this.contentType = contentType;
-		this.contents = contents;
-	}	
+	/**
+	 * Build a given set of source files to produce target files in specified
+	 * locations. A delta represents a list of pairs (s,t), where s is a source
+	 * file and t is the destination root for all generated files. Each file may
+	 * be associated with a different destination directory, in order to support
+	 * e.g. multiple output directories.
+	 *
+	 * @param delta
+	 *            --- the set of files to be built.
+	 * @param graph
+	 *            --- The build graph being constructed
+	 * @return --- the set of files generated or modified.
+	 */
+	public Set<Path.Entry<?>> build(
+			Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
 }

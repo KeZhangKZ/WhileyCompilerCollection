@@ -23,79 +23,23 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyfs.util;
-
-import java.io.IOException;
-import java.util.*;
-
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-
 /**
- * Provides a simple implementation of <code>Path.Entry</code>. This caches
- * content in a field and employs a <code>modifies</code> bit to determine if
- * that content needs to be written to permanent storage.
+ * <p>
+ * <b>The Whiley File System</b>. This provides a generic and flexible
+ * representation of hierarchically named objects. In essence, this is an
+ * abstract view of a "filesystem" which may be mapped to a physical file system
+ * (e.g. files, directories) or something else (e.g. an in-memory file system,
+ * the Eclipse filesystem, etc).
+ * </p>
+ * <p>
+ * A standard implementation of the file system is also provided which is based
+ * around physical files, directories and archive files (e.g. jars). This
+ * standard implementation is sufficient for a command-line compiler. However,
+ * when running a compiler from within an IDE (e.g. Eclipse) alternative
+ * implementations specific to the IDE may be required.
+ * </p>
  *
  * @author David J. Pearce
- *
- * @param <T>
  */
-public abstract class AbstractEntry<T> implements Path.Entry<T> {
-	protected final Path.ID id;
-	protected Content.Type<T> contentType;
-	protected T contents = null;
-	protected boolean modified = false;
+package wyfs;
 
-	public AbstractEntry(Path.ID mid) {
-		this.id = mid;
-	}
-
-	public Path.ID id() {
-		return id;
-	}
-
-	public void touch() {
-		this.modified = true;
-	}
-
-	public boolean isModified() {
-		return modified;
-	}
-
-	public Content.Type<T> contentType() {
-		return contentType;
-	}
-
-	public void refresh() throws IOException {
-		if(!modified) {
-			contents = null; // reset contents
-		}
-	}
-
-	public void flush() throws IOException {
-		if(modified && contents != null) {
-			contentType.write(outputStream(), contents);
-			this.modified = false;
-		}
-	}
-
-	public T read() throws IOException {
-		if (contents == null) {
-			contents = contentType.read(this,inputStream());
-		}
-		return contents;
-	}
-
-	public void write(T contents) throws IOException {
-		this.modified = true;
-		this.contents = contents;
-	}
-
-	public void associate(Content.Type<T> contentType, T contents) {
-		if(this.contentType != null) {
-			throw new IllegalArgumentException("content type already associated with this entry");
-		}
-		this.contentType = contentType;
-		this.contents = contents;
-	}	
-}

@@ -6,10 +6,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-import jplug.util.Pair;
-
-import wybs.lang.BuildTask;
-import wybs.lang.BuildRule;
+import wybs.lang.Build;
+import wybs.lang.Builder;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -24,46 +23,46 @@ import wyfs.lang.Path;
  * <b>NOTE</b>: instances of this class are immutable, although objects they
  * reference may not be (e.g. builders).
  * </p>
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
-public class StdBuildRule implements BuildRule {
+public class StdBuildRule implements Build.Rule {
 	/**
 	 * The builder used to build files using this rule.
 	 */
-	private final BuildTask.Instance task;
-	
+	final Builder builder;
+
 	/**
 	 * The source root containing all files which might be built using this
 	 * rule. However, whether or not files contained in this root will actually
 	 * be built depends on the includes and excludes filters.
 	 */
 	final Path.Root source;
-	
+
 	/**
 	 * The destination root into which all files built using this rule are
 	 * placed.
 	 */
 	final Path.Root target;
-	
+
 	/**
 	 * A content filter used to determine which files contained in the source
 	 * root should be built by this rule.  Maybe null.
 	 */
 	final Content.Filter<?> includes;
-	
+
 	/**
 	 * A content filter used to determine which files contained in the source
 	 * root should be not built by this rule.  Maybe null.
 	 */
 	final Content.Filter<?> excludes;
-	
+
 	/**
 	 * Construct a standard build rule.
-	 * 
-	 * @param task
-	 *            The task instance used to build files using this rule.
+	 *
+	 * @param builder
+	 *            The builder used to build files using this rule.
 	 * @param srcRoot
 	 *            The source root containing all files which might be built
 	 *            using this rule. However, whether or not files contained in
@@ -79,19 +78,18 @@ public class StdBuildRule implements BuildRule {
 	 *            The destination root into which all files built using this
 	 *            rule are placed.
 	 */
-	public StdBuildRule(BuildTask.Instance task, Path.Root srcRoot,
+	public StdBuildRule(Builder builder, Path.Root srcRoot,
 			Content.Filter<?> includes, Content.Filter<?> excludes,
 			Path.Root targetRoot) {
-		this.task = task;
+		this.builder = builder;
 		this.source = srcRoot;
 		this.target = targetRoot;
 		this.includes = includes;
 		this.excludes = excludes;
 	}
-	
+
 	@Override
-	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group)
-			throws IOException {
+	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group, Build.Graph graph) throws IOException {
 		ArrayList<Pair<Path.Entry<?>, Path.Root>> matches = new ArrayList<Pair<Path.Entry<?>, Path.Root>>();
 
 		// First, determine the set of matching files
@@ -107,7 +105,7 @@ public class StdBuildRule implements BuildRule {
 
 		// Second, build all matching files
 		if (matches.size() > 0) {
-			return task.build(matches);
+			return builder.build(matches, graph);
 		} else {
 			return Collections.EMPTY_SET;
 		}
