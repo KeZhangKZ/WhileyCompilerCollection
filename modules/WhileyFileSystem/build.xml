@@ -1,4 +1,4 @@
-<project name="wyfs" default="build">
+<project name="wyfs" default="compile">
 
   <!-- ================================================================== -->
   <!-- Configuration -->
@@ -27,25 +27,8 @@
 	<path refid="wyfs.classpath"/>
       </classpath>      
     </javac>
-  </target>
-
-  <!-- ================================================================== -->
-  <!-- Build -->
-  <!-- ================================================================== -->
-
-  <target name="build" depends="compile">
-    <mkdir dir="tmp"/>
-    <manifest file="tmp/MANIFEST.MF">
-      <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wyfs-v${version}.jar"/>
-    </manifest>
-    <jar destfile="${LIB_DIR}/wyfs-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="bin" includes="*/**/*.class"/>
-    </jar>
-    <delete dir="tmp"/>
     <echo message="============================================="/>
-    <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
+    <echo message="COMPILED: ${ant.project.name}"/>
     <echo message="============================================="/>
   </target>
 

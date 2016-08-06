@@ -1,12 +1,12 @@
-package wycc.util;
+package wyps.util;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import wycc.lang.Feature;
-import wycc.lang.Plugin;
+import wyps.lang.Feature;
+import wyps.lang.Plugin;
 
 public class FunctionExtension implements Feature {
 	private Plugin receiver;

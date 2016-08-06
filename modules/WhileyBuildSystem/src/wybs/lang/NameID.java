@@ -23,50 +23,64 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycc.util;
+package wybs.lang;
+
+import wyfs.lang.Path;
+import wyfs.util.Trie;
+
 
 /**
- * This class represents a pair of items
- * 
+ * A Name Identifier consists of a module, and a name within that module. The
+ * purpose of this is to provide a uniform way of referring to modules +
+ * names throughout the compiler.
+ *
  * @author David J. Pearce
  *
- * @param <FIRST> Type of first item
- * @param <SECOND> Type of second item
  */
-public class Pair<FIRST,SECOND> {
-	protected final FIRST first;
-	protected final SECOND second;	
-	
-	public Pair(FIRST f, SECOND s) {
-		first=f;
-		second=s;			
-	}		
-	
-	public FIRST first() { return first; }
-	public SECOND second() { return second; }
-	
-	public int hashCode() {
-		int fhc = first == null ? 0 : first.hashCode();
-		int shc = second == null ? 0 : second.hashCode();
-		return fhc ^ shc; 
+public final class NameID {
+	private final Path.ID module;
+	private final String name;
+
+	public NameID(Path.ID module, String name) {
+		this.module = module;
+		this.name = name;
 	}
-		
+
+	public String name() {
+		return name;
+	}
+
+	public Path.ID module() {
+		return module;
+	}
+
+	public String toString() {
+		return module + ":" + name;
+	}
+
+	public int hashCode() {
+		return name.hashCode() ^ module.hashCode();
+	}
+
 	public boolean equals(Object o) {
-		if(o instanceof Pair) {
-			Pair<FIRST, SECOND> p = (Pair<FIRST, SECOND>) o;
-			boolean r = false;
-			if(first != null) { r = first.equals(p.first()); }
-			else { r = p.first() == first; }
-			if(second != null) { r &= second.equals(p.second()); }
-			else { r &= p.second() == second; }
-			return r;				
+		if (o instanceof NameID) {
+			NameID u = (NameID) o;
+			return u.module.equals(module) && u.name.equals(name);
 		}
 		return false;
 	}
 	
-	public String toString() {
-		String fstr = first != null ? first.toString() : "null";
-		String sstr = second != null ? second.toString() : "null";
-		return "(" + fstr + ", " + sstr + ")";
+	/**
+	 * Create a NameID from a string representation. This is of the form
+	 * "module/id:name".
+	 * 
+	 * @param str
+	 * @return
+	 */
+	public static NameID fromString(String str) {
+		int index = str.indexOf(':');
+		String module = str.substring(0, index);
+		String name = str.substring(index + 1);
+		return new NameID(Trie.fromString(module), name);
 	}
 }

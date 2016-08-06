@@ -26,44 +26,28 @@
 package wybs.lang;
 
 import java.io.IOException;
-import java.util.*;
 
-import wyfs.lang.Path;
-import wyps.util.Pair;
 
 /**
- * <p>
- * Responsible for transforming files from one content type to another.
- * Typically this revolves around compiling a source file into one or more
- * binary files, although other kinds of transformations are possible (e.g.
- * source-to-source translations, etc).
- * </p>
+ * Represents an action that may be applied to a module. Such actions typically
+ * either check that a module is valid (with respect to some particular
+ * concern), or apply optimisations to the module. Examples include <i>constant
+ * propagation</i> and <i>definite assignment analysis</i>.
  *
  * @author David J. Pearce
  *
  */
-public interface Builder {
+public interface Transform<T extends CompilationUnit> {
 
 	/**
-	 * Get the project this builder is operating on.
+	 * Apply this transform to the given module. Modifications are made to the
+	 * module in-place. To easy integration with other frameworks (e.g.
+	 * Eclipse), any exception may be thrown.
 	 *
-	 * @return
+	 * @param file
+	 *            --- compilation unit to be transformed
+	 * @throws Exception
+	 *             --- some kind of failure occurred.
 	 */
-	public Build.Project project();
-
-	/**
-	 * Build a given set of source files to produce target files in specified
-	 * locations. A delta represents a list of pairs (s,t), where s is a source
-	 * file and t is the destination root for all generated files. Each file may
-	 * be associated with a different destination directory, in order to support
-	 * e.g. multiple output directories.
-	 *
-	 * @param delta
-	 *            --- the set of files to be built.
-	 * @param graph
-	 *            --- The build graph being constructed
-	 * @return --- the set of files generated or modified.
-	 */
-	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
+	public void apply(T file) throws IOException;
 }

@@ -23,47 +23,52 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.lang;
+package wyps.util;
 
-import java.io.IOException;
-import java.util.*;
-
-import wyfs.lang.Path;
 import wyps.util.Pair;
 
 /**
- * <p>
- * Responsible for transforming files from one content type to another.
- * Typically this revolves around compiling a source file into one or more
- * binary files, although other kinds of transformations are possible (e.g.
- * source-to-source translations, etc).
- * </p>
- *
+ * This class represents a pair of items
+ * 
  * @author David J. Pearce
  *
+ * @param <FIRST> Type of first item
+ * @param <SECOND> Type of second item
  */
-public interface Builder {
-
-	/**
-	 * Get the project this builder is operating on.
-	 *
-	 * @return
-	 */
-	public Build.Project project();
-
-	/**
-	 * Build a given set of source files to produce target files in specified
-	 * locations. A delta represents a list of pairs (s,t), where s is a source
-	 * file and t is the destination root for all generated files. Each file may
-	 * be associated with a different destination directory, in order to support
-	 * e.g. multiple output directories.
-	 *
-	 * @param delta
-	 *            --- the set of files to be built.
-	 * @param graph
-	 *            --- The build graph being constructed
-	 * @return --- the set of files generated or modified.
-	 */
-	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
+public class Pair<FIRST,SECOND> {
+	protected final FIRST first;
+	protected final SECOND second;	
+	
+	public Pair(FIRST f, SECOND s) {
+		first=f;
+		second=s;			
+	}		
+	
+	public FIRST first() { return first; }
+	public SECOND second() { return second; }
+	
+	public int hashCode() {
+		int fhc = first == null ? 0 : first.hashCode();
+		int shc = second == null ? 0 : second.hashCode();
+		return fhc ^ shc; 
+	}
+		
+	public boolean equals(Object o) {
+		if(o instanceof Pair) {
+			Pair<FIRST, SECOND> p = (Pair<FIRST, SECOND>) o;
+			boolean r = false;
+			if(first != null) { r = first.equals(p.first()); }
+			else { r = p.first() == first; }
+			if(second != null) { r &= second.equals(p.second()); }
+			else { r &= p.second() == second; }
+			return r;				
+		}
+		return false;
+	}
+	
+	public String toString() {
+		String fstr = first != null ? first.toString() : "null";
+		String sstr = second != null ? second.toString() : "null";
+		return "(" + fstr + ", " + sstr + ")";
+	}
 }

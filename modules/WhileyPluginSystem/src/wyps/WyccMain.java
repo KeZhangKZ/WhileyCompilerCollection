@@ -23,23 +23,17 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycc;
+package wyps;
 
 import java.io.File;
 import java.io.PrintStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
-import wycc.lang.Feature;
-import wycc.lang.Plugin;
-import wycc.util.FunctionExtension;
+import wycc.util.Logger;
 import wycc.util.OptArg;
-import jplug.util.*;
+import wyps.lang.Feature;
+import wyps.lang.Plugin;
+import wyps.util.*;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This

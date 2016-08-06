@@ -1,4 +1,4 @@
-package wycc.lang;
+package wyps.lang;
 
 /**
  * Represents a dependency from one plugin to another.  

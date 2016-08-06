@@ -8,18 +8,17 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
-import wybs.lang.BuildPlatform;
-import wybs.lang.BuildProject;
+import wybs.lang.Build;
 import wybs.lang.BuildTask;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
-import wycc.lang.Feature;
-import wycc.lang.Plugin;
-import wycc.util.FunctionExtension;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
+import wyps.lang.Feature;
+import wyps.lang.Plugin;
+import wyps.util.FunctionExtension;
 
 public class WybsPlugin implements Plugin {
 
@@ -31,7 +30,7 @@ public class WybsPlugin implements Plugin {
 	/**
 	 * The tasks map contains the set of build platforms register by other plugins.
 	 */
-	private HashMap<String,BuildPlatform> platforms = new HashMap<String,BuildPlatform>();
+	private HashMap<String,Build.Platform> platforms = new HashMap<String,Build.Platform>();
 
 	/**
 	 * The features map contains those features registered by this plugin.  
@@ -87,7 +86,7 @@ public class WybsPlugin implements Plugin {
 		System.out.println("Found registry : " + registry);
 		System.out.println("Searching for build platform...");
 		/*
-		BuildPlatform platform = platforms.get(targetPlatform);
+		Build.Platform platform = platforms.get(targetPlatform);
 		// The output root is the destination for all compiled files.		
 		DirectoryRoot outputRoot = new DirectoryRoot(outputDirectory,registry);
 		// Construct the roots for every library supplied.
@@ -101,8 +100,8 @@ public class WybsPlugin implements Plugin {
 		*/
 	}
 
-	public BuildProject createBuildProject(BuildPlatform platform,
-			Path.Root srcRoot, Path.Root binRoot, List<Path.Root> roots) {
+	public Build.Project createBuildProject(Build.Platform platform, Path.Root srcRoot, Path.Root binRoot,
+			List<Path.Root> roots) {
 		roots.add(srcRoot);
 		roots.add(binRoot);
 		// TODO: add virtual roots here for intermediate file formats
@@ -115,7 +114,7 @@ public class WybsPlugin implements Plugin {
 		for (String taskName : platform.builders()) {
 			BuildTask task = tasks.get(taskName);
 			BuildTask.Instance buildInstance = task.instantiate(project);
-			StdBuildRule rule = new StdBuildRule(buildInstance,srcRoot,includes,excludes,binRoot);
+			StdBuildRule rule = new StdBuildRule(buildInstance, srcRoot, includes, excludes, binRoot);
 			project.add(rule);
 		}
 		// Done
@@ -133,11 +132,11 @@ public class WybsPlugin implements Plugin {
 	}
 
 	private void registerBuildPlatformExtensionPoint(final Plugin.Context context) {
-		context.create("wybs.BuildPlatform", new Plugin.ExtensionPoint() {
+		context.create("wybs.Build.Platform", new Plugin.ExtensionPoint() {
 
 			@Override
 			public void register(Feature feature) {
-				BuildPlatform platform = (BuildPlatform) feature;
+				Build.Platform platform = (Build.Platform) feature;
 				platforms.put(platform.id(), platform);
 				context.logTimedMessage("Registered build platform: "
 						+ platform.id(), 0, 0);

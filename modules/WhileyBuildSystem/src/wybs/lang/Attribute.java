@@ -25,45 +25,63 @@
 
 package wybs.lang;
 
-import java.io.IOException;
-import java.util.*;
-
-import wyfs.lang.Path;
-import wyps.util.Pair;
-
 /**
- * <p>
- * Responsible for transforming files from one content type to another.
- * Typically this revolves around compiling a source file into one or more
- * binary files, although other kinds of transformations are possible (e.g.
- * source-to-source translations, etc).
- * </p>
+ * Represents a piece of meta-information that may be associated with a WYIL
+ * bytecode or declaration. For example, the location of the element in the
+ * source code which generated this bytecode.
  *
  * @author David J. Pearce
  *
  */
-public interface Builder {
+public interface Attribute {
 
 	/**
-	 * Get the project this builder is operating on.
+	 * Represents a location in the source code of a Whiley Module. For example,
+	 * this may be the location which generated a particular bytecode, or the
+	 * location of a particular type declaration.
 	 *
-	 * @return
+	 * @author David J. Pearce
+	 *
 	 */
-	public Build.Project project();
+	public final static class Source implements Attribute {
+		public final int start;	 // starting character index
+		public final int end;	 // end character index
+		public final int line;   // line number
+
+		public Source(int start, int end, int line) {
+			this.start = start;
+			this.end = end;
+			this.line = line;
+		}
+
+		public String toString() {
+			return "@" + start + ":" + end;
+		}
+	}
 
 	/**
-	 * Build a given set of source files to produce target files in specified
-	 * locations. A delta represents a list of pairs (s,t), where s is a source
-	 * file and t is the destination root for all generated files. Each file may
-	 * be associated with a different destination directory, in order to support
-	 * e.g. multiple output directories.
+	 * Represents an originating source location for a given syntactic element.
+	 * This typically occurs if some element from one file is included in
+	 * another element from another file.
 	 *
-	 * @param delta
-	 *            --- the set of files to be built.
-	 * @param graph
-	 *            --- The build graph being constructed
-	 * @return --- the set of files generated or modified.
+	 * @author David J. Pearce
+	 *
 	 */
-	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
+	public final static class Origin implements Attribute {
+		public final String filename;
+		public final int start;	 // starting character index
+		public final int end;	 // end character index
+		public final int line;   // line number
+
+		public Origin(String filename, int start, int end, int line) {
+			this.filename = filename;
+			this.start = start;
+			this.end = end;
+			this.line = line;
+		}
+
+		public String toString() {
+			return filename + "@" + start + ":" + end;
+		}
+	}
 }

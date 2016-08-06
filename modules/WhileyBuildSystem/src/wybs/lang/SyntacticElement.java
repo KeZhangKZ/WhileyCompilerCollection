@@ -25,45 +25,67 @@
 
 package wybs.lang;
 
-import java.io.IOException;
 import java.util.*;
-
-import wyfs.lang.Path;
-import wyps.util.Pair;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * <p>
- * Responsible for transforming files from one content type to another.
- * Typically this revolves around compiling a source file into one or more
- * binary files, although other kinds of transformations are possible (e.g.
- * source-to-source translations, etc).
- * </p>
+ * A Syntactic Element represents any part of a source file which is relevant to
+ * the syntactic structure of the file, and in particular parts we may wish to
+ * add information too (e.g. line numbers, types, etc).
  *
  * @author David J. Pearce
  *
  */
-public interface Builder {
+public interface SyntacticElement {
 
 	/**
-	 * Get the project this builder is operating on.
-	 *
-	 * @return
-	 */
-	public Build.Project project();
+     * Get the list of attributes associated with this syntactice element.
+     *
+     * @return
+     */
+	public List<Attribute> attributes();
 
 	/**
-	 * Build a given set of source files to produce target files in specified
-	 * locations. A delta represents a list of pairs (s,t), where s is a source
-	 * file and t is the destination root for all generated files. Each file may
-	 * be associated with a different destination directory, in order to support
-	 * e.g. multiple output directories.
-	 *
-	 * @param delta
-	 *            --- the set of files to be built.
-	 * @param graph
-	 *            --- The build graph being constructed
-	 * @return --- the set of files generated or modified.
-	 */
-	public Set<Path.Entry<?>> build(
-			Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
+     * Get the first attribute of the given class type. This is useful
+     * short-hand.
+     *
+     * @param c
+     * @return
+     */
+	public <T extends Attribute> T attribute(Class<T> c);
+
+	public class Impl  implements SyntacticElement {
+		private List<Attribute> attributes;
+
+		public Impl() {
+			// I use copy on write here, since for the most part I don't expect
+			// attributes to change, and hence can be safely aliased. But, when they
+			// do change I need fresh copies.
+			attributes = new CopyOnWriteArrayList<Attribute>();
+		}
+
+		public Impl(Attribute x) {
+			attributes = new ArrayList<Attribute>();
+			attributes.add(x);
+		}
+
+		public Impl(Collection<Attribute> attributes) {
+			this.attributes = new ArrayList<Attribute>(attributes);
+		}
+
+		public Impl(Attribute[] attributes) {
+			this.attributes = new ArrayList<Attribute>(Arrays.asList(attributes));
+		}
+
+		public List<Attribute> attributes() { return attributes; }
+
+		public <T extends Attribute> T attribute(Class<T> c) {
+			for(Attribute a : attributes) {
+				if(c.isInstance(a)) {
+					return (T) a;
+				}
+			}
+			return null;
+		}
+	}
 }

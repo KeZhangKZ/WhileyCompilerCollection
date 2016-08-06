@@ -1,6 +1,6 @@
-package wycc.lang;
+package wyps.lang;
 
-import wycc.util.Logger;
+import wyps.util.Logger;
 
 public interface Plugin extends Feature.Container {
 
