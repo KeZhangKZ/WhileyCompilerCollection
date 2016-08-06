@@ -35,10 +35,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import wycc.lang.Feature;
+import wycc.lang.Plugin;
 import wycc.util.FunctionExtension;
 import wycc.util.OptArg;
-import jplug.lang.Feature;
-import jplug.lang.Plugin;
 import jplug.util.*;
 
 /**

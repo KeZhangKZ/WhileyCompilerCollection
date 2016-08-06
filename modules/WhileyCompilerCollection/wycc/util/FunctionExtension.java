@@ -5,8 +5,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import jplug.lang.Feature;
-import jplug.lang.Plugin;
+import wycc.lang.Feature;
+import wycc.lang.Plugin;
 
 public class FunctionExtension implements Feature {
 	private Plugin receiver;

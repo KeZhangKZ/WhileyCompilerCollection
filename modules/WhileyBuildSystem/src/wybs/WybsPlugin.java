@@ -13,13 +13,13 @@ import wybs.lang.BuildProject;
 import wybs.lang.BuildTask;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
+import wycc.lang.Feature;
+import wycc.lang.Plugin;
 import wycc.util.FunctionExtension;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
-import jplug.lang.Feature;
-import jplug.lang.Plugin;
 
 public class WybsPlugin implements Plugin {
 
