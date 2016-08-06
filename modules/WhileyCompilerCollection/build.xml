@@ -1,14 +1,13 @@
-<project name="wybs" default="build">
+<project name="wycc" default="build">
 
   <!-- ================================================================== -->
   <!-- Configuration -->
   <!-- ================================================================== -->
   <import file="../../config.xml"/>
 
-  <path id="wybs.classpath">
-    <pathelement path="${WYFS_DIR}/src"/>
+  <path id="wycc.classpath">
   </path>
-
+    
   <!-- ================================================================== -->
   <!-- Compile -->
   <!-- ================================================================== -->
@@ -25,8 +24,8 @@
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
       <classpath>
-	<path refid="wybs.classpath"/>
-      </classpath>            
+	<path refid="wycc.classpath"/>
+      </classpath>      
     </javac>
   </target>
 
@@ -39,9 +38,9 @@
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
       <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wybs-v${version}.jar"/>
+      <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
     </manifest>
-    <jar destfile="${LIB_DIR}/wybs-v${version}.jar" manifest="tmp/MANIFEST.MF">
+    <jar destfile="${LIB_DIR}/wycc-v${version}.jar" manifest="tmp/MANIFEST.MF">
       <fileset dir="bin" includes="*/**/*.class"/>
     </jar>
     <delete dir="tmp"/>

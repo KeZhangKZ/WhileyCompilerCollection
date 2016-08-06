@@ -13,8 +13,14 @@
   <!-- ================================================================== -->
 
   <target name="compile">
-    <javac debug="true" debuglevel="vars,lines,source" source="1.7" target="1.7" includeantruntime="true">
-      <src path="src"/>
+    <javac
+	srcdir="src"
+	destdir="bin"
+	debug="true"
+	debuglevel="vars,lines,source"
+	source="1.7"
+	target="1.7"
+	includeantruntime="true">
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
       <classpath>
@@ -32,10 +38,10 @@
     <manifest file="tmp/MANIFEST.MF">
       <attribute name="Built-By" value="${user.name}"/>
       <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wybs-v${version}.jar"/>
+      <attribute name="Implementation-Title" value="wyfs-v${version}.jar"/>
     </manifest>
-    <jar destfile="${LIB_DIR}/wybs-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="src" includes="*/**/*.class"/>
+    <jar destfile="${LIB_DIR}/wyfs-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="bin" includes="*/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
     <echo message="============================================="/>
