@@ -4,9 +4,9 @@ import java.util.HashMap;
 
 import wycommon.util.Logger;
 import wyms.lang.Feature;
-import wyms.lang.Plugin;
+import wyms.lang.Module;
 
-public class DefaultPluginContext implements Plugin.Context {
+public class StdModuleContext implements Module.Context {
 
 	/**
 	 * Logging stream, which is null by default.
@@ -20,7 +20,7 @@ public class DefaultPluginContext implements Plugin.Context {
 	 * main extension points are: <i>Routes</i>, <i>Builders</i> and
 	 * <i>ContentTypes</i>.
 	 */
-	public final HashMap<String, Plugin.ExtensionPoint> extensionPoints = new HashMap<String, Plugin.ExtensionPoint>();
+	public final HashMap<Class<?>, Module.ExtensionPoint<?>> extensionPoints = new HashMap<>();
 
 	// ==================================================================
 	// Methods
@@ -31,18 +31,18 @@ public class DefaultPluginContext implements Plugin.Context {
 	}
 
 	@Override
-	public void register(String id, Feature feature) {
-		Plugin.ExtensionPoint ep = extensionPoints.get(id);
-		if(ep == null) {
-			throw new RuntimeException("Missing extension point: " + id);
+	public <T extends Feature> void register(Class<T> ep, T feature) {
+		Module.ExtensionPoint<T> container = (Module.ExtensionPoint<T>) extensionPoints.get(ep);
+		if (ep == null) {
+			throw new RuntimeException("Missing extension point: " + ep.getCanonicalName());
 		} else {
-			ep.register(feature);
+			container.register(feature);
 		}
 	}
 
 	@Override
-	public void create(String extension, Plugin.ExtensionPoint ep) {
-		if(extensionPoints.containsKey(extension)) {
+	public <T extends Feature> void create(Class<T> extension, Module.ExtensionPoint<T> ep) {
+		if (extensionPoints.containsKey(extension)) {
 			throw new RuntimeException("Extension point already exists: " + extension);
 		} else {
 			extensionPoints.put(extension, ep);

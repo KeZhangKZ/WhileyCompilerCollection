@@ -5,10 +5,10 @@ import java.util.Map;
 
 /**
  * <p>
- * Represents a registered component provided by a given plugin. The
+ * Represents a registered component provided by a given module. The
  * intuition is that a feature provides some functionality which could be
  * configured, etc. Features essentially form an object hierarchy within the
- * plugin system, and provide systematic way for users to configure a plugin
+ * module system, and provide systematic way for users to configure a module
  * system.
  * </p>
  *
@@ -70,7 +70,7 @@ public interface Feature {
 		 *
 		 * @return
 		 */
-		public Map<String, Class> getTemplate();
+		public Map<String, Template> getTemplate();
 
 		/**
 		 * Configure this particular feature using a given mapping of attribute
@@ -82,7 +82,7 @@ public interface Feature {
 	}
 
 	/**
-	 * A feature class is a special kind of container, with the intuition that a
+	 * A feature template is a special kind of container, with the intuition that a
 	 * feature class can instantiate features dynamically. The configuration of
 	 * a feature class will be reflected at the point of creation in its
 	 * instances. Furthermore, a feature class "contains" its instances.
@@ -90,7 +90,7 @@ public interface Feature {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Class extends Container {
+	public interface Template extends Container {
 		/**
 		 * Create a new instance of this feature class using the current
 		 * configuration.

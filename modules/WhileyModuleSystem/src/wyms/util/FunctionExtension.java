@@ -6,13 +6,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wyms.lang.Feature;
-import wyms.lang.Plugin;
+import wyms.lang.Module;
 
 public class FunctionExtension implements Feature {
-	private Plugin receiver;
+	private Module receiver;
 	private Method method;
 
-	public FunctionExtension(Plugin receiver, String name, java.lang.Class... parameters) {
+	public FunctionExtension(Module receiver, String name, java.lang.Class... parameters) {
 		this.receiver = receiver;
 		try {
 			this.method = receiver.getClass().getMethod(name, parameters);
@@ -38,9 +38,7 @@ public class FunctionExtension implements Feature {
 	}
 
 	/**
-	 * Invoke the builder main function, which should have been registered by
-	 * the build system plugin.
-	 *
+	 * 
 	 * @param functions
 	 * @param target
 	 * @param outputDirectory

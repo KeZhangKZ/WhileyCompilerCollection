@@ -26,23 +26,31 @@
 package wyclc;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycc.util.Logger;
-import wycc.util.OptArg;
-import wyms.lang.Feature;
-import wyms.lang.Plugin;
+import wycommon.util.Logger;
+import wycommon.util.OptArg;
+import wybs.WyBS;
+import wybs.lang.Build;
+import wybs.util.StdBuildRule;
+import wybs.util.StdProject;
+import wyfs.WyFS;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.JarFileRoot;
 import wyms.util.*;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This
- * supports loading and configuring plugins, as well as compiling files.
+ * supports loading and configuring modules, as well as compiling files.
  *
  * @author David J. Pearce
  *
  */
-public class WyclcMain {
+public class WyCLC {
 
 	/**
 	 * A default error output stream. This is configured separately from
@@ -51,24 +59,24 @@ public class WyclcMain {
 	private static PrintStream errout;
 
 	/**
-	 * The major version for this plugin application
+	 * The major version for this module application
 	 */
 	public static final int MAJOR_VERSION;
 
 	/**
-	 * The minor version for this plugin application
+	 * The minor version for this module application
 	 */
 	public static final int MINOR_VERSION;
 
 	/**
-	 * The minor revision for this plugin application
+	 * The minor revision for this module application
 	 */
 	public static final int MINOR_REVISION;
 
 	/**
 	 * The base list of recognised command-line options. These will be appended
 	 * with additional arguments, as determined by the available activated
-	 * plugins.
+	 * modules.
 	 */
 	private static OptArg[] COMMANDLINE_OPTIONS = new OptArg[] {
 			new OptArg("help", "Print this help information"),
@@ -83,12 +91,12 @@ public class WyclcMain {
 			new OptArg("X", OptArg.OPTIONSMAP, "Configure system component") };
 
 	/**
-	 * Identifies the location where plugins are stored.
+	 * Identifies the location where modules are stored.
 	 */
 	public static final String PLUGINS_DIR = "lib/plugins/";
 
 	/**
-	 * Identifies the location where local plugins are stored.
+	 * Identifies the location where local modules are stored.
 	 */
 	public static final String LOCAL_PLUGINS_DIR = "/.wycc/plugins/";
 
@@ -127,7 +135,7 @@ public class WyclcMain {
 		}
 
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = WyclcMain.class.getPackage()
+		String versionStr = WyCLC.class.getPackage()
 				.getImplementationVersion();
 		if (versionStr != null) {
 			String[] pts = versionStr.split("\\.");
@@ -155,14 +163,13 @@ public class WyclcMain {
 			verbose |= arg.equals("-verbose");
 		}
 
-		DefaultPluginManager manager = activatePluginSystem(verbose);
+		StdModuleManager manager = activateModuleSystem(verbose);
 
 		// --------------------------------------------------------------
 		// Fourth, parse command-line options
 		// --------------------------------------------------------------
 		ArrayList<String> args = new ArrayList<String>(Arrays.asList(_args));
-		Map<String, Object> values = OptArg.parseOptions(args,
-				COMMANDLINE_OPTIONS);
+		Map<String, Object> values = OptArg.parseOptions(args, COMMANDLINE_OPTIONS);
 
 		// Check if we're printing version
 		if (values.containsKey("version")) {
@@ -184,7 +191,7 @@ public class WyclcMain {
 		if(libraries == null) { libraries = Collections.EMPTY_LIST; }
 
 		// --------------------------------------------------------------
-		// Fifth, configure plugin system
+		// Fifth, configure module system
 		// --------------------------------------------------------------
 		Map<String,Map<String,Object>> attributes = (Map<String,Map<String,Object>>) values.get("X");
 
@@ -192,8 +199,15 @@ public class WyclcMain {
 			System.out.println("LOOKING TO CONFIGURE: " + attributes);
 		}
 
-		FunctionExtension.invoke("main", target, outputDirectory, libraries, args);
-
+		try {
+		
+		Build.Project project = createBuildProject(target,outputDirectory,libraries,manager);
+		
+		} catch(IOException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
 		// --------------------------------------------------------------
@@ -209,29 +223,18 @@ public class WyclcMain {
 	 * @param locations
 	 * @return
 	 */
-	public static DefaultPluginManager activatePluginSystem(boolean verbose) {
-
+	public static StdModuleManager activateModuleSystem(boolean verbose) {
 		// Determine plugin locations
-		List<String> locations = getPluginLocations();
+		List<String> locations = getModuleLocations();
 
 		// create the context and manager
-		DefaultPluginContext context = new DefaultPluginContext();
-		DefaultPluginManager manager = new DefaultPluginManager(context,
-				locations);
+		StdModuleContext context = new StdModuleContext();
+		StdModuleManager manager = new StdModuleManager(context, locations);
 
 		if (verbose) {
 			manager.setLogger(new Logger.Default(System.err));
 			context.setLogger(new Logger.Default(System.err));
 		}
-
-		// Create the global functions list, which allows plugins to provide
-		// functionality to be called directly from here.
-		context.create("wycc.functions", new Plugin.ExtensionPoint() {
-			@Override
-			public void register(Feature extension) {
-				FunctionExtension.register((FunctionExtension)extension);
-			}
-		});
 
 		manager.start();
 
@@ -239,12 +242,12 @@ public class WyclcMain {
 	}
 
 	/**
-	 * Create the list of plugin locations. That is, locations on the filesystem
-	 * where the plugin system will look for plugins.
+	 * Create the list of module locations. That is, locations on the filesystem
+	 * where the module system will look for plugins.
 	 *
 	 * @return
 	 */
-	public static List<String> getPluginLocations() {
+	public static List<String> getModuleLocations() {
 		ArrayList<String> locations = new ArrayList<String>();
 		locations.add(PLUGINS_DIR);
 		String HOME = System.getenv("HOME");
@@ -253,4 +256,63 @@ public class WyclcMain {
 		}
 		return locations;
 	}
+	
+
+	// ========================================================================
+	// Function Features
+	// ========================================================================
+	
+	/**
+	 * The job of this function is to construct an appropriate project, and
+	 * entirely manage the compilation of that project.
+	 *
+	 * @param targetPlatform
+	 *            --- The name of the target platform to generate code for.
+	 * @param outputDirectory
+	 *            --- The output directory into which to place generated files.
+	 *            Note, in the case of files in packages, this directory is the
+	 *            root of the package directory structure.
+	 * @param libraries
+	 *            --- Any additional libraries to include on the WhileyPath.
+	 */
+	public static Build.Project createBuildProject(String targetPlatform, File outputDirectory, List<File> libraries,
+			StdModuleManager manager) throws IOException {
+		WyFS wyfs = manager.getInstance(wyfs.WyFS.class);
+		WyBS wybs = manager.getInstance(wybs.WyBS.class);		
+		Content.Registry registry = wyfs.getContentRegistry();
+		System.out.println("Found registry : " + registry);		
+		Build.Platform platform = wybs.getBuildPlatform(targetPlatform);
+		System.out.println("Searching for build platform...");
+		// The output root is the destination for all compiled files.		
+		DirectoryRoot outputRoot = new DirectoryRoot(outputDirectory,registry);
+		// Construct the roots for every library supplied.
+		ArrayList<Path.Root> libraryRoots = new ArrayList<Path.Root>();
+		for(File lib : libraries) {
+			libraryRoots.add(new JarFileRoot(lib,registry));
+		}
+		// Create the build project
+		return createBuildProject(wybs, platform, outputRoot, outputRoot, libraryRoots);
+	}
+
+	public static Build.Project createBuildProject(WyBS wybs, Build.Platform platform, Path.Root srcRoot,
+			Path.Root binRoot, List<Path.Root> roots) {
+		roots.add(srcRoot);
+		roots.add(binRoot);
+		// TODO: add virtual roots here for intermediate file formats
+		// Construct the project
+		StdProject project = new StdProject(roots);
+		// Include all files
+		Content.Filter<?> includes = Content.filter("**", platform.sourceType());
+		Content.Filter<?> excludes = null;
+		// Add all necessary build rules
+		for (Class<? extends Build.Task> taskClass : platform.builders()) {
+			Build.Task task = wybs.getBuildTask(taskClass);
+			Build.Task.Instance buildInstance = task.instantiate();
+			StdBuildRule rule = new StdBuildRule(buildInstance, srcRoot, includes, excludes, binRoot);
+			project.add(rule);
+		}
+		// Done
+		return project;
+	}
+	
 }

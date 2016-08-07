@@ -30,7 +30,7 @@ public class StdBuildRule implements Build.Rule {
 	/**
 	 * The builder used to build files using this rule.
 	 */
-	final Build.Task builder;
+	final Build.Task.Instance builder;
 
 	/**
 	 * The source root containing all files which might be built using this
@@ -77,7 +77,7 @@ public class StdBuildRule implements Build.Rule {
 	 *            The destination root into which all files built using this
 	 *            rule are placed.
 	 */
-	public StdBuildRule(Build.Task builder, Path.Root srcRoot, Content.Filter<?> includes, Content.Filter<?> excludes,
+	public StdBuildRule(Build.Task.Instance builder, Path.Root srcRoot, Content.Filter<?> includes, Content.Filter<?> excludes,
 			Path.Root targetRoot) {
 		this.builder = builder;
 		this.source = srcRoot;
@@ -87,6 +87,7 @@ public class StdBuildRule implements Build.Rule {
 	}
 
 	@Override
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group, Build.Graph graph) throws IOException {
 		ArrayList<Pair<Path.Entry<?>, Path.Root>> matches = new ArrayList<Pair<Path.Entry<?>, Path.Root>>();
 

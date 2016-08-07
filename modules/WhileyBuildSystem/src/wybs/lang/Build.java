@@ -8,6 +8,8 @@ import java.util.Set;
 import wycommon.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyms.lang.Feature;
+import wyms.lang.Feature.Instance;
 
 public interface Build {
 
@@ -43,7 +45,7 @@ public interface Build {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public interface Platform {
+	public interface Platform extends Feature {
 
 		/**
 		 * The unique identifier for this platform through which it can be
@@ -79,12 +81,12 @@ public interface Build {
 
 		/**
 		 * The set of builders used by this platform. These are identifiers
-		 * referring to specific instances of the wybs.BuildTask extension
+		 * referring to specific instances of the wybs.lang.Build.Task extension
 		 * point.
 		 * 
 		 * @return
 		 */
-		public Set<String> builders();
+		public Set<Class<? extends Build.Task>> builders();
 
 		/**
 		 * The set of platforms on which this platform depends. These are
@@ -93,7 +95,7 @@ public interface Build {
 		 * 
 		 * @return
 		 */
-		public Set<String> dependents();
+		public Set<Class<? extends Build.Platform>> dependents();
 	}
 
 	/**
@@ -302,7 +304,7 @@ public interface Build {
 	 * @author David J. Pearce
 	 * 
 	 */
-	public interface Task {
+	public interface Task extends Feature.Template {
 
 		/**
 		 * The unique identifier for this task through which it can be referred.
@@ -311,27 +313,33 @@ public interface Build {
 		 */
 		public String id();
 
-		/**
-		 * Get the project this builder is operating on.
-		 * 
-		 * @return
-		 */
-		public Project project();
+		@Override
+		public Instance instantiate();
+		
+		public interface Instance extends Feature.Template.Instance {
+			/**
+			 * Get the project this build task instance is operating on.
+			 * 
+			 * @return
+			 */
+			public Project project();
 
-		/**
-		 * Build a given set of source files to produce target files in specified
-		 * locations. A delta represents a list of pairs (s,t), where s is a source
-		 * file and t is the destination root for all generated files. Each file may
-		 * be associated with a different destination directory, in order to support
-		 * e.g. multiple output directories.
-		 *
-		 * @param delta
-		 *            --- the set of files to be built.
-		 * @param graph
-		 *            --- The build graph being constructed
-		 * @return --- the set of files generated or modified.
-		 */
-		public Set<Path.Entry<?>> build(
-				Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
+			/**
+			 * Build a given set of source files to produce target files in
+			 * specified locations. A delta represents a list of pairs (s,t),
+			 * where s is a source file and t is the destination root for all
+			 * generated files. Each file may be associated with a different
+			 * destination directory, in order to support e.g. multiple output
+			 * directories.
+			 *
+			 * @param delta
+			 *            --- the set of files to be built.
+			 * @param graph
+			 *            --- The build graph being constructed
+			 * @return --- the set of files generated or modified.
+			 */
+			public Set<Path.Entry<?>> build(Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph)
+					throws IOException;
+		}
 	}
 }

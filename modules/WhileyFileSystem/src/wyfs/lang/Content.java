@@ -33,6 +33,7 @@ import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
+import wyms.lang.Feature;
 
 public class Content {
 
@@ -45,8 +46,15 @@ public class Content {
 	 *
 	 * @param <T>
 	 */
-	public interface Type<T> {
+	public interface Type<T> extends Feature {
 
+		/**
+		 * Get the suffix associated with this content type
+		 * 
+		 * @return
+		 */
+		public String getSuffix();
+		
 		/**
 		 * Physically read the raw bytes from a given input stream and convert
 		 * into the format described by this content type.

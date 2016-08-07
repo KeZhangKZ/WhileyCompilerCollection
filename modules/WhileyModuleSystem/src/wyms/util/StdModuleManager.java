@@ -18,13 +18,13 @@ import java.util.jar.Manifest;
 
 import wycommon.util.Logger;
 import wycommon.util.Pair;
-import wyms.lang.Plugin;
-import wyms.lang.PluginDescriptor;
+import wyms.lang.Module;
+import wyms.lang.Descriptor;
 import wyms.lang.SemanticDependency;
 import wyms.lang.SemanticVersion;
 
 
-public class DefaultPluginManager {
+public class StdModuleManager {
 
 	/**
 	 * Logging stream, which is null by default.
@@ -32,23 +32,25 @@ public class DefaultPluginManager {
 	private Logger logger = Logger.NULL;
 
 	/**
-	 * The list of locations into where we will search for plugin
+	 * The list of locations into where we will search for module
 	 */
 	private ArrayList<String> locations = new ArrayList<String>();
 
 	/**
-	 * The list of activated plugins
+	 * The list of activated modules
 	 */
-	private ArrayList<PluginDescriptor> plugins = new ArrayList<PluginDescriptor>();
+	private ArrayList<Descriptor> modules = new ArrayList<Descriptor>();
 
+	private HashMap<Class<? extends Module>,Module> instances = new HashMap<>();
+	
 	/**
-	 * The plugin context used to manage extension points for plugins.
+	 * The module context used to manage extension points for modules.
 	 *
 	 * @param locations
 	 */
-	private Plugin.Context context;
+	private Module.Context context;
 
-	public DefaultPluginManager(Plugin.Context context,
+	public StdModuleManager(Module.Context context,
 			Collection<String> locations) {
 		this.locations.addAll(locations);
 		this.context = context;
@@ -59,50 +61,61 @@ public class DefaultPluginManager {
 	}
 
 	/**
-	 * Scan and activate all plugins on the search path. As part of this, all
-	 * plugin dependencies will be checked.
+	 * Get instance of given module within this context, or null if no
+	 * instance available.
+	 * 
+	 * @param module
+	 * @return
+	 */
+	public <T extends Module> T getInstance(Class<T> module) {
+		return (T) instances.get(module);
+	}
+	
+	/**
+	 * Scan and activate all modules on the search path. As part of this, all
+	 * module dependencies will be checked.
 	 */
 	public void start() {
-		// First, scan for any plugins in the given directory.
+		// First, scan for any modules in the given directory.
 		scan();
 
-		// Second, arrange plugins in a topological order to resolve dependencies
-		pluginToplogicalSort();
+		// Second, arrange modules in a topological order to resolve dependencies
+		moduleToplogicalSort();
 
 		// Second, construct the URLClassLoader which will be used to load
-		// classes within the plugins.
-		URL[] urls = new URL[plugins.size()];
-		for(int i=0;i!=plugins.size();++i) {
-			urls[i] = plugins.get(i).getLocation();
+		// classes within the modules.
+		URL[] urls = new URL[modules.size()];
+		for(int i=0;i!=modules.size();++i) {
+			urls[i] = modules.get(i).getLocation();
 		}
 		URLClassLoader loader = new URLClassLoader(urls);
 
-		// Third, active the plugins. This will give them the opportunity to
+		// Third, active the modules. This will give them the opportunity to
 		// register whatever extensions they like.
-		activatePlugins(loader);
+		activateModules(loader);
 	}
 
 	/**
-	 * Deactivate all plugins previously activated.
+	 * Deactivate all modules previously activated.
 	 */
 	public void stop() {
-		deactivatePlugins();
+		deactiveModules();
 	}
 
 	/**
-	 * Activate all plugins in the order of occurrence in the given list. It is
+	 * Activate all modules in the order of occurrence in the given list. It is
 	 * assumed that all dependencies are already resolved prior to this and all
-	 * plugins are topologically sorted.
+	 * modules are topologically sorted.
 	 */
-	private void activatePlugins(URLClassLoader loader) {
-		for (int i=0;i!=plugins.size();++i) {
-			PluginDescriptor plugin = plugins.get(i);
+	private void activateModules(URLClassLoader loader) {
+		for (int i = 0; i != modules.size(); ++i) {
+			Descriptor module = modules.get(i);
 			try {
-				Class c = loader.loadClass(plugin.getActivator());
-				Plugin.Activator self = (Plugin.Activator) c.newInstance();
-				self.start(context);
-				logger.logTimedMessage("Activated plugin " + plugin.getId()
-						+ " (v" + plugin.getVersion() + ")" , 0, 0);
+				Class c = loader.loadClass(module.getActivator());
+				Module.Activator self = (Module.Activator) c.newInstance();				
+				Module instance = self.start(context);
+				instances.put(c, instance);
+				logger.logTimedMessage("Activated module " + module.getId() + " (v" + module.getVersion() + ")", 0, 0);
 			} catch (Exception e) {
 				e.printStackTrace();
 			}
@@ -110,57 +123,55 @@ public class DefaultPluginManager {
 	}
 
 	/**
-	 * Deactivate all plugins in the reverse order of occurrence in the given
+	 * Deactivate all modules in the reverse order of occurrence in the given
 	 * list. It is assumed that all dependencies are already resolved prior to
-	 * this and all plugins are topologically sorted.
+	 * this and all modules are topologically sorted.
 	 */
-	private void deactivatePlugins() {
+	private void deactiveModules() {
 
 		// TODO!
 
 	}
 
 	/**
-	 * Scan a given directory for plugins. A plugin is a jar file which contains
-	 * an appropriate plugin.xml file. This method does not start any plugins,
-	 * it simply extracts the appropriate meta-data from their plugin.xml file.
+	 * Scan a given directory for modules. A module is a jar file which contains
+	 * an appropriate module.xml file. This method does not start any modules,
+	 * it simply extracts the appropriate meta-data from their module.xml file.
 	 */
 	private void scan() {
 		for(String location : locations) {
-			File pluginDir = new File(location);
-			if (pluginDir.exists() && pluginDir.isDirectory()) {
-				for (String n : pluginDir.list()) {
+			File moduleDir = new File(location);
+			if (moduleDir.exists() && moduleDir.isDirectory()) {
+				for (String n : moduleDir.list()) {
 					if (n.endsWith(".jar")) {
 						try {
 							URL url = new File(location + File.separator + n)
 									.toURI().toURL();
-							PluginDescriptor plugin = parsePluginManifest(url);
-							if (plugin != null) {
-								plugins.add(plugin);
+							Descriptor module = parseModuleManifest(url);
+							if (module != null) {
+								modules.add(module);
 							}
 						} catch (MalformedURLException e) {
 							// This basically shouldn't happen, since we're
-							// constructing
-							// the URL directly from the directory name and the
-							// name of
-							// a located file.
+							// constructing the URL directly from the directory
+							// name and the name of a located file.
 						}
 					}
 				}
 			}
 		}
-		logger.logTimedMessage("Found " + plugins.size() + " plugins", 0,0);
+		logger.logTimedMessage("Found " + modules.size() + " modules", 0,0);
 	}
 
 	/**
-	 * Open a given plugin Jar and attempt to extract the plugin meta-data from
+	 * Open a given module Jar and attempt to extract the module meta-data from
 	 * the manifest. If the manifest doesn't contain the appropriate
 	 * information, then it's ignored an null is returned.
 	 *
 	 * @param bundleURL
 	 * @return
 	 */
-	private static PluginDescriptor parsePluginManifest(URL bundleURL) {
+	private static Descriptor parseModuleManifest(URL bundleURL) {
 		try {
 			JarFile jarFile = new JarFile(bundleURL.getFile());
 			Manifest manifest = jarFile.getManifest();
@@ -173,9 +184,9 @@ public class DefaultPluginManager {
 			String requireBundle = attributes.getValue("Require-Bundle");
 			List<SemanticDependency> bundleDependencies = Collections.EMPTY_LIST;
 			if(requireBundle != null) {
-				bundleDependencies = parsePluginDependencies(requireBundle);
+				bundleDependencies = parseModuleDependencies(requireBundle);
 			}
-			return new PluginDescriptor(bundleName, bundleId, bundleVersion, bundleURL,
+			return new Descriptor(bundleName, bundleId, bundleVersion, bundleURL,
 					bundleActivator, bundleDependencies);
 		} catch (IOException e) {
 			// Just ignore this jar file ... something is wrong.
@@ -184,23 +195,23 @@ public class DefaultPluginManager {
 	}
 
 	/**
-	 * Parse the Require-Bundle string to generate a list of plugin
+	 * Parse the Require-Bundle string to generate a list of module
 	 * dependencies.
 	 *
 	 * @param requireBundle
 	 * @return
 	 */
-	private static List<SemanticDependency> parsePluginDependencies(String requireBundle) {
+	private static List<SemanticDependency> parseModuleDependencies(String requireBundle) {
 		String[] deps = requireBundle.split(",");
 		ArrayList<SemanticDependency> dependencies = new ArrayList<SemanticDependency>();
 		for(int i=0;i!=deps.length;++i) {
-			SemanticDependency dep = parsePluginDependency(deps[i]);
-			dependencies.add(parsePluginDependency(deps[i]));
+			SemanticDependency dep = parseModuleDependency(deps[i]);
+			dependencies.add(dep);
 		}
 		return dependencies;
 	}
 
-	private static SemanticDependency parsePluginDependency(String dependency) {
+	private static SemanticDependency parseModuleDependency(String dependency) {
 		String[] components = dependency.split(";");
 		SemanticVersion minVersion = null;
 		SemanticVersion maxVersion = null;
@@ -233,35 +244,35 @@ public class DefaultPluginManager {
 		return new Pair<SemanticVersion, SemanticVersion>(minVersion, maxVersion);
 	}
 
-	private void pluginToplogicalSort() {
-		HashMap<String, PluginDescriptor> map = new HashMap<String, PluginDescriptor>();
+	private void moduleToplogicalSort() {
+		HashMap<String, Descriptor> map = new HashMap<String, Descriptor>();
 		HashSet<String> visited = new HashSet<String>();
-		ArrayList<PluginDescriptor> sorted = new ArrayList<PluginDescriptor>();
+		ArrayList<Descriptor> sorted = new ArrayList<Descriptor>();
 
-		for (int i = 0; i != plugins.size(); ++i) {
-			PluginDescriptor p = plugins.get(i);
+		for (int i = 0; i != modules.size(); ++i) {
+			Descriptor p = modules.get(i);
 			map.put(p.getId(), p);
 		}
 
-		for (int i = 0; i != plugins.size(); ++i) {
-			PluginDescriptor p = plugins.get(i);
+		for (int i = 0; i != modules.size(); ++i) {
+			Descriptor p = modules.get(i);
 			if (!visited.contains(p.getId())) {
 				visit(p, visited, sorted, map);
 			}
 		}
 
-		plugins.clear();
-		plugins.addAll(sorted);
+		modules.clear();
+		modules.addAll(sorted);
 	}
 
-	private static void visit(PluginDescriptor p, HashSet<String> visited,
-			ArrayList<PluginDescriptor> sorted, HashMap<String, PluginDescriptor> map) {
+	private static void visit(Descriptor p, HashSet<String> visited,
+			ArrayList<Descriptor> sorted, HashMap<String, Descriptor> map) {
 
 		// FIXME: this needs to detect cycles, which it currently doesn't do.
 
 		visited.add(p.getId());
 		for (SemanticDependency d : p.getDependencies()) {
-			PluginDescriptor pd = map.get(d.getId());
+			Descriptor pd = map.get(d.getId());
 			// FIXME: implement version checking
 			if (pd == null) {
 				throw new RuntimeException("missing dependency: " + d.getId());
