@@ -9,23 +9,22 @@ import java.util.HashMap;
 import java.util.List;
 
 import wybs.lang.Build;
-import wybs.lang.BuildTask;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
-import wyps.lang.Feature;
-import wyps.lang.Plugin;
-import wyps.util.FunctionExtension;
+import wyms.lang.Feature;
+import wyms.lang.Plugin;
+import wyms.util.FunctionExtension;
 
 public class WybsPlugin implements Plugin {
 
 	/**
 	 * The tasks map contains the set of build tasks registered by other plugins.
 	 */
-	private HashMap<String,BuildTask> tasks = new HashMap<String,BuildTask>();
+	private HashMap<String,Build.Task> tasks = new HashMap<String,Build.Task>();
 
 	/**
 	 * The tasks map contains the set of build platforms register by other plugins.

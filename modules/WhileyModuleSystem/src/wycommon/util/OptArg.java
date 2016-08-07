@@ -23,13 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyps.util;
+package wycommon.util;
 
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
 
-import wyps.util.OptArg;
+import wycommon.util.OptArg;
 
 /**
  * A small utility for parsing command-line options. It helps to take some of

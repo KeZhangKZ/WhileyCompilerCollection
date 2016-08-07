@@ -7,9 +7,10 @@
 
   <!-- The set of build files in the order they should be built. -->
   <filelist id="module.build.files" dir="modules">
+    <file name="WhileyModuleSystem/build.xml"/>
     <file name="WhileyFileSystem/build.xml"/>
     <file name="WhileyBuildSystem/build.xml"/>
-    <file name="WhileyPluginSystem/build.xml"/>    
+    <file name="WhileyCommandLineCompiler/build.xml"/>
   </filelist>
 
   <!-- ================================================================== -->
@@ -19,7 +20,7 @@
   <target name="compile">
     <subant failonerror="true" target="compile">
       <filelist refid="module.build.files"/>
-    </subant>  
+    </subant>
   </target>
 
   <!-- ================================================================== -->
@@ -34,9 +35,10 @@
       <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
     </manifest>
     <jar destfile="${LIB_DIR}/wycc-v${version}.jar" manifest="tmp/MANIFEST.MF">
+      <fileset dir="modules/WhileyModuleSystem/bin" includes="*/**/*.class"/>      
       <fileset dir="modules/WhileyFileSystem/bin" includes="*/**/*.class"/>
       <fileset dir="modules/WhileyBuildSystem/bin" includes="*/**/*.class"/>
-      <fileset dir="modules/WhileyPluginSystem/bin" includes="*/**/*.class"/>      
+      <fileset dir="modules/WhileyCommandLineCompiler/bin" includes="*/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
     <echo message="============================================="/>
@@ -57,18 +59,22 @@
        windowtitle="Whiley Compiler Collection API">
       <doctitle><![CDATA[<h1>The Whiley Compiler Collection (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
+      <packageset dir="modules/WhileyModuleSystem/src">
+	<include name="wyms/**"/>
+      </packageset>
       <packageset dir="modules/WhileyFileSystem/src">
 	<include name="wyfs/**"/>
       </packageset>
       <packageset dir="modules/WhileyBuildSystem/src">
 	<include name="wybs/**"/>
       </packageset>
-      <packageset dir="modules/WhileyPluginSystem/src">
-	<include name="wyps/**"/>
-      </packageset>      
+      <packageset dir="modules/WhileyCommandLineCompiler/src">
+	<include name="wyclc/**"/>
+      </packageset>
+      <group title="Whiley Module System (WyMS)" packages="wyms.*"/>
       <group title="Whiley File System (WyFS)" packages="wyfs.*"/>
       <group title="Whiley Build System (WyBS)" packages="wybs.*"/>
-      <group title="Whiley Plugin System (WyPS)" packages="wyps.*"/>
+      <group title="Whiley Command-Line Compiler (WyCLC)" packages="wyclc.*"/>
       </javadoc>
   </target>
 

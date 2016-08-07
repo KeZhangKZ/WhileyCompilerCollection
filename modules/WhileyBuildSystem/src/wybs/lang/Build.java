@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import wycommon.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -276,5 +277,61 @@ public interface Build {
 		 * @param child
 		 */
 		void registerDerivation(Path.Entry<?> parent, Path.Entry<?> child);
+	}
+	
+	/**
+	 * <p>
+	 * Represents a single atomic action within the context of a larger build
+	 * project. A given task transforming files from one content type to
+	 * another. Typically this revolves around compiling a source file into one
+	 * or more binary files, although other kinds of transformations are
+	 * possible (e.g. source-to-source translations, etc).
+	 * </p>
+	 * <p>
+	 * Every build task is associated with a given build project. There will be
+	 * at most one instance of a build task for a given project. Different
+	 * projects will not share task instances. This means that per-project
+	 * caching within a given task is possible, though care must be taken.
+	 * </p>
+	 * <p>
+	 * Every build task has a unique name which identifies the task. This allows
+	 * the task to be configured and/or to ensure required platform dependencies
+	 * are met.
+	 * </p>
+	 * 
+	 * @author David J. Pearce
+	 * 
+	 */
+	public interface Task {
+
+		/**
+		 * The unique identifier for this task through which it can be referred.
+		 * 
+		 * @return
+		 */
+		public String id();
+
+		/**
+		 * Get the project this builder is operating on.
+		 * 
+		 * @return
+		 */
+		public Project project();
+
+		/**
+		 * Build a given set of source files to produce target files in specified
+		 * locations. A delta represents a list of pairs (s,t), where s is a source
+		 * file and t is the destination root for all generated files. Each file may
+		 * be associated with a different destination directory, in order to support
+		 * e.g. multiple output directories.
+		 *
+		 * @param delta
+		 *            --- the set of files to be built.
+		 * @param graph
+		 *            --- The build graph being constructed
+		 * @return --- the set of files generated or modified.
+		 */
+		public Set<Path.Entry<?>> build(
+				Collection<Pair<Path.Entry<?>, Path.Root>> delta, Build.Graph graph) throws IOException;
 	}
 }

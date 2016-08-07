@@ -6,7 +6,7 @@
   <import file="../../config.xml"/>
 
   <path id="wybs.classpath">
-    <pathelement path="${WYFS_DIR}/src"/>
+    <pathelement path="${WYFS_DIR}/bin"/>
   </path>
 
   <!-- ================================================================== -->

@@ -1,4 +1,4 @@
-package wyps.lang;
+package wyms.lang;
 
 import java.util.Collection;
 import java.util.Map;

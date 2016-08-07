@@ -23,7 +23,7 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyps;
+package wyclc;
 
 import java.io.File;
 import java.io.PrintStream;
@@ -31,9 +31,9 @@ import java.util.*;
 
 import wycc.util.Logger;
 import wycc.util.OptArg;
-import wyps.lang.Feature;
-import wyps.lang.Plugin;
-import wyps.util.*;
+import wyms.lang.Feature;
+import wyms.lang.Plugin;
+import wyms.util.*;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This
@@ -42,7 +42,7 @@ import wyps.util.*;
  * @author David J. Pearce
  *
  */
-public class WyccMain {
+public class WyclcMain {
 
 	/**
 	 * A default error output stream. This is configured separately from
@@ -127,7 +127,7 @@ public class WyccMain {
 		}
 
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = WyccMain.class.getPackage()
+		String versionStr = WyclcMain.class.getPackage()
 				.getImplementationVersion();
 		if (versionStr != null) {
 			String[] pts = versionStr.split("\\.");

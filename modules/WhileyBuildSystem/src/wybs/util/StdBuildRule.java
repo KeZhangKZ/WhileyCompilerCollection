@@ -7,10 +7,9 @@ import java.util.Collections;
 import java.util.Set;
 
 import wybs.lang.Build;
-import wybs.lang.Builder;
+import wycommon.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyps.util.Pair;
 
 /**
  * <p>
@@ -31,7 +30,7 @@ public class StdBuildRule implements Build.Rule {
 	/**
 	 * The builder used to build files using this rule.
 	 */
-	final Builder builder;
+	final Build.Task builder;
 
 	/**
 	 * The source root containing all files which might be built using this
@@ -62,7 +61,7 @@ public class StdBuildRule implements Build.Rule {
 	 * Construct a standard build rule.
 	 *
 	 * @param builder
-	 *            The builder used to build files using this rule.
+	 *            The build task used to build files using this rule.
 	 * @param srcRoot
 	 *            The source root containing all files which might be built
 	 *            using this rule. However, whether or not files contained in
@@ -78,8 +77,7 @@ public class StdBuildRule implements Build.Rule {
 	 *            The destination root into which all files built using this
 	 *            rule are placed.
 	 */
-	public StdBuildRule(Builder builder, Path.Root srcRoot,
-			Content.Filter<?> includes, Content.Filter<?> excludes,
+	public StdBuildRule(Build.Task builder, Path.Root srcRoot, Content.Filter<?> includes, Content.Filter<?> excludes,
 			Path.Root targetRoot) {
 		this.builder = builder;
 		this.source = srcRoot;

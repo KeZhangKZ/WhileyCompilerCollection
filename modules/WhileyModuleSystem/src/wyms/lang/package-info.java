@@ -23,31 +23,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wybs.lang;
-
-import java.io.IOException;
-
-
 /**
- * Represents an action that may be applied to a module. Such actions typically
- * either check that a module is valid (with respect to some particular
- * concern), or apply optimisations to the module. Examples include <i>constant
- * propagation</i> and <i>definite assignment analysis</i>.
- *
+ * Provides core interfaces for describing plugins.
+ * 
  * @author David J. Pearce
- *
  */
-public interface Transform<T extends CompilationUnit> {
-
-	/**
-	 * Apply this transform to the given module. Modifications are made to the
-	 * module in-place. To easy integration with other frameworks (e.g.
-	 * Eclipse), any exception may be thrown.
-	 *
-	 * @param file
-	 *            --- compilation unit to be transformed
-	 * @throws Exception
-	 *             --- some kind of failure occurred.
-	 */
-	public void apply(T file) throws IOException;
-}
+package wyms.lang;

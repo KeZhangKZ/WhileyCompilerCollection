@@ -1,4 +1,4 @@
-package wyps.util;
+package wyms.util;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,12 +16,12 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import wyps.util.Logger;
-import wyps.util.Pair;
-import wyps.lang.Plugin;
-import wyps.lang.PluginDescriptor;
-import wyps.lang.SemanticDependency;
-import wyps.lang.SemanticVersion;
+import wycommon.util.Logger;
+import wycommon.util.Pair;
+import wyms.lang.Plugin;
+import wyms.lang.PluginDescriptor;
+import wyms.lang.SemanticDependency;
+import wyms.lang.SemanticVersion;
 
 
 public class DefaultPluginManager {

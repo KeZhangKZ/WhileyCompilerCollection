@@ -1,10 +1,10 @@
-package wyps.util;
+package wyms.util;
 
 import java.util.HashMap;
 
-import wyps.util.Logger;
-import wyps.lang.Feature;
-import wyps.lang.Plugin;
+import wycommon.util.Logger;
+import wyms.lang.Feature;
+import wyms.lang.Plugin;
 
 public class DefaultPluginContext implements Plugin.Context {
 
