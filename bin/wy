@@ -35,7 +35,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wycc jplug"
+LIBS="wycc"
 
 # check for running under cywin
 cygwin=false
@@ -80,4 +80,4 @@ done
 # RUN APPLICATION
 ######################
 
-java -server -Xmx128M -cp "$WYCC_CLASSPATH" wycc.WyccMain "$@"
+java -server -Xmx128M -cp "$WYCC_CLASSPATH" wyclc.WyCLC "$@"

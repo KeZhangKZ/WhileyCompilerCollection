@@ -26,21 +26,11 @@
 package wyclc;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
 
 import wycommon.util.Logger;
 import wycommon.util.OptArg;
-import wybs.WyBS;
-import wybs.lang.Build;
-import wybs.util.StdBuildRule;
-import wybs.util.StdProject;
-import wyfs.WyFS;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
-import wyfs.util.JarFileRoot;
 import wyms.util.*;
 
 /**
@@ -98,7 +88,7 @@ public class WyCLC {
 	/**
 	 * Identifies the location where local modules are stored.
 	 */
-	public static final String LOCAL_PLUGINS_DIR = "/.wycc/plugins/";
+	public static final String LOCAL_PLUGINS_DIR = "/.wy/plugins/";
 
 	// ==================================================================
 	// Helpers
@@ -117,7 +107,7 @@ public class WyCLC {
 	 * Print usage information to the console.
 	 */
 	protected static void usage() {
-		System.out.println("usage: wycc <options> <files>");
+		System.out.println("usage: wy <options> <files>");
 		OptArg.usage(System.out, COMMANDLINE_OPTIONS);
 	}
 
@@ -138,7 +128,8 @@ public class WyCLC {
 		String versionStr = WyCLC.class.getPackage()
 				.getImplementationVersion();
 		if (versionStr != null) {
-			String[] pts = versionStr.split("\\.");
+			String[] bits = versionStr.split("-");
+			String[] pts = bits[0].split("\\.");
 			MAJOR_VERSION = Integer.parseInt(pts[0]);
 			MINOR_VERSION = Integer.parseInt(pts[1]);
 			MINOR_REVISION = Integer.parseInt(pts[2]);
@@ -193,20 +184,6 @@ public class WyCLC {
 		// --------------------------------------------------------------
 		// Fifth, configure module system
 		// --------------------------------------------------------------
-		Map<String,Map<String,Object>> attributes = (Map<String,Map<String,Object>>) values.get("X");
-
-		if(attributes != null) {
-			System.out.println("LOOKING TO CONFIGURE: " + attributes);
-		}
-
-		try {
-		
-		Build.Project project = createBuildProject(target,outputDirectory,libraries,manager);
-		
-		} catch(IOException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
 		
 		// --------------------------------------------------------------
 		// Finally, deactivate all plugins
@@ -225,7 +202,7 @@ public class WyCLC {
 	 */
 	public static StdModuleManager activateModuleSystem(boolean verbose) {
 		// Determine plugin locations
-		List<String> locations = getModuleLocations();
+		List<String> locations = getPluginLocations();
 
 		// create the context and manager
 		StdModuleContext context = new StdModuleContext();
@@ -247,7 +224,7 @@ public class WyCLC {
 	 *
 	 * @return
 	 */
-	public static List<String> getModuleLocations() {
+	public static List<String> getPluginLocations() {
 		ArrayList<String> locations = new ArrayList<String>();
 		locations.add(PLUGINS_DIR);
 		String HOME = System.getenv("HOME");
@@ -256,63 +233,4 @@ public class WyCLC {
 		}
 		return locations;
 	}
-	
-
-	// ========================================================================
-	// Function Features
-	// ========================================================================
-	
-	/**
-	 * The job of this function is to construct an appropriate project, and
-	 * entirely manage the compilation of that project.
-	 *
-	 * @param targetPlatform
-	 *            --- The name of the target platform to generate code for.
-	 * @param outputDirectory
-	 *            --- The output directory into which to place generated files.
-	 *            Note, in the case of files in packages, this directory is the
-	 *            root of the package directory structure.
-	 * @param libraries
-	 *            --- Any additional libraries to include on the WhileyPath.
-	 */
-	public static Build.Project createBuildProject(String targetPlatform, File outputDirectory, List<File> libraries,
-			StdModuleManager manager) throws IOException {
-		WyFS wyfs = manager.getInstance(wyfs.WyFS.class);
-		WyBS wybs = manager.getInstance(wybs.WyBS.class);		
-		Content.Registry registry = wyfs.getContentRegistry();
-		System.out.println("Found registry : " + registry);		
-		Build.Platform platform = wybs.getBuildPlatform(targetPlatform);
-		System.out.println("Searching for build platform...");
-		// The output root is the destination for all compiled files.		
-		DirectoryRoot outputRoot = new DirectoryRoot(outputDirectory,registry);
-		// Construct the roots for every library supplied.
-		ArrayList<Path.Root> libraryRoots = new ArrayList<Path.Root>();
-		for(File lib : libraries) {
-			libraryRoots.add(new JarFileRoot(lib,registry));
-		}
-		// Create the build project
-		return createBuildProject(wybs, platform, outputRoot, outputRoot, libraryRoots);
-	}
-
-	public static Build.Project createBuildProject(WyBS wybs, Build.Platform platform, Path.Root srcRoot,
-			Path.Root binRoot, List<Path.Root> roots) {
-		roots.add(srcRoot);
-		roots.add(binRoot);
-		// TODO: add virtual roots here for intermediate file formats
-		// Construct the project
-		StdProject project = new StdProject(roots);
-		// Include all files
-		Content.Filter<?> includes = Content.filter("**", platform.sourceType());
-		Content.Filter<?> excludes = null;
-		// Add all necessary build rules
-		for (Class<? extends Build.Task> taskClass : platform.builders()) {
-			Build.Task task = wybs.getBuildTask(taskClass);
-			Build.Task.Instance buildInstance = task.instantiate();
-			StdBuildRule rule = new StdBuildRule(buildInstance, srcRoot, includes, excludes, binRoot);
-			project.add(rule);
-		}
-		// Done
-		return project;
-	}
-	
 }

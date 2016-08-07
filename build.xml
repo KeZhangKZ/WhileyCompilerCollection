@@ -7,10 +7,9 @@
 
   <!-- The set of build files in the order they should be built. -->
   <filelist id="module.build.files" dir="modules">
-    <file name="WhileyModuleSystem/build.xml"/>
-    <file name="WhileyFileSystem/build.xml"/>
-    <file name="WhileyBuildSystem/build.xml"/>
-    <file name="WhileyCommandLineCompiler/build.xml"/>
+    <file name="Common/build.xml"/>
+    <file name="ModuleSystem/build.xml"/>
+    <file name="CommandLineCompiler/build.xml"/>
   </filelist>
 
   <!-- ================================================================== -->
@@ -34,11 +33,11 @@
       <attribute name="Implementation-Version" value="${version}"/>
       <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
     </manifest>
-    <jar destfile="${LIB_DIR}/wycc-v${version}.jar" manifest="tmp/MANIFEST.MF">
-      <fileset dir="modules/WhileyModuleSystem/bin" includes="*/**/*.class"/>      
-      <fileset dir="modules/WhileyFileSystem/bin" includes="*/**/*.class"/>
-      <fileset dir="modules/WhileyBuildSystem/bin" includes="*/**/*.class"/>
-      <fileset dir="modules/WhileyCommandLineCompiler/bin" includes="*/**/*.class"/>
+    <jar destfile="${LIB_DIR}/wycc-v${version}.jar"
+	 manifest="tmp/MANIFEST.MF">
+      <fileset dir="modules/Common/bin" includes="*/**/*.class"/>
+      <fileset dir="modules/ModuleSystem/bin" includes="*/**/*.class"/>
+      <fileset dir="modules/CommandLineCompiler/bin" includes="*/**/*.class"/>
     </jar>
     <delete dir="tmp"/>
     <echo message="============================================="/>
@@ -59,21 +58,17 @@
        windowtitle="Whiley Compiler Collection API">
       <doctitle><![CDATA[<h1>The Whiley Compiler Collection (v${version})</h1>]]></doctitle>
       <bottom><![CDATA[<i>Copyright &#169; 2011 David J. Pearce. All Rights Reserved.</i>]]></bottom>
+      <packageset dir="modules/Common/src">
+	<include name="wycommon/**"/>
+      </packageset>
       <packageset dir="modules/WhileyModuleSystem/src">
 	<include name="wyms/**"/>
       </packageset>
-      <packageset dir="modules/WhileyFileSystem/src">
-	<include name="wyfs/**"/>
-      </packageset>
-      <packageset dir="modules/WhileyBuildSystem/src">
-	<include name="wybs/**"/>
-      </packageset>
-      <packageset dir="modules/WhileyCommandLineCompiler/src">
+      <packageset dir="modules/CommandLineCompiler/src">
 	<include name="wyclc/**"/>
       </packageset>
+      <group title="Whiley Common Utils (WyCommon)" packages="wycommon.*"/>
       <group title="Whiley Module System (WyMS)" packages="wyms.*"/>
-      <group title="Whiley File System (WyFS)" packages="wyfs.*"/>
-      <group title="Whiley Build System (WyBS)" packages="wybs.*"/>
       <group title="Whiley Command-Line Compiler (WyCLC)" packages="wyclc.*"/>
       </javadoc>
   </target>

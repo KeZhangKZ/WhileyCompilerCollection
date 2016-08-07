@@ -1,18 +1,20 @@
-<project name="wycc" default="compile">
+<project name="wyclc" default="compile">
 
   <!-- ================================================================== -->
   <!-- Configuration -->
   <!-- ================================================================== -->
   <import file="../../config.xml"/>
 
-  <path id="wycc.classpath">
+  <path id="wyclc.classpath">
+    <pathelement path="${WYMS_DIR}/bin"/>   
   </path>
-    
+
   <!-- ================================================================== -->
   <!-- Compile -->
   <!-- ================================================================== -->
 
   <target name="compile">
+    <mkdir dir="bin"/>
     <javac
 	srcdir="src"
 	destdir="bin"
@@ -24,12 +26,12 @@
       <include name="*/**"/>
       <exclude name="*/**/package-info.java"/>
       <classpath>
-	<path refid="wycc.classpath"/>
-      </classpath>      
+	<path refid="wyclc.classpath"/>
+      </classpath>            
     </javac>
     <echo message="============================================="/>
     <echo message="COMPILED: ${ant.project.name}"/>
-    <echo message="============================================="/>
+    <echo message="============================================="/>    
   </target>
 
   <!-- ================================================================== -->
