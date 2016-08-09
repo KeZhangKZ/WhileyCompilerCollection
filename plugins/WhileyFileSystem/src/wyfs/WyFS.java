@@ -41,17 +41,6 @@ public class WyFS implements Module {
 		return features.values();
 	}
 
-	@Override
-	public String name() {
-		return "wyfs";
-	}
-
-	@Override
-	public String description() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public Content.Registry getContentRegistry() {
 		return registry;
 	}
@@ -69,7 +58,7 @@ public class WyFS implements Module {
 			@Override
 			public void register(Content.Type contentType) {
 				registry.register(contentType);
-				context.logTimedMessage("Registered content type: " + contentType.name(), 0, 0);
+				context.logTimedMessage("Registered content type: " + contentType.getClass().getName(), 0, 0);
 			}
 		});
 	}

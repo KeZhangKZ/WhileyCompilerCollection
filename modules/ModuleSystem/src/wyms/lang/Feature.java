@@ -23,13 +23,13 @@ public interface Feature {
 	 *
 	 * @return
 	 */
-	public String name();
+	// public String name();
 
 	/**
 	 * Every feature requires a human-readable description. This allows the set
 	 * of available features to be interrogated by a user.
 	 */
-	public String description();
+	// public String description();
 
 	/**
 	 * A feature container is a feature which may contain other "sub-features".

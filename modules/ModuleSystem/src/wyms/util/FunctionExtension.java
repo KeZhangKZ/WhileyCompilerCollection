@@ -21,16 +21,6 @@ public class FunctionExtension implements Feature {
 		}
 	}
 
-	@Override
-	public String name() {
-		return method.getName();
-	}
-
-	@Override
-	public String description() {
-		return null;
-	}
-
 	private static final ArrayList<FunctionExtension> functions = new ArrayList<FunctionExtension>();
 
 	public static void register(FunctionExtension fe) {

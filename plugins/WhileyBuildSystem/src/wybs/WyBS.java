@@ -59,17 +59,6 @@ public class WyBS implements Module {
 		return features.values();
 	}
 
-	@Override
-	public String name() {
-		return "wybs";
-	}
-
-	@Override
-	public String description() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public Build.Platform getBuildPlatform(String id) {
 		return platforms.get(id);
 	}
@@ -103,7 +92,7 @@ public class WyBS implements Module {
 			@Override
 			public void register(Build.Task task) {
 				tasks.put(task.getClass(), task);
-				context.logTimedMessage("Registered build task: " + task.id(), 0, 0);
+				context.logTimedMessage("Registered build task: " + task.getClass().getName(), 0, 0);
 			}
 		});
 	}
