@@ -8,6 +8,4 @@
   <property name="LIB_DIR" value="${rootdir}/lib/"/>
   <property name="DIST_DIR" value="${rootdir}/dist/"/>
 
-  <property name="WYMS_DIR" value="${rootdir}/modules/ModuleSystem"/>
-
 </project>
