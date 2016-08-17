@@ -126,9 +126,9 @@ public interface Feature {
 		 * @param name
 		 *            Name of the attribute in question
 		 * @param value
-		 *            Value to which the attribute is set
+		 *            Data to which the attribute is set
 		 */
-		public void set(java.lang.String name, Value value);
+		public void set(java.lang.String name, Data value);
 		
 		/**
 		 * Get the value assigned to a given attribute in this configuration.
@@ -136,9 +136,9 @@ public interface Feature {
 		 * @param name
 		 *            Name of the attribute in question
 		 * @param value
-		 *            Value to which the attribute is set
+		 *            Data to which the attribute is set
 		 */
-		public Value get(java.lang.String name);		
+		public Data get(java.lang.String name);		
 	}
 	
 	public interface Schema {
@@ -149,7 +149,7 @@ public interface Feature {
 		 * @param name
 		 * @return
 		 */
-		public Type get(java.lang.String name);
+		public Kind get(java.lang.String name);
 		
 		/**
 		 * Check whether a given value is acceptable for this schema or not.
@@ -157,7 +157,7 @@ public interface Feature {
 		 * @param name
 		 * @param value
 		 */
-		public void checkValid(java.lang.String name, Value value);
+		public void checkValid(java.lang.String name, Data value);
 	}
 	
 		
@@ -167,7 +167,7 @@ public interface Feature {
 	 * @author David J. Pearce
 	 *
 	 */
-	public abstract static class Value {
+	public abstract static class Data {
 
 		/**
 		 * Represents a boolean value used for configuring a feature
@@ -175,21 +175,21 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */
-		public final static class Boolean extends Value {
+		public final static class Boolean extends Data {
 			private final boolean value;
 
 			public Boolean(boolean value) {
 				this.value = value;
 			}
 
-			public boolean getValue() {
+			public boolean getData() {
 				return value;
 			}
 
 			@Override
 			public boolean equals(Object o) {
-				if (o instanceof Value.Boolean) {
-					Value.Boolean a = (Value.Boolean) o;
+				if (o instanceof Data.Boolean) {
+					Data.Boolean a = (Data.Boolean) o;
 					return value == a.value;
 				}
 				return false;
@@ -207,21 +207,21 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */
-		public final static class Integer extends Value {
+		public final static class Integer extends Data {
 			private final int value;
 
 			public Integer(int value) {
 				this.value = value;
 			}
 
-			public int getValue() {
+			public int getData() {
 				return value;
 			}
 
 			@Override
 			public boolean equals(Object o) {
-				if (o instanceof Value.Integer) {
-					Value.Integer a = (Value.Integer) o;
+				if (o instanceof Data.Integer) {
+					Data.Integer a = (Data.Integer) o;
 					return value == a.value;
 				}
 				return false;
@@ -239,21 +239,21 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static final class String extends Value {
+		public static final class String extends Data {
 			private final java.lang.String value;
 
 			public String(java.lang.String value) {
 				this.value = value;
 			}
 
-			public java.lang.String getValue() {
+			public java.lang.String getData() {
 				return value;
 			}
 
 			@Override
 			public boolean equals(Object o) {
-				if (o instanceof Value.String) {
-					Value.String a = (Value.String) o;
+				if (o instanceof Data.String) {
+					Data.String a = (Data.String) o;
 					return value.equals(a.value);
 				}
 				return false;
@@ -271,10 +271,10 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */
-		public class Array extends Value {
-			private final Value[] elements;
+		public class Array extends Data {
+			private final Data[] elements;
 
-			public Array(Value... elements) {
+			public Array(Data... elements) {
 				this.elements = elements;
 			}
 
@@ -282,14 +282,14 @@ public interface Feature {
 				return elements.length;
 			}
 
-			public Value getElement(int i) {
+			public Data getElement(int i) {
 				return elements[i];
 			}
 
 			@Override
 			public boolean equals(Object o) {
-				if (o instanceof Value.Array) {
-					Value.Array a = (Value.Array) o;
+				if (o instanceof Data.Array) {
+					Data.Array a = (Data.Array) o;
 					return Arrays.equals(elements, a.elements);
 				}
 				return false;
@@ -309,8 +309,8 @@ public interface Feature {
 	 * @author David J. Pearce
 	 *
 	 */
-	public abstract static class Type {		
-		public abstract boolean accept(Value v);
+	public abstract static class Kind {		
+		public abstract boolean accept(Data v);
 
 		/**
 		 * The type of boolean configuration values
@@ -318,13 +318,13 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */		
-		public static class Boolean extends Type {
+		public static class Boolean extends Kind {
 			private Boolean() {
 			}
 
 			@Override
-			public boolean accept(Value v) {
-				return v instanceof Value.Boolean;
+			public boolean accept(Data v) {
+				return v instanceof Data.Boolean;
 			}
 
 			@Override
@@ -344,13 +344,13 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Integer extends Type {
+		public static class Integer extends Kind {
 			private Integer() {
 			}
 
 			@Override
-			public boolean accept(Value v) {
-				return v instanceof Value.Integer;
+			public boolean accept(Data v) {
+				return v instanceof Data.Integer;
 			}
 
 			@Override
@@ -370,13 +370,13 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class String extends Type {
+		public static class String extends Kind {
 			private String() {
 			}
 
 			@Override
-			public boolean accept(Value v) {
-				return v instanceof Value.String;
+			public boolean accept(Data v) {
+				return v instanceof Data.String;
 			}
 
 			@Override
@@ -396,21 +396,21 @@ public interface Feature {
 		 * @author David J. Pearce
 		 *
 		 */
-		public static class Array extends Type {
-			private final Type element;
+		public static class Array extends Kind {
+			private final Kind element;
 
-			public Array(Type element) {
+			public Array(Kind element) {
 				this.element = element;
 			}
 
-			public Type getElement() {
+			public Kind getElement() {
 				return element;
 			}
 
 			@Override
-			public boolean accept(Value v) {
-				if (v instanceof Value.Array) {
-					Value.Array arr = (Value.Array) v;
+			public boolean accept(Data v) {
+				if (v instanceof Data.Array) {
+					Data.Array arr = (Data.Array) v;
 					for (int i = 0; i != arr.size(); ++i) {
 						if (!element.accept(arr.getElement(i))) {
 							return false;

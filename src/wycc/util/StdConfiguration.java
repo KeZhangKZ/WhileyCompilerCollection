@@ -6,7 +6,7 @@ import wycc.lang.Feature;
 
 public class StdConfiguration implements Feature.Configuration {
 	private final Feature.Schema schema;
-	private final HashMap<String, Feature.Value> values = new HashMap<String, Feature.Value>();
+	private final HashMap<String, Feature.Data> values = new HashMap<String, Feature.Data>();
 
 	public StdConfiguration(Feature.Schema schema) {
 		this.schema = schema;
@@ -18,9 +18,9 @@ public class StdConfiguration implements Feature.Configuration {
 	 * @param name
 	 *            Name of the attribute in question
 	 * @param value
-	 *            Value to which the attribute is set
+	 *            Data to which the attribute is set
 	 */
-	public void set(java.lang.String name, Feature.Value value) {
+	public void set(java.lang.String name, Feature.Data value) {
 		schema.checkValid(name,value);
 		values.put(name,value);
 	}
@@ -31,10 +31,10 @@ public class StdConfiguration implements Feature.Configuration {
 	 * @param name
 	 *            Name of the attribute in question
 	 * @param value
-	 *            Value to which the attribute is set
+	 *            Data to which the attribute is set
 	 */
 	@Override
-	public Feature.Value get(String name) {
+	public Feature.Data get(String name) {
 		return values.get(name);
 	}
 }
