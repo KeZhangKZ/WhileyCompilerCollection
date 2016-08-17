@@ -3,10 +3,11 @@ package wyfs;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+
+import wycc.lang.Feature;
+import wycc.lang.Module;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyms.lang.Feature;
-import wyms.lang.Module;
 
 /**
  * Represents an instance of the WhileyBuildSystem module, and contains all

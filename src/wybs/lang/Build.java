@@ -5,11 +5,11 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
-import wycommon.util.Pair;
+import wycc.lang.Feature;
+import wycc.lang.Feature.Instance;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyms.lang.Feature;
-import wyms.lang.Feature.Instance;
 
 public interface Build {
 

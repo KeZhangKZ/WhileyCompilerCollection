@@ -11,13 +11,13 @@ import java.util.List;
 import wybs.lang.Build;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
+import wycc.lang.Feature;
+import wycc.lang.Module;
+import wycc.util.FunctionExtension;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
-import wyms.lang.Feature;
-import wyms.lang.Module;
-import wyms.util.FunctionExtension;
 
 /**
  * Represents an instance of the WhileyBuildSystem module, and contains all

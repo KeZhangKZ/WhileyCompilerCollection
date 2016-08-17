@@ -1,6 +1,6 @@
-package wyms.lang;
+package wycc.lang;
 
-import wycommon.util.Logger;
+import wycc.util.Logger;
 
 /**
  * <p>

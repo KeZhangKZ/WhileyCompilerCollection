@@ -23,9 +23,9 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wycommon.util;
+package wycc.util;
 
-import wycommon.util.Pair;
+import wycc.util.Pair;
 
 /**
  * This class represents a pair of items

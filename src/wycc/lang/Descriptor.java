@@ -1,4 +1,4 @@
-package wyms.lang;
+package wycc.lang;
 
 import java.net.URL;
 import java.util.ArrayList;

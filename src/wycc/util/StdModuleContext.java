@@ -1,10 +1,9 @@
-package wyms.util;
+package wycc.util;
 
 import java.util.HashMap;
 
-import wycommon.util.Logger;
-import wyms.lang.Feature;
-import wyms.lang.Module;
+import wycc.lang.Feature;
+import wycc.lang.Module;
 
 public class StdModuleContext implements Module.Context {
 

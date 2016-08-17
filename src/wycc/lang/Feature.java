@@ -1,4 +1,4 @@
-package wyms.lang;
+package wycc.lang;
 
 import java.util.Arrays;
 import java.util.Collection;

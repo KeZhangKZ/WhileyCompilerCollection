@@ -1,12 +1,12 @@
-package wyms.util;
+package wycc.util;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import wyms.lang.Feature;
-import wyms.lang.Module;
+import wycc.lang.Feature;
+import wycc.lang.Module;
 
 public class FunctionExtension implements Feature {
 	private Module receiver;

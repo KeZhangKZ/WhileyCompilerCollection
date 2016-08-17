@@ -7,7 +7,7 @@ import java.util.Collections;
 import java.util.Set;
 
 import wybs.lang.Build;
-import wycommon.util.Pair;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 

@@ -28,4 +28,4 @@
  * 
  * @author David J. Pearce
  */
-package wyms.lang;
+package wycc.lang;

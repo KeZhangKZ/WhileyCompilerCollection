@@ -1,4 +1,4 @@
-package wyms.lang;
+package wycc.lang;
 
 /**
  * Represents a version number with three components: the major component;

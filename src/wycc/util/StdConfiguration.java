@@ -1,7 +1,8 @@
-package wyms.util;
+package wycc.util;
 
 import java.util.HashMap;
-import wyms.lang.Feature;
+
+import wycc.lang.Feature;
 
 public class StdConfiguration implements Feature.Configuration {
 	private final Feature.Schema schema;

@@ -29,11 +29,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import wycc.lang.Feature;
 import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
-import wyms.lang.Feature;
 
 public class Content {
 

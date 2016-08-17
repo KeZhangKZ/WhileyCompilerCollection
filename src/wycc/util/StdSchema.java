@@ -1,9 +1,9 @@
-package wyms.util;
+package wycc.util;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import wyms.lang.Feature;
+import wycc.lang.Feature;
 
 public class StdSchema implements Feature.Schema {
 	private HashMap<String,Feature.Type> schema;

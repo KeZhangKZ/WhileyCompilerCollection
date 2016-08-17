@@ -1,4 +1,4 @@
-package wyms.util;
+package wycc.util;
 
 import java.io.File;
 import java.io.IOException;
@@ -16,12 +16,10 @@ import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
 
-import wycommon.util.Logger;
-import wycommon.util.Pair;
-import wyms.lang.Module;
-import wyms.lang.Descriptor;
-import wyms.lang.SemanticDependency;
-import wyms.lang.SemanticVersion;
+import wycc.lang.Descriptor;
+import wycc.lang.Module;
+import wycc.lang.SemanticDependency;
+import wycc.lang.SemanticVersion;
 
 
 public class StdModuleManager {

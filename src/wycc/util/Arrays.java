@@ -1,4 +1,4 @@
-package wycommon.util;
+package wycc.util;
 
 public class Arrays {
 

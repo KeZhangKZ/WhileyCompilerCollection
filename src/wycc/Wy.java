@@ -23,15 +23,13 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-package wyclc;
+package wycc;
 
 import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycommon.util.Logger;
-import wycommon.util.OptArg;
-import wyms.util.*;
+import wycc.util.*;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This
@@ -40,7 +38,7 @@ import wyms.util.*;
  * @author David J. Pearce
  *
  */
-public class WyCLC {
+public class Wy {
 
 	/**
 	 * A default error output stream. This is configured separately from
@@ -125,7 +123,7 @@ public class WyCLC {
 		}
 
 		// determine version numbering from the MANIFEST attributes
-		String versionStr = WyCLC.class.getPackage()
+		String versionStr = Wy.class.getPackage()
 				.getImplementationVersion();
 		if (versionStr != null) {
 			String[] bits = versionStr.split("-");
