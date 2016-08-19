@@ -29,7 +29,14 @@ import java.io.File;
 import java.io.PrintStream;
 import java.util.*;
 
-import wycc.util.*;
+import wybs.lang.Build;
+import wycc.lang.Feature;
+import wycc.lang.Module;
+import wycc.util.Logger;
+import wycc.util.OptArg;
+import wycc.util.StdModuleContext;
+import wycc.util.StdModuleManager;
+import wyfs.lang.Content;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This
@@ -66,16 +73,10 @@ public class Wy {
 	 * with additional arguments, as determined by the available activated
 	 * modules.
 	 */
-	private static OptArg[] COMMANDLINE_OPTIONS = new OptArg[] {
+	private static OptArg[] COMMANDLINE_OPTIONS = new OptArg[] { 
 			new OptArg("help", "Print this help information"),
 			new OptArg("version", "Print version information"),
-			new OptArg("verbose",
-					"Print detailed information on what the system is doing"),
-			new OptArg("L", OptArg.FILELIST,
-					"Specify external libraries to include"),
-			new OptArg("D", OptArg.FILEDIR,
-					"Specify output directory for generated files"),
-			new OptArg("T", OptArg.STRING, "Specify target platform"),
+			new OptArg("verbose", "Print detailed information on what the system is doing"),
 			new OptArg("X", OptArg.OPTIONSMAP, "Configure system component") };
 
 	/**
@@ -139,11 +140,50 @@ public class Wy {
 		}
 	}
 
+
+	// ==================================================================
+	// Extension Points
+	// ==================================================================
+
+	/**
+	 * Create the Build.Template extension point. This is where plugins register
+	 * their primary functionality for constructing a specific build project.
+	 * 
+	 * @param context
+	 * @param templates
+	 */
+	private static void createTemplateExtensionPoint(Module.Context context, final List<Build.Template> templates) {
+		context.create(Build.Template.class, new Module.ExtensionPoint<Build.Template>() {
+			@Override
+			public void register(Build.Template template) {
+				System.out.println("Registering build template: " + template);
+				templates.add(template);
+			}
+		});
+	}
+	
+	/**
+	 * Create the Content.Type extension point. 
+	 * 
+	 * @param context
+	 * @param templates
+	 */
+	private static void createContentTypeExtensionPoint(Module.Context context, final List<Content.Type> contentTypes) {
+		context.create(Content.Type.class, new Module.ExtensionPoint<Content.Type>() {
+			@Override
+			public void register(Content.Type contentType) {
+				contentTypes.add(contentType);
+			}
+		});
+	}
+	
 	// ==================================================================
 	// Main Method
 	// ==================================================================
 
 	public static void main(String[] _args) {
+		ArrayList<Build.Template> templates = new ArrayList<Build.Template>();
+		ArrayList<Content.Type> contentTypes = new ArrayList<Content.Type>(); 
 		// --------------------------------------------------------------
 		// First, preprocess command-line arguments
 		// --------------------------------------------------------------
@@ -151,8 +191,8 @@ public class Wy {
 		for(String arg : _args) {
 			verbose |= arg.equals("-verbose");
 		}
-
-		StdModuleManager manager = activateModuleSystem(verbose);
+		
+		StdModuleManager manager = activateModuleSystem(verbose, templates, contentTypes);
 
 		// --------------------------------------------------------------
 		// Fourth, parse command-line options
@@ -170,14 +210,6 @@ public class Wy {
 			usage();
 			System.exit(0);
 		}
-
-		String target = (String) values.get("T");
-		File outputDirectory = (File) values.get("D");
-		List<File> libraries = (ArrayList<File>) values.get("L");
-		// Apply some defaults
-		if(target == null) { target = "wyil"; }
-		if(outputDirectory == null) { outputDirectory = new File("."); }
-		if(libraries == null) { libraries = Collections.EMPTY_LIST; }
 
 		// --------------------------------------------------------------
 		// Fifth, configure module system
@@ -198,7 +230,8 @@ public class Wy {
 	 * @param locations
 	 * @return
 	 */
-	public static StdModuleManager activateModuleSystem(boolean verbose) {
+	public static StdModuleManager activateModuleSystem(boolean verbose, List<Build.Template> templates,
+			List<Content.Type> contentTypes) {
 		// Determine plugin locations
 		List<String> locations = getPluginLocations();
 
@@ -211,6 +244,12 @@ public class Wy {
 			context.setLogger(new Logger.Default(System.err));
 		}
 
+
+		// create extension points		
+		createTemplateExtensionPoint(context,templates);
+		createContentTypeExtensionPoint(context,contentTypes);
+		
+		// start modules		
 		manager.start();
 
 		return manager;
