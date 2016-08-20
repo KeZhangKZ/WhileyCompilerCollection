@@ -12,7 +12,7 @@ import wycc.util.Logger;
  * @author David J. Pearce
  *
  */
-public interface Module extends Feature.Container {
+public interface Module {
 
 	/**
 	 * A module Context provides a mechanism for modules to interact with their

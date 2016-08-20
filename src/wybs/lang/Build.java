@@ -6,37 +6,11 @@ import java.util.List;
 import java.util.Set;
 
 import wycc.lang.Feature;
-import wycc.lang.Feature.Instance;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 public interface Build {
-
-	/**
-	 * <p>
-	 * A template for constructing a build project according to some predefined
-	 * schema. For example, a build project which turns files of one kind into
-	 * binary files of another kind. Build templates are generally configurable
-	 * to support different build procedures.
-	 * </p>
-	 * <p>
-	 * The template creates a fully fledged project which includes all roots,
-	 * supplementary libraries, build rules, etc.
-	 * </p>
-	 * 
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Template extends Feature {
-		/**
-		 * Instantiate this template with a given configuration.
-		 * 
-		 * @param config
-		 * @return
-		 */
-		public Project instantiate(Configuration config);
-	}
 
 	/**
 	 * <p>

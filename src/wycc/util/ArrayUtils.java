@@ -1,6 +1,6 @@
 package wycc.util;
 
-public class Arrays {
+public class ArrayUtils {
 
 	/**
 	 * Return an integer array containing consecutive integers from a given

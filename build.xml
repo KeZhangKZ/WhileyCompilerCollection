@@ -9,7 +9,7 @@
   </path>
 
   <!-- ================================================================== -->
-  <!-- Build -->
+  <!-- Compile -->
   <!-- ================================================================== -->
 
     <target name="compile">
@@ -28,17 +28,9 @@
   <!-- ================================================================== -->
 
   <target name="build" depends="compile">
-    <mkdir dir="tmp"/>
-    <manifest file="tmp/MANIFEST.MF">
-      <attribute name="Built-By" value="${user.name}"/>
-      <attribute name="Implementation-Version" value="${version}"/>
-      <attribute name="Implementation-Title" value="wycc-v${version}.jar"/>
-    </manifest>
-    <jar destfile="${LIB_DIR}/wycc-v${version}.jar"
-	 manifest="tmp/MANIFEST.MF">
+    <jar destfile="${LIB_DIR}/wycc-v${version}.jar">
       <fileset dir="bin" includes="*/**/*.class"/>
     </jar>
-    <delete dir="tmp"/>
     <echo message="============================================="/>
     <echo message="BUILT: lib/${ant.project.name}-v${version}.jar"/>
     <echo message="============================================="/>
@@ -74,7 +66,7 @@
 
   <target name="distjars" depends="build">
     <subant failonerror="false" target="dist">
-      <filelist refid="module.build.files"/>
+      
     </subant>
   </target>
 
