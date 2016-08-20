@@ -10,7 +10,8 @@ public abstract class AbstractCommand extends AbstractConfigurable implements Co
 	
 	@Override
 	public String getName() {
-		return this.getClass().getName();
+		String name = this.getClass().getSimpleName(); 
+		return name.toLowerCase();
 	}
 
 }

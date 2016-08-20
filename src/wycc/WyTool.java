@@ -82,38 +82,31 @@ public class WyTool extends AbstractConfigurable {
 	// ==================================================================
 	// Instance Fields
 	// ==================================================================
-	/**
-	 * The list of registered build commands in the order of registration.
-	 */
-	private final HashMap<String,Command> commands = new HashMap<String,Command>();
+	
+	private final ArrayList<Command> commands;
 	
 	/**
 	 * The list of registered content types
 	 */
-	private final ArrayList<Content.Type> contentTypes = new ArrayList<Content.Type>();
-		
-	/**
-	 * List of module activators 
-	 */
-	private final ArrayList<Module.Activator> activators;
-
+	private final ArrayList<Content.Type> contentTypes;
+	
 	/**
 	 * 
 	 */
 	private StdModuleContext context = null;
-	
-	/**
-	 * Determines whether or not verbose output should be displayed
-	 */
-	private boolean verbose;
 		
 	// ==================================================================
 	// Constructors
 	// ==================================================================
 	
-	public WyTool(List<Module.Activator> activators) {
+	public WyTool() {
 		super("verbose");
-		this.activators = new ArrayList<Module.Activator>();
+		this.commands = new ArrayList<Command>();
+		this.contentTypes = new ArrayList<Content.Type>();
+		this.context = new StdModuleContext();
+		// create extension points		
+		createTemplateExtensionPoint();
+		createContentTypeExtensionPoint();		
 	}
 
 	// ==================================================================
@@ -121,7 +114,7 @@ public class WyTool extends AbstractConfigurable {
 	// ==================================================================
 
 	public void setVerbose() {
-		this.verbose = true;
+		context.setLogger(new Logger.Default(System.err));
 	}
 	
 	// ==================================================================
@@ -144,7 +137,13 @@ public class WyTool extends AbstractConfigurable {
 	 * @return
 	 */
 	public Command getCommand(String name) {
-		return commands.get(name);
+		for (int i = 0; i != commands.size(); ++i) {
+			Command c = commands.get(i);
+			if (c.getName().equals(name)) {
+				return c;
+			}
+		}
+		return null;
 	}
 	
 	/**
@@ -152,37 +151,10 @@ public class WyTool extends AbstractConfigurable {
 	 * 
 	 * @return
 	 */
-	public Collection<Command> getCommands() {
-		return commands.values();
+	public List<Command> getCommands() {
+		return commands;
 	}
 	
-	/**
-	 * Activate the plugin system and create the plugin manager. A default
-	 * extension point is created for registering functions to be called from
-	 * here.
-	 *
-	 * @param verbose
-	 * @param locations
-	 * @return
-	 */
-	public void activate() {
-		// create the context and manager
-		context = new StdModuleContext();
-		
-		if (verbose) {
-			context.setLogger(new Logger.Default(System.err));
-		}
-
-		// create extension points		
-		createTemplateExtensionPoint();
-		createContentTypeExtensionPoint();
-		
-		// start modules		
-		for(Module.Activator a : activators) {
-			a.start(context);
-		}
-	}
-
 	// ==================================================================
 	// Helpers
 	// ==================================================================
@@ -198,14 +170,13 @@ public class WyTool extends AbstractConfigurable {
 		context.create(Command.class, new Module.ExtensionPoint<Command>() {
 			@Override
 			public void register(Command command) {
-				System.out.println("Registering command: " + command);
-				commands.put(command.getName(),command);
+				commands.add(command);
 			}
 		});
 	}
 	
 	/**
-	 * Create the Content.Type extension point. 
+	 * Create the Content.Type extension point.
 	 * 
 	 * @param context
 	 * @param templates
