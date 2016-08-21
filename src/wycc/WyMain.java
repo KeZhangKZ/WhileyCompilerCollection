@@ -17,7 +17,7 @@ import wycc.util.Pair;
  *
  */
 public class WyMain {
-	
+
 	/**
 	 * The static list of default plugin activators which this tool uses. Whilst
 	 * this list is currently statically fixed, eventually we'll be able to
@@ -153,7 +153,7 @@ public class WyMain {
 	 * @return
 	 */
 	public static String rightPad(String str, int n) {
-	     return String.format("%1$-" + n + "s", str);  
+	     return String.format("%1$-" + n + "s", str);
 	}
 	
 	/**
@@ -221,6 +221,24 @@ public class WyMain {
 			return Integer.parseInt(str);
 		} else {
 			return str;
+		}
+	}
+
+	/**
+	 * Print a complete stack trace. This differs from
+	 * Throwable.printStackTrace() in that it always prints all of the trace.
+	 * 
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for(StackTraceElement ste : err.getStackTrace()) {
+			out.println("\tat " + ste.toString());
+		}
+		if(err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out,err.getCause());
 		}
 	}
 }
