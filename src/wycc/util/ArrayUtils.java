@@ -36,7 +36,7 @@ public class ArrayUtils {
 	 *            last into the resulting array.
 	 * @return
 	 */
-	private static boolean[] append(boolean[] lhs, boolean[] rhs) {
+	public static boolean[] append(boolean[] lhs, boolean[] rhs) {
 		boolean[] rs = java.util.Arrays.copyOf(lhs, lhs.length + rhs.length);
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
 		return rs;
@@ -54,7 +54,7 @@ public class ArrayUtils {
 	 *            last into the resulting array.
 	 * @return
 	 */
-	private static int[] append(int[] lhs, int[] rhs) {
+	public static int[] append(int[] lhs, int[] rhs) {
 		int[] rs = java.util.Arrays.copyOf(lhs, lhs.length + rhs.length);
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
 		return rs;
@@ -72,10 +72,9 @@ public class ArrayUtils {
 	 *            last into the resulting array.
 	 * @return
 	 */
-	private static <T> T[] append(T[] lhs, T[] rhs) {
+	public static <T> T[] append(T[] lhs, T... rhs) {
 		T[] rs = java.util.Arrays.copyOf(lhs, lhs.length + rhs.length);
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
 		return rs;
 	}
-
 }

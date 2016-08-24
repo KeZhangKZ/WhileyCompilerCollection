@@ -28,7 +28,7 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 	@Override
 	public void set(String name, Object value) {
 		try {
-			Method m = this.getClass().getDeclaredMethod("set" + capitalise(name));
+			Method m = this.getClass().getMethod("set" + capitalise(name));
 			if(value != null) {
 				m.invoke(this,value);
 			} else {
@@ -50,7 +50,7 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 	@Override
 	public Object get(String name) {
 		try {
-			Method m = this.getClass().getDeclaredMethod("get" + capitalise(name));
+			Method m = this.getClass().getMethod("get" + capitalise(name));
 			return m.invoke(this);
 		} catch (NoSuchMethodException e) {
 			throw new IllegalArgumentException(e);
@@ -67,8 +67,8 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 	
 	@Override
 	public String describe(String name) {
-		try {
-			Method m = this.getClass().getDeclaredMethod("describe" + capitalise(name));
+		try {			
+			Method m = this.getClass().getMethod("describe" + capitalise(name));
 			return (String) m.invoke(this);
 		} catch (NoSuchMethodException e) {
 			throw new IllegalArgumentException(e);
