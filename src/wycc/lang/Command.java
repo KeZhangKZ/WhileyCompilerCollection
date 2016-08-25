@@ -6,7 +6,7 @@ package wycc.lang;
  * @author David J. Pearce
  *
  */
-public interface Command extends Feature.Configurable {
+public interface Command<T> extends Feature.Configurable {
 	/**
 	 * Get the name of this command. This should uniquely identify the command
 	 * in question.
@@ -24,5 +24,5 @@ public interface Command extends Feature.Configurable {
 	/**
 	 * Execute this command with the given arguments.
 	 */
-	public void execute(String... args);
+	public T execute(String... args);
 }

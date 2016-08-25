@@ -8,7 +8,7 @@ import wycc.util.AbstractCommand;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
-public class Build extends AbstractCommand {
+public class Build extends AbstractCommand<String> {
 	public Build() {
 		super("init");
 	}
@@ -23,8 +23,8 @@ public class Build extends AbstractCommand {
 	}
 	
 	@Override
-	public void execute(String... args) {
-		System.out.println("BUILDING!!");
+	public String execute(String... args) {
+		return "BUILDING...";
 	}
 
 	// =======================================================================

@@ -2,7 +2,7 @@ package wycc.util;
 
 import wycc.lang.Command;
 
-public abstract class AbstractCommand extends AbstractConfigurable implements Command {
+public abstract class AbstractCommand<T> extends AbstractConfigurable implements Command<T> {
 
 	public AbstractCommand(String... options) {
 		super(options);
