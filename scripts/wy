@@ -35,7 +35,7 @@
 
 DIR=`dirname "$0"`/..
 LIBDIR=$DIR/lib
-LIBS="wycc wyc"
+LIBS="wycc wyc wycs"
 
 # check for running under cywin
 cygwin=false

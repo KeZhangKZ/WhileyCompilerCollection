@@ -1,5 +1,9 @@
 package wycc.util;
 
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.Collection;
+
 public class ArrayUtils {
 
 	/**
@@ -76,5 +80,160 @@ public class ArrayUtils {
 		T[] rs = java.util.Arrays.copyOf(lhs, lhs.length + rhs.length);
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
 		return rs;
+	}
+	
+	/**
+	 * Add all elements from an array into a given collection of the same type.
+	 * 
+	 * @param lhs
+	 *            The left-hand side. Elements of this array will be added to
+	 *            the collection.
+	 * @param rhs
+	 *            The right-hand side. Elements from the left-hand side will be
+	 *            added to this collection.
+	 */
+	public static <T> void addAll(T[] lhs, Collection<T> rhs) {
+		for(int i=0;i!=lhs.length;++i) {
+			rhs.add(lhs[i]);
+		}
+	}
+	
+	/**
+	 * Convert a collection of strings into a string array.
+	 * 
+	 * @param items
+	 * @return
+	 */
+	public static String[] toStringArray(Collection<String> items) {
+		String[] result = new String[items.size()];
+		int i = 0;
+		for(String s : items) {
+			result[i++] = s;
+		}
+		return result;
+	}
+	
+	/**
+	 * Remove duplicate types from an unsorted array. This produces a potentially
+	 * smaller array with all duplicates removed. Null is permitted in the array
+	 * and will be preserved, though duplicates of it will not be. Items in the
+	 * array are compared using <code>Object.equals()</code>.
+	 * 
+	 * @param items
+	 *            The array for which duplicates are to be removed
+	 * @return
+	 */
+	public static <T> T[] removeDuplicates(T[] items) {
+		int count = 0;
+		// First, identify duplicates and store this information in a bitset.
+		BitSet duplicates = new BitSet(items.length);
+		for (int i = 0; i != items.length; ++i) {
+			T ith = items[i];
+			for (int j = i + 1; j < items.length; ++j) {
+				T jth = items[j];
+				if(ith == null) {
+					if(jth == null) {
+						duplicates.set(i);
+						count = count + 1;
+					}
+				} else if (ith.equals(jth)) {
+					duplicates.set(i);
+					count = count + 1;
+					break;
+				}
+			}
+		}
+		// Second, eliminate duplicates (if any)
+		if (count == 0) {
+			// nothing actually needs to be removed
+			return items;
+		} else {
+			T[] nItems = Arrays.copyOf(items, items.length - count);
+			for (int i = 0, j = 0; i != items.length; ++i) {
+				if (duplicates.get(i)) {
+					// this is a duplicate, ignore
+				} else {
+					nItems[j++] = items[i];
+				}
+			}
+			return nItems;
+		}
+	}
+	
+	/**
+	 * Remove duplicate types from an sorted array, thus any duplicates are
+	 * located adjacent to each other. This produces a potentially smaller array
+	 * with all duplicates removed. Null is permitted in the array and will be
+	 * preserved, though duplicates of it will not be. Items in the array are
+	 * compared using <code>Object.equals()</code>.
+	 * 
+	 * @param items
+	 *            The array for which duplicates are to be removed
+	 * @return
+	 */
+	public static <T> T[] sortedRemoveDuplicates(T[] items) {
+		int count = 0;
+		// First, identify duplicates and store this information in a bitset.
+		BitSet duplicates = new BitSet(items.length);
+		for (int i = 1; i != items.length; ++i) {
+			T ith = items[i];
+			T jth = items[i-1];
+			if(ith != null) {
+				if (ith.equals(jth)) {
+					duplicates.set(i-1);
+					count = count + 1;
+					break;
+				}
+			} else if(jth == null) {
+				duplicates.set(i-1);
+				count = count + 1;
+			}
+		}
+		// Second, eliminate duplicates (if any)
+		if (count == 0) {
+			// nothing actually needs to be removed
+			return items;
+		} else {
+			T[] nItems = Arrays.copyOf(items, items.length - count);
+			for (int i = 0, j = 0; i != items.length; ++i) {
+				if (duplicates.get(i)) {
+					// this is a duplicate, ignore
+				} else {
+					nItems[j++] = items[i];
+				}
+			}
+			return nItems;
+		}
+	}
+	
+	/**
+	 * Remove any occurrence of <code>null</code> from a given array. The
+	 * resulting array may be shorter in length, but the relative position of
+	 * all non-null items will remain unchanged.
+	 * 
+	 * @param items
+	 * @return
+	 */
+	public static <T> T[] removeNulls(T[] items) {
+		int count = 0;
+		for(int i=0;i!=items.length;++i) {
+			if(items[i] == null) {
+				count++;
+			}
+		}
+		// Second, eliminate duplicates (if any)
+		if (count == 0) {
+			// nothing actually needs to be removed
+			return items;
+		} else {
+			T[] nItems = Arrays.copyOf(items, items.length - count);
+			for(int i=0, j = 0;i!=items.length;++i) {
+				T ith = items[i];
+				if(ith != null) {
+					nItems[j++] = ith;
+				}
+			}
+			return nItems;
+		}
 	}
 }
