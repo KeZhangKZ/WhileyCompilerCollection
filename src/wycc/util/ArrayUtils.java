@@ -9,7 +9,7 @@ public class ArrayUtils {
 	/**
 	 * Return an integer array containing consecutive integers from a given
 	 * start value upto (but not including) a given end value.
-	 * 
+	 *
 	 * @param start
 	 *            The start value from which the range begins. This value is
 	 *            always the first element of the final array (assuming it's not
@@ -27,11 +27,11 @@ public class ArrayUtils {
 		}
 		return rs;
 	}
-	
+
 	/**
 	 * Append two arrays of boolean type together, producing a fresh array whose
 	 * length equals that of the first and second added together.
-	 * 
+	 *
 	 * @param lhs
 	 *            The left-hand side. Elements of this array will be copied
 	 *            first into the resulting array.
@@ -45,11 +45,11 @@ public class ArrayUtils {
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
 		return rs;
 	}
-	
+
 	/**
 	 * Append two arrays of integer type together, producing a fresh array whose
 	 * length equals that of the first and second added together.
-	 * 
+	 *
 	 * @param lhs
 	 *            The left-hand side. Elements of this array will be copied
 	 *            first into the resulting array.
@@ -63,11 +63,11 @@ public class ArrayUtils {
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
 		return rs;
 	}
-	
+
 	/**
 	 * Append two arrays of unknown type together, producing a fresh array whose
 	 * length equals that of the first and second added together.
-	 * 
+	 *
 	 * @param lhs
 	 *            The left-hand side. Elements of this array will be copied
 	 *            first into the resulting array.
@@ -81,10 +81,10 @@ public class ArrayUtils {
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
 		return rs;
 	}
-	
+
 	/**
 	 * Add all elements from an array into a given collection of the same type.
-	 * 
+	 *
 	 * @param lhs
 	 *            The left-hand side. Elements of this array will be added to
 	 *            the collection.
@@ -97,10 +97,10 @@ public class ArrayUtils {
 			rhs.add(lhs[i]);
 		}
 	}
-	
+
 	/**
 	 * Convert a collection of strings into a string array.
-	 * 
+	 *
 	 * @param items
 	 * @return
 	 */
@@ -112,13 +112,13 @@ public class ArrayUtils {
 		}
 		return result;
 	}
-	
+
 	/**
 	 * Remove duplicate types from an unsorted array. This produces a potentially
 	 * smaller array with all duplicates removed. Null is permitted in the array
 	 * and will be preserved, though duplicates of it will not be. Items in the
 	 * array are compared using <code>Object.equals()</code>.
-	 * 
+	 *
 	 * @param items
 	 *            The array for which duplicates are to be removed
 	 * @return
@@ -135,6 +135,7 @@ public class ArrayUtils {
 					if(jth == null) {
 						duplicates.set(i);
 						count = count + 1;
+						break;
 					}
 				} else if (ith.equals(jth)) {
 					duplicates.set(i);
@@ -159,14 +160,14 @@ public class ArrayUtils {
 			return nItems;
 		}
 	}
-	
+
 	/**
 	 * Remove duplicate types from an sorted array, thus any duplicates are
 	 * located adjacent to each other. This produces a potentially smaller array
 	 * with all duplicates removed. Null is permitted in the array and will be
 	 * preserved, though duplicates of it will not be. Items in the array are
 	 * compared using <code>Object.equals()</code>.
-	 * 
+	 *
 	 * @param items
 	 *            The array for which duplicates are to be removed
 	 * @return
@@ -205,12 +206,12 @@ public class ArrayUtils {
 			return nItems;
 		}
 	}
-	
+
 	/**
 	 * Remove any occurrence of <code>null</code> from a given array. The
 	 * resulting array may be shorter in length, but the relative position of
 	 * all non-null items will remain unchanged.
-	 * 
+	 *
 	 * @param items
 	 * @return
 	 */
