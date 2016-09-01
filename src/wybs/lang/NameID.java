@@ -37,7 +37,7 @@ import wyfs.util.Trie;
  * @author David J. Pearce
  *
  */
-public final class NameID {
+public final class NameID implements Comparable<NameID> {
 	private final Path.ID module;
 	private final String name;
 
@@ -54,14 +54,13 @@ public final class NameID {
 		return module;
 	}
 
+	@Override
 	public String toString() {
 		return module + ":" + name;
 	}
 
-	public int hashCode() {
-		return name.hashCode() ^ module.hashCode();
-	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (o instanceof NameID) {
 			NameID u = (NameID) o;
@@ -69,11 +68,25 @@ public final class NameID {
 		}
 		return false;
 	}
-	
+
+	@Override
+	public int compareTo(NameID o) {
+		int r = module.compareTo(o.module);
+		if(r == 0) {
+			r = name.compareTo(o.name);
+		}
+		return r;
+	}
+
+	@Override
+	public int hashCode() {
+		return name.hashCode() ^ module.hashCode();
+	}
+
 	/**
 	 * Create a NameID from a string representation. This is of the form
 	 * "module/id:name".
-	 * 
+	 *
 	 * @param str
 	 * @return
 	 */
@@ -83,4 +96,5 @@ public final class NameID {
 		String name = str.substring(index + 1);
 		return new NameID(Trie.fromString(module), name);
 	}
+
 }
