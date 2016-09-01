@@ -237,4 +237,25 @@ public class ArrayUtils {
 			return nItems;
 		}
 	}
+
+	/**
+	 * A default operator for comparing arrays
+	 *
+	 * @param lhs
+	 * @param rhs
+	 * @return
+	 */
+	public static <S,T extends Comparable<S>> int compareTo(T[] lhs, T[] rhs) {
+		if(lhs.length != rhs.length) {
+			return lhs.length - rhs.length;
+		} else {
+			for(int i=0;i!=lhs.length;++i) {
+				int r = lhs[i].compareTo((S) rhs[i]);
+				if(r != 0) {
+					return r;
+				}
+			}
+			return 0;
+		}
+	}
 }
