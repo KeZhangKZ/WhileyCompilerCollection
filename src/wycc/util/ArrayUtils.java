@@ -258,4 +258,25 @@ public class ArrayUtils {
 			return 0;
 		}
 	}
+
+	/**
+	 * Determine the first index of a given item in an array of items, or return
+	 * -1 otherwise. Items are compared using the method
+	 * <code>Object.equals()</code>. The <code>items</code> array may contain
+	 * <code>null</code> values; likewise, <code>item</code> may be
+	 * <code>null</code> and will match against other <code>null</code> values.
+	 *
+	 * @param items
+	 * @param item
+	 * @return
+	 */
+	public static <T> int firstIndexOf(T[] items, T item) {
+		for (int i = 0; i != items.length; ++i) {
+			T ith = items[i];
+			if (ith == item || (ith != null && ith.equals(item))) {
+				return i;
+			}
+		}
+		return -1;
+	}
 }
