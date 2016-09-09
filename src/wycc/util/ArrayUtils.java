@@ -176,7 +176,7 @@ public class ArrayUtils {
 		int count = 0;
 		// First, identify duplicates and store this information in a bitset.
 		BitSet duplicates = new BitSet(items.length);
-		for (int i = 1; i != items.length; ++i) {
+		for (int i = 1; i < items.length; ++i) {
 			T ith = items[i];
 			T jth = items[i-1];
 			if(ith != null) {
