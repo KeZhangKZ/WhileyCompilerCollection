@@ -114,6 +114,21 @@ public class ArrayUtils {
 	}
 
 	/**
+	 * Convert a collection of Integers into an int array.
+	 *
+	 * @param items
+	 * @return
+	 */
+	public static int[] toIntArray(Collection<Integer> items) {
+		int[] result = new int[items.size()];
+		int i = 0;
+		for (Integer v : items) {
+			result[i++] = v;
+		}
+		return result;
+	}
+
+	/**
 	 * Remove duplicate types from an unsorted array. This produces a potentially
 	 * smaller array with all duplicates removed. Null is permitted in the array
 	 * and will be preserved, though duplicates of it will not be. Items in the
