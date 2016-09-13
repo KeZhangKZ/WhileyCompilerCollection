@@ -6,3 +6,4 @@
 *.c
 *.o
 *.jar
+/target/
