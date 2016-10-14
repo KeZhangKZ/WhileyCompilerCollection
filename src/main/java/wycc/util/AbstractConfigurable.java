@@ -9,17 +9,17 @@ import wycc.lang.Feature;
  * Provides a simple mechanism for implementing the configurable interface.
  * Specifically, this employs reflection to identify appropriate getters/setters
  * which are then considered part of the configuration.
- * 
+ *
  * @author David J. Pearce
  *
  */
 public abstract class AbstractConfigurable implements Feature.Configurable {
 	private String[] options;
-	
+
 	public AbstractConfigurable(String... options) {
 		this.options = options;
 	}
-	
+
 	@Override
 	public String[] getOptions() {
 		return options;
@@ -28,9 +28,12 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 	@Override
 	public void set(String name, Object value) {
 		try {
-			Method m = this.getClass().getMethod("set" + capitalise(name));
-			if(value != null) {
-				m.invoke(this,value);
+			String methodName = "set" + capitalise(name);
+			Method m = findMethod(this.getClass(), methodName);
+			if (m == null) {
+				throw new IllegalArgumentException("No such method: " + methodName);
+			} else if (value != null) {
+				m.invoke(this, value);
 			} else {
 				m.invoke(this);
 			}
@@ -40,20 +43,21 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 			throw new IllegalArgumentException(e);
 		} catch (IllegalArgumentException e) {
 			throw new IllegalArgumentException(e);
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(e);
 		} catch (InvocationTargetException e) {
 			throw new IllegalArgumentException(e);
-		} 
+		}
 	}
 
 	@Override
 	public Object get(String name) {
 		try {
-			Method m = this.getClass().getMethod("get" + capitalise(name));
-			return m.invoke(this);
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(e);
+			String methodName = "get" + capitalise(name);
+			Method m = findMethod(this.getClass(), methodName);
+			if (m == null) {
+				throw new IllegalArgumentException("No such method: " + methodName);
+			} else {
+				return m.invoke(this);
+			}
 		} catch (SecurityException e) {
 			throw new IllegalArgumentException(e);
 		} catch (IllegalAccessException e) {
@@ -64,14 +68,17 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 			throw new IllegalArgumentException(e);
 		}
 	}
-	
+
 	@Override
 	public String describe(String name) {
-		try {			
-			Method m = this.getClass().getMethod("describe" + capitalise(name));
-			return (String) m.invoke(this);
-		} catch (NoSuchMethodException e) {
-			throw new IllegalArgumentException(e);
+		try {
+			String methodName = "describe" + capitalise(name);
+			Method m = findMethod(this.getClass(), methodName);
+			if (m == null) {
+				throw new IllegalArgumentException("No such method: " + methodName);
+			} else {
+				return (String) m.invoke(this);
+			}
 		} catch (SecurityException e) {
 			throw new IllegalArgumentException(e);
 		} catch (IllegalAccessException e) {
@@ -82,7 +89,7 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 			throw new IllegalArgumentException(e);
 		}
 	}
-	
+
 	/**
 	 * Make the first letter of the string a captial.
 	 * @param str
@@ -92,5 +99,36 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 		String rest = str.substring(1);
 		char c = Character.toUpperCase(str.charAt(0));
 		return c + rest;
-}
+	}
+
+	/**
+	 * Traverse the class hierarchy looking for a method with a specific name.
+	 * This starts by looking in the given class for a method with the given
+	 * name. If no such method is found, then it looks in the super class. Note
+	 * that it doesn't look into interfaces however.
+	 *
+	 * @param clazz
+	 * @param name
+	 * @return
+	 */
+	private static Method findMethod(Class<?> clazz, String name) {
+		try {
+			if (clazz != null) {
+				for (Method m : clazz.getMethods()) {
+					if (m.getName().equals(name)) {
+						return m;
+					}
+				}
+
+				return findMethod(clazz.getSuperclass(), name);
+			} else {
+				// didn't find it
+				return null;
+			}
+		} catch (SecurityException e) {
+			throw new IllegalArgumentException(e);
+		} catch (IllegalArgumentException e) {
+			throw new IllegalArgumentException(e);
+		}
+	}
 }
