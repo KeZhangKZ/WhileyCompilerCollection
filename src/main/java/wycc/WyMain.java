@@ -33,15 +33,15 @@ public class WyMain {
 
 	public static void main(String[] args) {
 		WyTool tool = new WyTool();
-		
+
 		// register default commands and activate default plugins
 		registerDefaultCommands(tool);
 		activateDefaultPlugins(tool);
-		
+
 		// process command-line options
 		Command command = null;
 		ArrayList<String> commandArgs = new ArrayList<String>();
-		
+
 		// Parse command-line options and determine the command to execute
 		for(int i=0;i!=args.length;++i) {
 			String arg = args[i];
@@ -61,7 +61,7 @@ public class WyMain {
 				commandArgs.add(arg);
 			}
 		}
-		
+
 		// Execute the command (if applicable)
 		if (command == null) {
 			// Not applicable, print usage information
@@ -72,20 +72,20 @@ public class WyMain {
 			command.execute(args);
 		}
 	}
-	
+
 	// ==================================================================
 	// Helpers
 	// ==================================================================
 
 	/**
 	 * Register the set of default commands that are included automatically
-	 * 
+	 *
 	 * @param tool
 	 */
-	private static void registerDefaultCommands(WyTool tool) {		
+	private static void registerDefaultCommands(WyTool tool) {
 		// The list of default commands available in the tool
 		Command[] defaultCommands = {
-				new Build()
+				//new Build()
 		};
 		// Register the default commands available in the tool
 		Module.Context context = tool.getContext();
@@ -93,7 +93,7 @@ public class WyMain {
 			context.register(wycc.lang.Command.class,c);
 		}
 	}
-	
+
 	/**
 	 * Activate the default set of plugins which the tool uses. Currently this
 	 * list is statically determined, but eventually it will be possible to
@@ -106,8 +106,8 @@ public class WyMain {
 	private static void activateDefaultPlugins(WyTool tool) {
 		Module.Context context = tool.getContext();
 		// create the context and manager
-	
-		// start modules		
+
+		// start modules
 		for(String name : ACTIVATOR_NAMES) {
 			try {
 				Class<?> c = Class.forName(name);
@@ -123,7 +123,7 @@ public class WyMain {
 		}
 	}
 
-	
+
 	/**
 	 * Print usage information to the console.
 	 */
@@ -145,7 +145,7 @@ public class WyMain {
 	 * Right pad a given string with spaces to ensure the resulting string is
 	 * exactly n characters wide. This assumes the given string has at most n
 	 * characters already.
-	 * 
+	 *
 	 * @param str
 	 *            String to right-pad
 	 * @param n
@@ -155,12 +155,12 @@ public class WyMain {
 	public static String rightPad(String str, int n) {
 	     return String.format("%1$-" + n + "s", str);
 	}
-	
+
 	/**
 	 * Left pad a given string with spaces to ensure the resulting string is
 	 * exactly n characters wide. This assumes the given string has at most n
 	 * characters already.
-	 * 
+	 *
 	 * @param str
 	 *            String to left-pad
 	 * @param n
@@ -168,12 +168,12 @@ public class WyMain {
 	 * @return
 	 */
 	public static String leftPad(String str, int n) {
-	     return String.format("%1$" + n + "s", str);  
+	     return String.format("%1$" + n + "s", str);
 	}
 
 	/**
 	 * Determine the maximum width of any configured command name
-	 * 
+	 *
 	 * @param commands
 	 * @return
 	 */
@@ -184,12 +184,12 @@ public class WyMain {
 		}
 		return max;
 	}
-	
+
 	/**
 	 * Parse an option which is either a string of the form "--name" or
 	 * "--name=data". Here, name is an arbitrary string and data is a string
 	 * representing a data value.
-	 * 
+	 *
 	 * @param arg
 	 *            The option argument to be parsed.
 	 * @return
@@ -203,10 +203,10 @@ public class WyMain {
 		}
 		return new Pair<String,Object>(split[0],data);
 	}
-	
+
 	/**
 	 * Parse a given string representing a data value into an instance of Data.
-	 * 
+	 *
 	 * @param str
 	 *            The string to be parsed.
 	 * @return
@@ -227,7 +227,7 @@ public class WyMain {
 	/**
 	 * Print a complete stack trace. This differs from
 	 * Throwable.printStackTrace() in that it always prints all of the trace.
-	 * 
+	 *
 	 * @param out
 	 * @param err
 	 */

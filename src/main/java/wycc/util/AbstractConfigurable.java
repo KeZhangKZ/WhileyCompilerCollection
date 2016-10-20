@@ -27,15 +27,15 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 
 	@Override
 	public void set(String name, Object value) {
+		String methodName = "set" + capitalise(name);
 		try {
-			String methodName = "set" + capitalise(name);
 			Method m = findMethod(this.getClass(), methodName);
-			if (m == null) {
-				throw new IllegalArgumentException("No such method: " + methodName);
-			} else if (value != null) {
+			if (m != null && value != null) {
 				m.invoke(this, value);
-			} else {
+				return;
+			} else if (m != null) {
 				m.invoke(this);
+				return;
 			}
 		} catch (SecurityException e) {
 			throw new IllegalArgumentException(e);
@@ -46,16 +46,15 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 		} catch (InvocationTargetException e) {
 			throw new IllegalArgumentException(e);
 		}
+		throw new IllegalArgumentException("No such method: " + methodName);
 	}
 
 	@Override
 	public Object get(String name) {
+		String methodName = "get" + capitalise(name);
 		try {
-			String methodName = "get" + capitalise(name);
 			Method m = findMethod(this.getClass(), methodName);
-			if (m == null) {
-				throw new IllegalArgumentException("No such method: " + methodName);
-			} else {
+			if (m != null) {
 				return m.invoke(this);
 			}
 		} catch (SecurityException e) {
@@ -67,6 +66,7 @@ public abstract class AbstractConfigurable implements Feature.Configurable {
 		} catch (InvocationTargetException e) {
 			throw new IllegalArgumentException(e);
 		}
+		throw new IllegalArgumentException("No such method: " + methodName);
 	}
 
 	@Override
