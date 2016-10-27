@@ -24,7 +24,8 @@ public class WyMain {
 	 * register plugins dynamically.
 	 */
 	private static final String[] ACTIVATOR_NAMES = {
-			"wyc.Activator"
+			"wyc.Activator",
+			"wyjc.Activator"
 	};
 
 	// ==================================================================
