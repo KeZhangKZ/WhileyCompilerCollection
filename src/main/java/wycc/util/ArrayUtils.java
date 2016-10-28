@@ -21,11 +21,15 @@ public class ArrayUtils {
 	 * @return
 	 */
 	public static int[] range(int start, int end) {
-		int[] rs = new int[Math.abs(end - start)];
-		for (int i = start; i < end; ++i) {
-			rs[i - start] = i;
+		if (end <= start) {
+			return new int[0];
+		} else {
+			int[] rs = new int[Math.abs(end - start)];
+			for (int i = start; i < end; ++i) {
+				rs[i - start] = i;
+			}
+			return rs;
 		}
-		return rs;
 	}
 
 	/**
