@@ -313,7 +313,6 @@ public class ArrayUtils {
 				if (ith.equals(jth)) {
 					duplicates.set(i-1);
 					count = count + 1;
-					break;
 				}
 			} else if(jth == null) {
 				duplicates.set(i-1);
