@@ -1,4 +1,4 @@
-<project name="wyc" default="build" xmlns:artifact="urn:maven-ant">
+<project name="wycc" default="build" xmlns:artifact="urn:maven-ant">
 
   <!-- ================================================================== -->
   <!-- Configuration -->
@@ -144,7 +144,15 @@
       <arg value="-Pgpg" />
     </artifact:mvn>
   </target>
-  
+
+  <!-- ================================================================== -->
+  <!-- Deploy Plugin -->
+  <!-- ================================================================== -->
+
+  <target name="plugin" depends="build">
+    <copy file="${CLASS_JAR}" todir="${WHILEYHOME}/lib"/>
+  </target>
+
   <!-- ================================================================== -->
   <!-- Clean -->
   <!-- ================================================================== -->
