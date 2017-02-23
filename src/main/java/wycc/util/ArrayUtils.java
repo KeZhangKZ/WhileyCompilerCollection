@@ -1,5 +1,6 @@
 package wycc.util;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -51,6 +52,46 @@ public class ArrayUtils {
 	}
 
 	/**
+	 * Append an integer item to the front of an array of integer type together,
+	 * producing a fresh array whose length equals that the second plus one.
+	 *
+	 * @param lhs
+	 *            The left-hand side. Elements of this array will be copied
+	 *            first into the resulting array.
+	 * @param rhs
+	 *            The right-hand side. Elements of this array will be copied
+	 *            last into the resulting array.
+	 * @return
+	 */
+	public static int[] append(int lhs, int[] rhs) {
+		int[] rs = new int[rhs.length+1];
+		rs[0] = lhs;
+		System.arraycopy(rhs, 0, rs, 1, rhs.length);
+		return rs;
+	}
+
+	/**
+	 * Append two integer items to the front of an array of integer type
+	 * together, producing a fresh array whose length equals that of the third
+	 * plus two.
+	 *
+	 * @param lhs
+	 *            The left-hand side. Elements of this array will be copied
+	 *            first into the resulting array.
+	 * @param rhs
+	 *            The right-hand side. Elements of this array will be copied
+	 *            last into the resulting array.
+	 * @return
+	 */
+	public static int[] append(int first, int second, int[] rhs) {
+		int[] rs = new int[rhs.length+2];
+		rs[0] = first;
+		rs[1] = second;
+		System.arraycopy(rhs, 0, rs, 2, rhs.length);
+		return rs;
+	}
+
+	/**
 	 * Append two arrays of integer type together, producing a fresh array whose
 	 * length equals that of the first and second added together.
 	 *
@@ -83,6 +124,63 @@ public class ArrayUtils {
 	public static <T> T[] append(T[] lhs, T... rhs) {
 		T[] rs = java.util.Arrays.copyOf(lhs, lhs.length + rhs.length);
 		System.arraycopy(rhs, 0, rs, lhs.length, rhs.length);
+		return rs;
+	}
+
+	/**
+	 * Append an element onto an array of unknown type together, producing a
+	 * fresh array whose length equals that of the second plus one.
+	 *
+	 * @param lhs
+	 *            The left-hand side. This element will be copied
+	 *            first into the resulting array.
+	 * @param rhs
+	 *            The right-hand side. Elements of this array will be copied
+	 *            last into the resulting array.
+	 * @return
+	 */
+	public static <T> T[] append(T lhs, T... rhs) {
+		T[] rs = java.util.Arrays.copyOf(rhs, 1 + rhs.length);
+		System.arraycopy(rhs, 0, rs, 1, rhs.length);
+		rs[0] = lhs;
+		return rs;
+	}
+
+	/**
+	 * Append an element onto an array of unknown type together, producing a
+	 * fresh array whose length equals that of the second plus one.
+	 *
+	 * @param lhs
+	 *            The left-hand side. This element will be copied
+	 *            first into the resulting array.
+	 * @param rhs
+	 *            The right-hand side. Elements of this array will be copied
+	 *            last into the resulting array.
+	 * @return
+	 */
+	public static <T> T[] append(Class<T> type, T lhs, T... rhs) {
+		T[] rs = (T[]) Array.newInstance(type, rhs.length+1);
+		System.arraycopy(rhs, 0, rs, 1, rhs.length);
+		rs[0] = lhs;
+		return rs;
+	}
+
+	/**
+	 * Append an element onto an array of unknown type together, producing a
+	 * fresh array whose length equals that of the second plus one.
+	 *
+	 * @param lhs
+	 *            The left-hand side. This element will be copied
+	 *            first into the resulting array.
+	 * @param rhs
+	 *            The right-hand side. Elements of this array will be copied
+	 *            last into the resulting array.
+	 * @return
+	 */
+	public static <T> T[] append(Class<T> type, T[] lhs, T rhs) {
+		T[] rs = (T[]) Array.newInstance(type, lhs.length+1);
+		System.arraycopy(lhs, 0, rs, 0, lhs.length);
+		rs[lhs.length] = rhs;
 		return rs;
 	}
 
@@ -130,6 +228,19 @@ public class ArrayUtils {
 			result[i++] = v;
 		}
 		return result;
+	}
+
+	/**
+	 * Convert from an array of one kind to an array of another kind.
+	 *
+	 * @param type
+	 * @param src
+	 * @return
+	 */
+	public static <T,S> T[] toArray(Class<T> type, S[] src) {
+		T[] dest = (T[]) Array.newInstance(type, src.length);
+		System.arraycopy(src, 0, dest, 0, src.length);
+		return dest;
 	}
 
 	/**
@@ -202,7 +313,6 @@ public class ArrayUtils {
 				if (ith.equals(jth)) {
 					duplicates.set(i-1);
 					count = count + 1;
-					break;
 				}
 			} else if(jth == null) {
 				duplicates.set(i-1);
