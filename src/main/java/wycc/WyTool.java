@@ -33,7 +33,6 @@ import wybs.lang.Build;
 import wycc.lang.Command;
 import wycc.lang.Feature;
 import wycc.lang.Module;
-import wycc.util.AbstractConfigurable;
 import wycc.util.Logger;
 import wycc.util.OptArg;
 import wycc.util.Pair;
@@ -42,7 +41,7 @@ import wycc.util.StdModuleManager;
 import wyfs.lang.Content;
 
 
-public class WyTool extends AbstractConfigurable {
+public class WyTool {
 
 	/**
 	 * The major version for this module application
@@ -78,35 +77,34 @@ public class WyTool extends AbstractConfigurable {
 			MINOR_REVISION = 0;
 		}
 	}
-	
+
 	// ==================================================================
 	// Instance Fields
 	// ==================================================================
-	
+
 	private final ArrayList<Command> commands;
-	
+
 	/**
 	 * The list of registered content types
 	 */
 	private final ArrayList<Content.Type> contentTypes;
-	
+
 	/**
-	 * 
+	 *
 	 */
 	private StdModuleContext context = null;
-		
+
 	// ==================================================================
 	// Constructors
 	// ==================================================================
-	
+
 	public WyTool() {
-		super("verbose");
-		this.commands = new ArrayList<Command>();
-		this.contentTypes = new ArrayList<Content.Type>();
+		this.commands = new ArrayList<>();
+		this.contentTypes = new ArrayList<>();
 		this.context = new StdModuleContext();
-		// create extension points		
+		// create extension points
 		createTemplateExtensionPoint();
-		createContentTypeExtensionPoint();		
+		createContentTypeExtensionPoint();
 	}
 
 	// ==================================================================
@@ -116,23 +114,33 @@ public class WyTool extends AbstractConfigurable {
 	public void setVerbose() {
 		context.setLogger(new Logger.Default(System.err));
 	}
-	
+
+	public void set(String option, Object value) throws Feature.ConfigurationError {
+		switch(option) {
+		case "verbose":
+			setVerbose();
+			break;
+		default:
+			throw new Feature.ConfigurationError("unknown option encountered");
+		}
+	}
+
 	// ==================================================================
 	// Methods
 	// ==================================================================
-	
+
 	/**
 	 * Get the module context associated with this tool instance
-	 * 
+	 *
 	 * @return
 	 */
 	public Module.Context getContext() {
 		return context;
 	}
-	
+
 	/**
 	 * Get a particular command.
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -145,16 +153,16 @@ public class WyTool extends AbstractConfigurable {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * Get a collection of all commands
-	 * 
+	 *
 	 * @return
 	 */
 	public List<Command> getCommands() {
 		return commands;
 	}
-	
+
 	// ==================================================================
 	// Helpers
 	// ==================================================================
@@ -162,7 +170,7 @@ public class WyTool extends AbstractConfigurable {
 	/**
 	 * Create the Build.Template extension point. This is where plugins register
 	 * their primary functionality for constructing a specific build project.
-	 * 
+	 *
 	 * @param context
 	 * @param templates
 	 */
@@ -174,10 +182,10 @@ public class WyTool extends AbstractConfigurable {
 			}
 		});
 	}
-	
+
 	/**
 	 * Create the Content.Type extension point.
-	 * 
+	 *
 	 * @param context
 	 * @param templates
 	 */
@@ -188,5 +196,5 @@ public class WyTool extends AbstractConfigurable {
 				contentTypes.add(contentType);
 			}
 		});
-	}	
+	}
 }
