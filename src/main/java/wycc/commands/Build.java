@@ -4,15 +4,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import wycc.util.AbstractCommand;
+import wycc.lang.Command;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
-public class Build extends AbstractCommand<String> {
+public class Build implements Command<String> {
 	public Build() {
-		super("init");
+
 	}
-		
+
 	@Override
 	public String getDescription() {
 		return "Perform build operations on an existing project";
@@ -21,16 +21,45 @@ public class Build extends AbstractCommand<String> {
 	public String describeInit() {
 		return "Initialise a new build project";
 	}
-	
+
 	@Override
 	public String execute(String... args) {
 		return "BUILDING...";
 	}
 
+	@Override
+	public String[] getOptions() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String describe(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public void set(String name, Object value) throws ConfigurationError {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public Object get(String name) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 	// =======================================================================
 	// Helpers
 	// =======================================================================
-	
+
 	/**
 	 * Generate the list of source files which need to be recompiled. By
 	 * default, this is done by comparing modification times of each whiley file
@@ -45,7 +74,7 @@ public class Build extends AbstractCommand<String> {
 					throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
-		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
+		ArrayList<Path.Entry<T>> sources = new ArrayList<>();
 
 		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
 			// currently, I'm assuming everything is modified!

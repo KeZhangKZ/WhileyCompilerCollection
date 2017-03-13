@@ -6,6 +6,7 @@ import java.util.List;
 
 import wycc.commands.Build;
 import wycc.lang.Command;
+import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
 import wycc.util.Pair;
 
@@ -25,7 +26,8 @@ public class WyMain {
 	 */
 	private static final String[] ACTIVATOR_NAMES = {
 			"wyc.Activator",
-			"wyjc.Activator"
+			"wyjc.Activator",
+			"wyal.Activator"
 	};
 
 	// ==================================================================
@@ -41,21 +43,17 @@ public class WyMain {
 
 		// process command-line options
 		Command command = null;
-		ArrayList<String> commandArgs = new ArrayList<String>();
+		ArrayList<String> commandArgs = new ArrayList<>();
 
 		// Parse command-line options and determine the command to execute
+		boolean success = true;
+		//
 		for(int i=0;i!=args.length;++i) {
 			String arg = args[i];
 			//
 			if (arg.startsWith("--")) {
 				Pair<String,Object> option = parseOption(arg);
-				if(command == null) {
-					// Configuration option for the tool
-					tool.set(option.first(), option.second());
-				} else {
-					// Configuration option for the command
-					command.set(option.first(), option.second());
-				}
+				success &= applyOption(option,tool,command);
 			} else if(command == null) {
 				command = tool.getCommand(arg);
 			} else {
@@ -67,16 +65,37 @@ public class WyMain {
 		if (command == null) {
 			// Not applicable, print usage information
 			usage(tool);
+		} else if(!success) {
+			// There was some problem during configuration
+			System.exit(1);
 		} else {
 			// Yes, execute the given command
 			args = commandArgs.toArray(new String[commandArgs.size()]);
 			command.execute(args);
+			System.exit(0);
 		}
 	}
 
 	// ==================================================================
 	// Helpers
 	// ==================================================================
+
+	private static boolean applyOption(Pair<String,Object> option, WyTool tool, Command command) {
+		try {
+			if(command == null) {
+				// Configuration option for the tool
+				tool.set(option.first(), option.second());
+			} else {
+				// Configuration option for the command
+				command.set(option.first(), option.second());
+			}
+			return true;
+		} catch (ConfigurationError e) {
+			System.out.print("ERROR: ");
+			System.out.println(e.getMessage());
+			return false;
+		}
+	}
 
 	/**
 	 * Register the set of default commands that are included automatically
@@ -202,7 +221,7 @@ public class WyMain {
 		if(split.length > 1) {
 			data = parseData(split[1]);
 		}
-		return new Pair<String,Object>(split[0],data);
+		return new Pair<>(split[0],data);
 	}
 
 	/**
