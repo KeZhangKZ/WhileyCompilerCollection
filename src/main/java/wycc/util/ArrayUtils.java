@@ -336,6 +336,57 @@ public class ArrayUtils {
 		}
 	}
 
+
+	/**
+	 * Sort and remove duplicate items from a given array.
+	 *
+	 * @param children
+	 * @return
+	 */
+	public static <T extends S, S extends Comparable<S>> T[] sortAndRemoveDuplicates(T[] children) {
+		int r = isSortedAndUnique(children);
+		switch (r) {
+		case 0:
+			// In this case, the array is already sorted and no duplicates were
+			// found.
+			return children;
+		case 1:
+			// In this case, the array is already sorted, but duplicates were
+			// found
+			return ArrayUtils.sortedRemoveDuplicates(children);
+		default:
+			// In this case, the array is not sorted and may or may not
+			// contain duplicates.
+			children = Arrays.copyOf(children, children.length);
+			Arrays.sort(children);
+			return ArrayUtils.sortedRemoveDuplicates(children);
+		}
+	}
+
+	/**
+	 * Check whether or not the children of this array are sorted according to
+	 * their underlying order. And, if so, whether or not there are any
+	 * duplicate elements encountered.
+	 *
+	 * @param children
+	 * @return
+	 */
+	public static <T extends Comparable<T>> int isSortedAndUnique(T[] children) {
+		int r = 0;
+		for (int i = 1; i < children.length; ++i) {
+			int c = children[i - 1].compareTo(children[i]);
+			if (c == 0) {
+				// Duplicate found, though still could be in sorted order.
+				r = 1;
+			} else if (c > 0) {
+				// NOT in sorted order
+				return -1;
+			}
+		}
+		// All good
+		return r;
+	}
+
 	/**
 	 * Remove any occurrence of a given value from an array. The resulting array
 	 * may be shorter in length, but the relative position of all other items
