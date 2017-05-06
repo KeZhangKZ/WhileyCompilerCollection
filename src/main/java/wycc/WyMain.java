@@ -27,6 +27,7 @@ public class WyMain {
 	private static final String[] ACTIVATOR_NAMES = {
 			"wyc.Activator",
 			"wyjc.Activator",
+			"wyjs.Activator",
 			"wyal.Activator"
 	};
 
@@ -149,16 +150,16 @@ public class WyMain {
 	 */
 	private static void usage(WyTool tool) {
 		System.out.println("usage: wy [--verbose] command [<options>] [<args>]");
+		System.out.println();
 		int maxWidth = determineCommandNameWidth(tool.getCommands());
+		System.out.println("Commands:");
 		for(Command c : tool.getCommands()) {
+			System.out.print("  ");
 			System.out.print(rightPad(c.getName(),maxWidth));
-			System.out.println("\t" + c.getDescription());
-			for(String option : c.getOptions()) {
-				System.out.print(leftPad("[--" + option +"]",maxWidth));
-				System.out.println("\t" + c.describe(option));
-			}
-			System.out.println();
+			System.out.println("   " + c.getDescription());
 		}
+		System.out.println();
+		System.out.println("Run `wy COMMAND --help` for more information on a command");
 	}
 
 	/**
