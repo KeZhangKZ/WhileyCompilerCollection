@@ -27,6 +27,7 @@ public class WyMain {
 	private static final String[] ACTIVATOR_NAMES = {
 			"wyc.Activator",
 			"wyjc.Activator",
+			"wyjs.Activator",
 			"wyal.Activator"
 	};
 
