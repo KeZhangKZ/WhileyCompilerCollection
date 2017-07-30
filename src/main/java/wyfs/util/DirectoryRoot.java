@@ -46,6 +46,7 @@ import wyfs.lang.Path.ID;
 public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 
 	public final static FileFilter NULL_FILTER = new FileFilter() {
+		@Override
 		public boolean accept(File file) {
 			return true;
 		}
@@ -126,6 +127,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		return dir;
 	}
 
+	@Override
 	public String toString() {
 		return dir.getPath();
 	}
@@ -151,7 +153,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	public <T> List<Path.Entry<T>> find(List<File> files,
 			Content.Type<T> contentType)
 			throws IOException {
-		ArrayList<Path.Entry<T>> sources = new ArrayList<Path.Entry<T>>();
+		ArrayList<Path.Entry<T>> sources = new ArrayList<>();
 		String suffix = "." + contentTypes.suffix(contentType);
 		String location = location().getCanonicalPath();
 
@@ -175,7 +177,6 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 					}
 				}
 			}
-			sources.add(null);
 		}
 
 		return sources;
@@ -197,10 +198,12 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 			this.file = file;
 		}
 
+		@Override
 		public String location() {
 			return file.getPath();
 		}
 
+		@Override
 		public long lastModified() {
 			return file.lastModified();
 		}
@@ -209,6 +212,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 			return file;
 		}
 
+		@Override
 		public String suffix() {
 			String filename = file.getName();
 			String suffix = "";
@@ -219,15 +223,18 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 			return suffix;
 		}
 
+		@Override
 		public InputStream inputStream() throws IOException {
 			return new FileInputStream(file);
 		}
 
+		@Override
 		public OutputStream outputStream() throws IOException {
 			file.getParentFile().mkdirs();
 			return new FileOutputStream(file);
 		}
 
+		@Override
 		public String toString() {
 			return file.toString();
 		}
@@ -312,6 +319,7 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 			}
 		}
 
+		@Override
 		public String toString() {
 			return dir + ":" + id;
 		}

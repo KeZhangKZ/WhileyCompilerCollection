@@ -116,7 +116,6 @@ public abstract class AbstractFolder implements Path.Folder {
 	@Override
 	public <T> Path.Entry<T> get(ID eid, Content.Type<T> ct) throws IOException{
 		updateContents();
-
 		ID tid = id.append(eid.get(0));
 
 		int idx = binarySearch(contents,nentries,tid);
@@ -332,6 +331,7 @@ public abstract class AbstractFolder implements Path.Folder {
 	}
 
 	private static final Comparator<Path.Item> entryComparator = new Comparator<Path.Item>() {
+		@Override
 		public int compare(Path.Item e1, Path.Item e2) {
 			return e1.id().compareTo(e2.id());
 		}
