@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wycc.commands.Build;
+import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
@@ -64,8 +65,8 @@ public class WyMain {
 
 		// Execute the command (if applicable)
 		if (command == null) {
-			// Not applicable, print usage information
-			usage(tool);
+			// Not applicable, print usage information via the help sub-system.
+			tool.getCommand("help").execute();
 		} else if(!success) {
 			// There was some problem during configuration
 			System.exit(1);
@@ -106,6 +107,7 @@ public class WyMain {
 	private static void registerDefaultCommands(WyTool tool) {
 		// The list of default commands available in the tool
 		Command[] defaultCommands = {
+				new Help(System.out,tool.getCommands())
 				//new Build()
 		};
 		// Register the default commands available in the tool
@@ -142,68 +144,6 @@ public class WyMain {
 				e.printStackTrace();
 			}
 		}
-	}
-
-
-	/**
-	 * Print usage information to the console.
-	 */
-	private static void usage(WyTool tool) {
-		System.out.println("usage: wy [--verbose] command [<options>] [<args>]");
-		System.out.println();
-		int maxWidth = determineCommandNameWidth(tool.getCommands());
-		System.out.println("Commands:");
-		for(Command c : tool.getCommands()) {
-			System.out.print("  ");
-			System.out.print(rightPad(c.getName(),maxWidth));
-			System.out.println("   " + c.getDescription());
-		}
-		System.out.println();
-		System.out.println("Run `wy COMMAND --help` for more information on a command");
-	}
-
-	/**
-	 * Right pad a given string with spaces to ensure the resulting string is
-	 * exactly n characters wide. This assumes the given string has at most n
-	 * characters already.
-	 *
-	 * @param str
-	 *            String to right-pad
-	 * @param n
-	 *            Width of resulting string
-	 * @return
-	 */
-	public static String rightPad(String str, int n) {
-	     return String.format("%1$-" + n + "s", str);
-	}
-
-	/**
-	 * Left pad a given string with spaces to ensure the resulting string is
-	 * exactly n characters wide. This assumes the given string has at most n
-	 * characters already.
-	 *
-	 * @param str
-	 *            String to left-pad
-	 * @param n
-	 *            Width of resulting string
-	 * @return
-	 */
-	public static String leftPad(String str, int n) {
-	     return String.format("%1$" + n + "s", str);
-	}
-
-	/**
-	 * Determine the maximum width of any configured command name
-	 *
-	 * @param commands
-	 * @return
-	 */
-	private static int determineCommandNameWidth(List<Command> commands) {
-		int max = 0;
-		for(Command c : commands) {
-			max = Math.max(max, c.getName().length());
-		}
-		return max;
 	}
 
 	/**

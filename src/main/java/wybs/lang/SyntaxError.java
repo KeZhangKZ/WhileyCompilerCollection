@@ -43,7 +43,7 @@ public class SyntaxError extends RuntimeException {
 	 * The file entry to which this error applies
 	 */
 	private Path.Entry<?> entry;
-	
+
 	/**
 	 * The SyntacticElement to which this error refers
 	 */
@@ -57,7 +57,7 @@ public class SyntaxError extends RuntimeException {
 	 * @param entry
 	 *            The path entry for the compilation unit this error refers to
 	 * @param element
-	 *            The syntactic element to this error refers 
+	 *            The syntactic element to this error refers
 	 */
 	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticElement element) {
 		super(msg);
@@ -83,13 +83,21 @@ public class SyntaxError extends RuntimeException {
 
 	/**
 	 * Get the syntactic element to which this error is attached.
-	 * 
+	 *
 	 * @return
 	 */
 	public SyntacticElement getElement() {
 		return element;
 	}
-	
+
+	/**
+	 * Get the syntactic entry to which this error refers
+	 * @return
+	 */
+	public Path.Entry<?> getEntry() {
+		return entry;
+	}
+
 	/**
 	 * Output the syntax error to a given output stream in full form. In full
 	 * form, contextual information from the originating source file is
@@ -147,7 +155,7 @@ public class SyntaxError extends RuntimeException {
 	}
 
 	private void printFullError(PrintStream output, Path.Entry<?> entry, EnclosingLine enclosing, String message) {
-		
+
 		output.println(entry.location() + ":" + enclosing.lineNumber + ": " + message);
 
 		printLineHighlight(output,enclosing);
@@ -275,6 +283,7 @@ public class SyntaxError extends RuntimeException {
 			super(msg, entry, element, ex);
 		}
 
+		@Override
 		public String getMessage() {
 			String msg = super.getMessage();
 			if (msg == null || msg.equals("")) {
@@ -284,7 +293,7 @@ public class SyntaxError extends RuntimeException {
 			}
 		}
 	}
-	
+
 	private static String escapeMessage(String message) {
 		message = message.replace("\n", "\\n");
 		message = message.replace("\"", "\\\"");
