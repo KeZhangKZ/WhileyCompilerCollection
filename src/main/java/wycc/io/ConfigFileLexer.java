@@ -14,25 +14,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wycc.lang.BuildFile;
+import wycc.lang.ConfigFile;
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 import wyfs.lang.Path;
 
 /**
- * Split a source file into a list of tokens. These tokens can then be fed into
+ * Split a configuration file into a list of tokens. These tokens can then be fed into
  * the parser in order to generate an Abstract Syntax Tree (AST).
  *
  * @author David J. Pearce
  *
  */
-public class BuildFileLexer {
-	private final Path.Entry<BuildFile> entry;
+public class ConfigFileLexer {
+	private final Path.Entry<ConfigFile> entry;
 	private StringBuilder input;
 	private int pos;
 
-	public BuildFileLexer(Path.Entry<BuildFile> entry) throws IOException {
+	public ConfigFileLexer(Path.Entry<ConfigFile> entry) throws IOException {
 		this.entry = entry;
 		Reader reader = new InputStreamReader(entry.inputStream());
 		BufferedReader in = new BufferedReader(reader);
@@ -65,6 +65,8 @@ public class BuildFileLexer {
 				tokens.add(scanStringConstant());
 			} else if (c == '\'') {
 				tokens.add(scanCharacterConstant());
+			} else if (isOperatorStart(c)) {
+				tokens.add(scanOperator());
 			} else if (Character.isLetter(c) || c == '_') {
 				tokens.add(scanIdentifier());
 			} else if (Character.isWhitespace(c)) {
@@ -214,8 +216,7 @@ public class BuildFileLexer {
 		while (pos < input.length() && input.charAt(pos) != '\n') {
 			pos++;
 		}
-		return new Token(Token.Kind.LineComment, input.substring(start, pos),
-				start);
+		return new Token(Token.Kind.LineComment, input.substring(start, pos), start);
 	}
 
 	/**
@@ -225,8 +226,7 @@ public class BuildFileLexer {
 	 * @param tokens
 	 */
 	public void skipWhitespace(List<Token> tokens) {
-		while (pos < input.length()
-				&& (input.charAt(pos) == '\n' || input.charAt(pos) == '\t')) {
+		while (pos < input.length() && (input.charAt(pos) == '\n' || input.charAt(pos) == '\t')) {
 			pos++;
 		}
 	}
@@ -247,7 +247,7 @@ public class BuildFileLexer {
 
 	}
 
-	static final char[] opStarts = { '[', ']' };
+	static final char[] opStarts = { '[', ']', '=' };
 
 	public boolean isOperatorStart(char c) {
 		for (char o : opStarts) {
@@ -266,6 +266,8 @@ public class BuildFileLexer {
 			return new Token(Token.Kind.LeftSquare, "[", pos++);
 		case ']':
 			return new Token(Token.Kind.RightSquare, "[", pos++);
+		case '=':
+			return new Token(Token.Kind.Equals, "=", pos++);
 		// =================================================================
 		//
 		// =================================================================
@@ -293,6 +295,7 @@ public class BuildFileLexer {
 			// Operators
 			LeftSquare("["),
 			RightSquare("]"),
+			Equals,
 			// Other
 			NewLine, Indent, LineComment;
 

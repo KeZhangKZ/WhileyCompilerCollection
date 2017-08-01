@@ -1,15 +1,21 @@
 package wycc;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Map;
 
-import wycc.commands.Build;
+import wybs.lang.SyntaxError;
 import wycc.commands.Help;
 import wycc.lang.Command;
+import wycc.lang.ConfigFile;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
 import wycc.util.Pair;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
+import wyfs.util.DirectoryRoot;
+import wyfs.util.Trie;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This
@@ -19,30 +25,40 @@ import wycc.util.Pair;
  *
  */
 public class WyMain {
-
 	/**
-	 * The static list of default plugin activators which this tool uses. Whilst
-	 * this list is currently statically fixed, eventually we'll be able to
-	 * register plugins dynamically.
+	 * Default implementation of a content registry. This associates whiley and
+	 * wyil files with their respective content types.
+	 *
+	 * @author David J. Pearce
+	 *
 	 */
-	private static final String[] ACTIVATOR_NAMES = {
-			"wyc.Activator",
-			"wyjc.Activator",
-			"wyjs.Activator",
-			"wyal.Activator"
-	};
+	public static class Registry implements Content.Registry {
+		@Override
+		public void associate(Path.Entry e) {
+			String suffix = e.suffix();
+
+			if (suffix.equals("wy")) {
+				e.associate(ConfigFile.ContentType, null);
+			}
+		}
+
+		@Override
+		public String suffix(Content.Type<?> t) {
+			return t.getSuffix();
+		}
+	}
 
 	// ==================================================================
 	// Main Method
 	// ==================================================================
 
-	public static void main(String[] args) {
-		WyTool tool = new WyTool();
-
-		// register default commands and activate default plugins
-		registerDefaultCommands(tool);
-		activateDefaultPlugins(tool);
-
+	public static void main(String[] args) throws IOException {
+		String whileyhome = System.getenv("WHILEYHOME");
+		if(whileyhome == null) {
+			System.err.println("error: WHILEYHOME environment variable not set");
+			System.exit(-1);
+		}
+		WyTool tool = constructWyTool(whileyhome);
 		// process command-line options
 		Command command = null;
 		ArrayList<String> commandArgs = new ArrayList<>();
@@ -81,6 +97,36 @@ public class WyMain {
 	// ==================================================================
 	// Helpers
 	// ==================================================================
+
+	private static WyTool constructWyTool(String whileyhome) throws IOException {
+		WyTool tool = new WyTool();
+		Registry registry = new Registry();
+		// Register default commands
+		registerDefaultCommands(tool);
+		// Attempt to read global configuration
+		DirectoryRoot globalConfigDir = new DirectoryRoot(whileyhome, registry);
+		ConfigFile global = readConfigFile("config", globalConfigDir);
+		if (global == null) {
+			System.err.println("Unable to read global configuration file");
+		} else {
+			activateDefaultPlugins(tool, global);
+		}
+		return tool;
+	}
+
+	private static ConfigFile readConfigFile(String name, Path.Root root) throws IOException {
+		Path.Entry<ConfigFile> global = root.get(Trie.fromString(name), ConfigFile.ContentType);
+		if (global != null) {
+			try {
+				return global.read();
+			} catch (SyntaxError e) {
+				e.outputSourceError(System.err, false);
+				System.exit(-1);
+			}
+		}
+		//
+		return null;
+	}
 
 	private static boolean applyOption(Pair<String,Object> option, WyTool tool, Command command) {
 		try {
@@ -126,23 +172,30 @@ public class WyMain {
 	 * @param locations
 	 * @return
 	 */
-	private static void activateDefaultPlugins(WyTool tool) {
-		Module.Context context = tool.getContext();
-		// create the context and manager
+	private static void activateDefaultPlugins(WyTool tool, ConfigFile global) {
+		Map<String,Object> plugins = (Map<String,Object>) global.toMap().get("plugins");
+		if(plugins != null) {
+			Module.Context context = tool.getContext();
+			// create the context and manager
 
-		// start modules
-		for(String name : ACTIVATOR_NAMES) {
-			try {
-				Class<?> c = Class.forName(name);
-				Module.Activator instance = (Module.Activator) c.newInstance();
-				instance.start(context);
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (InstantiationException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
+			// start modules
+			for(String name : plugins.keySet()) {
+				String activator = (String) plugins.get(name);
+				try {
+					Class<?> c = Class.forName(activator);
+					Module.Activator instance = (Module.Activator) c.newInstance();
+					instance.start(context);
+				} catch (ClassNotFoundException e) {
+					e.printStackTrace();
+				} catch (InstantiationException e) {
+					e.printStackTrace();
+				} catch (IllegalAccessException e) {
+					e.printStackTrace();
+				}
 			}
+		} else {
+			System.out.println("No plugin configuration found");
+			System.exit(-1);
 		}
 	}
 

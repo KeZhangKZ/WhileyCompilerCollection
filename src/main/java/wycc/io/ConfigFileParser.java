@@ -25,11 +25,11 @@ import wybs.lang.SyntacticElement;
 import wybs.lang.SyntaxError;
 
 import static wybs.lang.SyntaxError.*;
-import static wycc.io.BuildFileLexer.Token.Kind.*;
+import static wycc.io.ConfigFileLexer.Token.Kind.*;
 
-import wycc.io.BuildFileLexer.Token;
-import wycc.lang.BuildFile;
-import wycc.lang.BuildFile.*;
+import wycc.io.ConfigFileLexer.Token;
+import wycc.lang.ConfigFile;
+import wycc.lang.ConfigFile.*;
 import wycc.util.Pair;
 import wycc.util.Triple;
 import wyfs.lang.Path;
@@ -37,61 +37,89 @@ import wyfs.util.Trie;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
- * original source file in question. No effort is made to check whether or not
- * the generated tree is syntactically correct. Subsequent stages of the
- * compiler are responsible for doing this.
+ * original configuration file in question.
  *
  * @author David J. Pearce
  *
  */
-public class BuildFileParser {
-	private final Path.Entry<BuildFile> entry;
+public class ConfigFileParser {
+	private final Path.Entry<ConfigFile> entry;
 	private ArrayList<Token> tokens;
 	private int index;
 
-	public BuildFileParser(Path.Entry<BuildFile> entry, List<Token> tokens) {
+	public ConfigFileParser(Path.Entry<ConfigFile> entry, List<Token> tokens) {
 		this.entry = entry;
 		this.tokens = new ArrayList<>(tokens);
 	}
 
 	/**
-	 * Read a <code>BuildFile</code> from the token stream. If the stream is
+	 * Read a <code>ConfigFile</code> from the token stream. If the stream is
 	 * invalid in some way (e.g. contains a syntax error, etc) then a
 	 * <code>SyntaxError</code> is thrown.
 	 *
 	 * @return
 	 */
-	public BuildFile read() {
-		BuildFile wf = new BuildFile(entry);
-		// FIXME: check package is consistent?
-
+	public ConfigFile read() {
+		ConfigFile cf = new ConfigFile(entry);
+		List<Declaration> declarations = cf.getDeclarations();
 		skipWhiteSpace();
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
-			if (lookahead.kind == Import) {
-				parseImportDeclaration(wf);
+			if (lookahead.kind == LeftSquare) {
+				parseSection(declarations);
 			} else {
-				List<Modifier> modifiers = parseModifiers();
-				checkNotEof();
-				lookahead = tokens.get(index);
-				if (lookahead.text.equals("type")) {
-					parseTypeDeclaration(wf, modifiers);
-				} else if (lookahead.text.equals("constant")) {
-					parseConstantDeclaration(wf, modifiers);
-				} else if (lookahead.kind == Function) {
-					parseFunctionOrMethodDeclaration(wf, modifiers, true);
-				} else if (lookahead.kind == Method) {
-					parseFunctionOrMethodDeclaration(wf, modifiers, false);
-				} else if (lookahead.kind == Property) {
-					parsePropertyDeclaration(wf, modifiers);
-				} else {
-					syntaxError("unrecognised declaration", lookahead);
-				}
+				parseKeyValuePair(declarations);
 			}
 			skipWhiteSpace();
 		}
+		return cf;
+	}
 
-		return wf;
+	private void parseSection(List<Declaration> declarations) {
+		match(LeftSquare);
+		String name = match(Identifier).text;
+		ConfigFile.Section section = new ConfigFile.Section(name);
+		match(RightSquare);
+		skipWhiteSpace();
+		while (index < tokens.size()) {
+			Token lookahead = tokens.get(index);
+			if (lookahead.kind == LeftSquare) {
+				break;
+			} else {
+				parseKeyValuePair(section.getContents());
+			}
+			skipWhiteSpace();
+		}
+		//
+		declarations.add(section);
+	}
+
+	private void parseKeyValuePair(List<Declaration> declarations) {
+		String key = match(Token.Kind.Identifier).text;
+		Object value;
+		match(Token.Kind.Equals);
+		skipWhiteSpace();
+		checkNotEof();
+		Token token = tokens.get(index);
+		switch (token.kind) {
+		case False:
+			value = false;
+			break;
+		case True:
+			value = true;
+			break;
+		case IntValue:
+			value = new BigInteger(token.text);
+			break;
+		case StringValue:
+			value = parseString(token.text);
+			break;
+		default:
+			syntaxError("unknown token", token);
+			return; // deadcode
+		}
+		declarations.add(new ConfigFile.KeyValuePair(key, value));
+		match(token.kind);
 	}
 
 	/**
@@ -153,40 +181,6 @@ public class BuildFileParser {
 			index = index + 1;
 			return token;
 		}
-	}
-
-	/**
-	 * Attempt to match a given token(s) at a given level of indent, whilst
-	 * ignoring any whitespace in between. Note that, in the case it fails to
-	 * match, then the index will be unchanged. This latter point is important,
-	 * otherwise we could accidentally gobble up some important indentation. If
-	 * more than one kind is provided then this will try to match any of them.
-	 *
-	 * @param terminated
-	 *            Indicates whether or not this function should be concerned
-	 *            with new lines. The terminated flag indicates whether or not
-	 *            the current construct being parsed is known to be terminated.
-	 *            If so, then we don't need to worry about newlines and can
-	 *            greedily consume them (i.e. since we'll eventually run into
-	 *            the terminating symbol).
-	 * @param indent
-	 *            The indentation level to try and match the tokens at.
-	 * @param kinds
-	 *
-	 * @return
-	 */
-	private Token tryAndMatchAtIndent(boolean terminated, Indent indent, Token.Kind... kinds) {
-		int start = index;
-		Indent r = getIndent();
-		if (r != null && r.equivalent(indent)) {
-			Token t = tryAndMatch(terminated, kinds);
-			if (t != null) {
-				return r;
-			}
-		}
-		// backtrack in all failing cases.
-		index = start;
-		return null;
 	}
 
 	/**
@@ -389,8 +383,7 @@ public class BuildFileParser {
 	 * @return
 	 */
 	private boolean isLineSpace(Token token) {
-		return token.kind == Token.Kind.Indent || token.kind == Token.Kind.LineComment
-				|| token.kind == Token.Kind.BlockComment;
+		return token.kind == Token.Kind.Indent || token.kind == Token.Kind.LineComment;
 	}
 
 	/**
@@ -442,14 +435,14 @@ public class BuildFileParser {
 	 * @param v
 	 * @return
 	 */
-	protected List<Constant> parseString(String v) {
+	protected String parseString(String v) {
 		/*
 		 * Parsing a string requires several steps to be taken. First, we need
 		 * to strip quotes from the ends of the string.
 		 */
 		v = v.substring(1, v.length() - 1);
 
-		ArrayList<Constant> result = new ArrayList<>();
+		StringBuffer result = new StringBuffer();
 		// Second, step through the string and replace escaped characters
 		for (int i = 0; i < v.length(); i++) {
 			if (v.charAt(i) == '\\') {
@@ -493,14 +486,14 @@ public class BuildFileParser {
 					default:
 						throw new RuntimeException("unknown escape character");
 					}
-					result.add(new Constant.Integer(BigInteger.valueOf(replace)));
+					result = result.append(replace);
 					i = i + 1;
 				}
 			} else {
-				result.add(new Constant.Integer(BigInteger.valueOf(v.charAt(i))));
+				result = result.append(v.charAt(i));
 			}
 		}
-		return result;
+		return result.toString();
 	}
 
 	/**
