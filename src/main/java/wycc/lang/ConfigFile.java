@@ -44,12 +44,12 @@ public class ConfigFile extends AbstractCompilationUnit {
 
 		@Override
 		public String toString() {
-			return "Content-Type: wy";
+			return "Content-Type: wyml";
 		}
 
 		@Override
 		public String getSuffix() {
-			return "wy";
+			return "wyml";
 		}
 	};
 

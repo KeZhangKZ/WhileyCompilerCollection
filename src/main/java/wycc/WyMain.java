@@ -37,7 +37,7 @@ public class WyMain {
 		public void associate(Path.Entry e) {
 			String suffix = e.suffix();
 
-			if (suffix.equals("wy")) {
+			if (suffix.equals("wyml")) {
 				e.associate(ConfigFile.ContentType, null);
 			}
 		}
