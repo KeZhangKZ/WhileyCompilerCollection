@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import wybs.lang.SyntaxError;
+import wycc.commands.Build;
 import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.lang.ConfigFile;
@@ -115,7 +116,7 @@ public class WyMain {
 		WyTool tool = new WyTool();
 		Registry registry = new Registry();
 		// Register default commands
-		registerDefaultCommands(tool);
+		registerDefaultCommands(tool,registry);
 		// Attempt to read global configuration
 		DirectoryRoot globalConfigDir = new DirectoryRoot(whileyhome, registry);
 		ConfigFile global = readConfigFile("config", globalConfigDir);
@@ -163,11 +164,11 @@ public class WyMain {
 	 *
 	 * @param tool
 	 */
-	private static void registerDefaultCommands(WyTool tool) {
+	private static void registerDefaultCommands(WyTool tool, Content.Registry registry) {
 		// The list of default commands available in the tool
 		Command[] defaultCommands = {
-				new Help(System.out,tool.getCommands())
-				//new Build()
+				new Help(System.out,tool.getCommands()),
+				new Build(registry)
 		};
 		// Register the default commands available in the tool
 		Module.Context context = tool.getContext();

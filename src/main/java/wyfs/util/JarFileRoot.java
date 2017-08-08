@@ -19,6 +19,8 @@ import java.util.jar.*;
 
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Path.ID;
+import wyfs.lang.Path.RelativeRoot;
 import wyfs.lang.Content.Type;
 
 /**
@@ -188,5 +190,10 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 		public void write(T contents) {
 			throw new UnsupportedOperationException();
 		}
+	}
+
+	@Override
+	public RelativeRoot createRelativeRoot(ID id) throws IOException {
+		throw new UnsupportedOperationException();
 	}
 }

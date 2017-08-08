@@ -387,6 +387,16 @@ public class Path {
 				throws IOException;
 
 		/**
+		 * Create a relative root. That is, a root which is relative to this
+		 * root.
+		 *
+		 * @param id
+		 * @return
+		 * @throws IOException
+		 */
+		public Path.RelativeRoot createRelativeRoot(ID id) throws IOException;
+
+		/**
 		 * Force root to flush entries to permanent storage (where appropriate).
 		 * This is essential as, at any given moment, path entries may only be
 		 * stored in memory. We must flush them to disk in order to preserve any
@@ -400,6 +410,15 @@ public class Path {
 		 * no effect (i.e. the new contents are retained).
 		 */
 		public void refresh() throws IOException;
+	}
+
+	public interface RelativeRoot extends Root {
+		/**
+		 * Get the parent root to which this is relative.
+		 *
+		 * @return
+		 */
+		Path.Root getParent();
 	}
 
 	/**

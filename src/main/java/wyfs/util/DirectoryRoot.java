@@ -23,6 +23,8 @@ import wyfs.lang.Content.Registry;
 import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.ID;
+import wyfs.lang.Path.RelativeRoot;
+import wyfs.lang.Path.Root;
 
 /**
  * Provides an implementation of <code>Path.Root</code> for representing a file
@@ -31,7 +33,7 @@ import wyfs.lang.Path.ID;
  * @author David J. Pearce
  *
  */
-public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
+public class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 
 	public final static FileFilter NULL_FILTER = new FileFilter() {
 		@Override
@@ -125,6 +127,13 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		return new Folder(Trie.ROOT);
 	}
 
+	@Override
+	public RelativeRoot createRelativeRoot(ID id) throws IOException {
+		File subdir = new File(dir,id.toString().replace('/',File.separatorChar));
+		System.out.println("CREATED RELATIVE ROOT: " + subdir);
+		return new Relative(subdir,filter,contentTypes);
+	}
+
 	/**
 	 * Given a list of physical files on the file system, determine their
 	 * corresponding <code>Path.Entry</code> instances in this root (if there
@@ -170,6 +179,18 @@ public final class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		return sources;
 	}
 
+	public final class Relative extends DirectoryRoot implements Path.RelativeRoot {
+
+		public Relative(File dir, FileFilter filter, Registry contentTypes) throws IOException {
+			super(dir,filter,contentTypes);
+		}
+
+		@Override
+		public Root getParent() {
+			return DirectoryRoot.this;
+		}
+
+	}
 	/**
 	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
