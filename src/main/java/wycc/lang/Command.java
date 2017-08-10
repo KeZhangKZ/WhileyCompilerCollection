@@ -13,6 +13,8 @@
 // limitations under the License.
 package wycc.lang;
 
+import java.util.Map;
+
 /**
  * A command which can be executed (e.g. from the command-line)
  *
@@ -30,12 +32,29 @@ public interface Command<T> extends Feature.Configurable {
 
 	/**
 	 * Get a description of this command.
+	 *
 	 * @return
 	 */
 	public String getDescription();
 
 	/**
-	 * Execute this command with the given arguments.
+	 * Perform whatever initialisation is necessary for a given configuration.
+	 *
+	 * @param configuration
+	 *            --- The list of configuration options passed to this command
+	 */
+	public void initialise(Map<String, Object> configuration);
+
+	/**
+	 * Perform whatever destruction is necessary whence the command is complete.
+	 */
+	public void finalise();
+
+	/**
+	 * Execute this command with the given arguments. Every invocation of this
+	 * function occurs after a single call to <code>initialise()</code> and
+	 * before any calls are made to <code>finalise()</code>. Observer, however,
+	 * that this command may be executed multiple times.
 	 */
 	public T execute(String... args);
 }
