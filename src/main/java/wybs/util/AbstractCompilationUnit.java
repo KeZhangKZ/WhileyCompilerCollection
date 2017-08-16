@@ -162,11 +162,12 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Identifier extends AbstractSyntacticItem {
+	public static class Identifier extends AbstractSyntacticItem implements CompilationUnit.Identifier {
 		public Identifier(String name) {
 			super(ITEM_ident, name, new SyntacticItem[0]);
 		}
 
+		@Override
 		public String get() {
 			return (String) data;
 		}
@@ -189,7 +190,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class Name extends AbstractSyntacticItem {
+	public static class Name extends AbstractSyntacticItem implements CompilationUnit.Name {
 		public Name(Identifier... components) {
 			super(ITEM_name, components);
 		}
@@ -217,6 +218,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return r;
 		}
 
+		@Override
 		public NameID toNameID() {
 			Trie pkg = Trie.ROOT;
 			for (int i = 0; i < size() - 1; ++i) {
