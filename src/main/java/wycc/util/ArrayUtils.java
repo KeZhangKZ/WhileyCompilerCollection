@@ -238,10 +238,29 @@ public class ArrayUtils {
 	 * @return
 	 */
 	public static <T,S> T[] toArray(Class<T> type, S[] src) {
+		@SuppressWarnings("unchecked")
 		T[] dest = (T[]) Array.newInstance(type, src.length);
 		System.arraycopy(src, 0, dest, 0, src.length);
 		return dest;
 	}
+
+	/**
+	 * Convert from an array of one kind to an array of another kind.
+	 *
+	 * @param type
+	 * @param src
+	 * @return
+	 */
+	@SuppressWarnings("unchecked")
+	public static <T,S> T[] toArray(Class<T> type, Collection<S> src) {
+		T[] dest = (T[]) Array.newInstance(type, src.size());
+		int i = 0;
+		for(S s : src) {
+			dest[i++] = (T) s;
+		}
+		return dest;
+	}
+
 
 	/**
 	 * Remove duplicate types from an unsorted array. This produces a potentially

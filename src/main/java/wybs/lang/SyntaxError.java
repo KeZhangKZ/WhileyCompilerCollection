@@ -31,6 +31,7 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 
 import wyfs.lang.Path;
+import wybs.util.AbstractCompilationUnit.Attribute;
 
 /**
  * This exception is thrown when a syntax error occurs in the parser.
@@ -47,7 +48,7 @@ public class SyntaxError extends RuntimeException {
 	/**
 	 * The SyntacticElement to which this error refers
 	 */
-	private SyntacticElement element;
+	private SyntacticItem element;
 
 	/**
 	 * Identify a syntax error at a particular point in a file.
@@ -59,7 +60,7 @@ public class SyntaxError extends RuntimeException {
 	 * @param element
 	 *            The syntactic element to this error refers
 	 */
-	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticElement element) {
+	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticItem element) {
 		super(msg);
 		this.entry = entry;
 		this.element = element;
@@ -75,7 +76,7 @@ public class SyntaxError extends RuntimeException {
 	 * @param element
 	 *            The syntactic element to this error refers
 	 */
-	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticElement element, Throwable ex) {
+	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticItem element, Throwable ex) {
 		super(msg,ex);
 		this.entry = entry;
 		this.element = element;
@@ -86,7 +87,7 @@ public class SyntaxError extends RuntimeException {
 	 *
 	 * @return
 	 */
-	public SyntacticElement getElement() {
+	public SyntacticItem getElement() {
 		return element;
 	}
 
@@ -117,7 +118,9 @@ public class SyntaxError extends RuntimeException {
 		if (entry == null) {
 			output.println("syntax error: " + getMessage());
 		} else {
-			EnclosingLine enclosing = readEnclosingLine(entry, element.attribute(Attribute.Source.class));
+			SyntacticHeap parent = element.getParent();
+			Attribute.Span span = parent.getParent(element,Attribute.Span.class);
+			EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);
 			if(enclosing == null) {
 				output.println("syntax error: " + getMessage());
 			} else if(brief) {
@@ -233,7 +236,9 @@ public class SyntaxError extends RuntimeException {
 		}
 	}
 
-	private static EnclosingLine readEnclosingLine(Path.Entry<?> entry, Attribute.Source location) {
+	private static EnclosingLine readEnclosingLine(Path.Entry<?> entry, Attribute.Span location) {
+		int spanStart = location.getStart().get().intValue();
+		int spanEnd = location.getEnd().get().intValue();
 		int line = 0;
 		int lineStart = 0;
 		int lineEnd = 0;
@@ -248,7 +253,7 @@ public class SyntaxError extends RuntimeException {
 				text.append(buf, 0, len);
 			}
 
-			while (lineEnd < text.length() && lineEnd <= location.start) {
+			while (lineEnd < text.length() && lineEnd <= spanStart) {
 				lineStart = lineEnd;
 				lineEnd = parseLine(text, lineEnd);
 				line = line + 1;
@@ -258,7 +263,7 @@ public class SyntaxError extends RuntimeException {
 		}
 		lineEnd = Math.min(lineEnd, text.length());
 
-		return new EnclosingLine(location.start, location.end, line, lineStart, lineEnd,
+		return new EnclosingLine(spanStart, spanEnd, line, lineStart, lineEnd,
 				text.substring(lineStart, lineEnd));
 	}
 
@@ -274,11 +279,11 @@ public class SyntaxError extends RuntimeException {
 	 *
 	 */
 	public static class InternalFailure extends SyntaxError {
-		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticElement element) {
+		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticItem element) {
 			super(msg, entry, element);
 		}
 
-		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticElement element,
+		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticItem element,
 				Throwable ex) {
 			super(msg, entry, element, ex);
 		}

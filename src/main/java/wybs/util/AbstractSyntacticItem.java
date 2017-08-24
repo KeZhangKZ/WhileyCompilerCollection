@@ -21,6 +21,7 @@ import java.util.List;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wycc.util.ArrayUtils;
 
 public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		implements Comparable<SyntacticItem>, SyntacticItem {
@@ -29,7 +30,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	private int index; // index in the parent
 	private int opcode;
 	private SyntacticItem[] operands;
-	protected Object data;
+	protected byte[] data;
 
 	public AbstractSyntacticItem(int opcode) {
 		super();
@@ -38,32 +39,13 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		this.data = null;
 	}
 
-	public AbstractSyntacticItem(int opcode, SyntacticItem operand) {
-		this.opcode = opcode;
-		this.operands = new SyntacticItem[]{operand};
-		this.data = null;
-	}
-	public AbstractSyntacticItem(int opcode, SyntacticItem first, SyntacticItem second) {
-		this.opcode = opcode;
-		this.operands = new SyntacticItem[]{first,second};
-		this.data = null;
-	}
-	public AbstractSyntacticItem(int opcode, SyntacticItem first, SyntacticItem second, SyntacticItem third) {
-		this.opcode = opcode;
-		this.operands = new SyntacticItem[]{first,second,third};
-		this.data = null;
-	}
-	public AbstractSyntacticItem(int opcode, List<SyntacticItem> operands) {
-		this(opcode, operands.toArray(new SyntacticItem[operands.size()]));
-	}
-
-	public AbstractSyntacticItem(int opcode, SyntacticItem[] operands) {
+	public AbstractSyntacticItem(int opcode, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = null;
 	}
 
-	protected AbstractSyntacticItem(int opcode, Object data, SyntacticItem[] operands) {
+	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem[] operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = data;
@@ -116,9 +98,8 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		operands[ith] = child;
 	}
 
-	@Override
-	public SyntacticItem[] getOperands() {
-		return operands;
+	public <T> T[] toArray(Class<T> elementKind) {
+		return ArrayUtils.toArray(elementKind, operands);
 	}
 
 	@Override
@@ -131,15 +112,20 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	}
 
 	@Override
-	public Object getData() {
+	public final SyntacticItem[] getOperands() {
+		return operands;
+	}
+
+	@Override
+	public byte[] getData() {
 		return data;
 	}
 
 	@Override
 	public int hashCode() {
-		int hash = getOpcode() ^ Arrays.hashCode(getOperands());
+		int hash = getOpcode() ^ Arrays.hashCode(operands);
 		if (data != null) {
-			hash ^= data.hashCode();
+			hash ^= Arrays.hashCode(data);
 		}
 		return hash;
 	}
@@ -148,8 +134,8 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	public boolean equals(Object o) {
 		if (o instanceof AbstractSyntacticItem) {
 			AbstractSyntacticItem bo = (AbstractSyntacticItem) o;
-			return getOpcode() == bo.getOpcode() && Arrays.equals(getOperands(), bo.getOperands())
-					&& (data == bo.data || (data != null && data.equals(bo.data)));
+			return getOpcode() == bo.getOpcode() && Arrays.equals(operands, bo.operands)
+					&& Arrays.equals(data, bo.data);
 		}
 		return false;
 	}
