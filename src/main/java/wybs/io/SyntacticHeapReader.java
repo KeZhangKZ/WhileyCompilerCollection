@@ -44,7 +44,6 @@ public abstract class SyntacticHeapReader {
 		checkHeader();
 		// third, determine number of items
 		int size = in.read_uv();
-		System.out.println("READING: " + size + " items");
 		Bytecode[] items = new Bytecode[size];
 		// third, read abstract syntactic items
 		for(int i=0;i!=items.length;++i) {
@@ -59,13 +58,10 @@ public abstract class SyntacticHeapReader {
 	protected Bytecode readItem() throws IOException {
 		// read opcode
 		int opcode = in.read_u8();
-		System.out.print("READ: " + schema[opcode].getMnemonic());
 		// Write operands
 		int[] operands = readOperands(opcode);
-		System.out.print(" OPERANDS: " + Arrays.toString(operands));
 		// Write data (if any)
 		byte[] data = readData(opcode);
-		System.out.println(" DATA: " + Arrays.toString(data));
 		// Pad to next byte boundary
 		in.pad_u8();
 		//

@@ -28,8 +28,8 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	// Constants;
 	private SyntacticHeap parent;
 	private int index; // index in the parent
-	private int opcode;
-	private SyntacticItem[] operands;
+	protected int opcode;
+	protected SyntacticItem[] operands;
 	protected byte[] data;
 
 	public AbstractSyntacticItem(int opcode) {

@@ -33,7 +33,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	public static final int ITEM_name = 7;
 
 	public static final int ATTR_span = 8;
-	public static final int CONST_byte = 15; // deprecated
+	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
 
@@ -318,7 +318,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 		public static class Byte extends Value {
 			public Byte(byte value) {
-				super(CONST_byte, value);
+				super(ITEM_byte, value);
 			}
 
 			public byte get() {
@@ -511,7 +511,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			}
 		};
 		// ==========================================================================
-		schema[CONST_byte] = new Schema(Operands.ZERO,Data.ONE, "ITEM_byte") {
+		schema[ITEM_byte] = new Schema(Operands.ZERO,Data.ONE, "ITEM_byte") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Value.Byte(data[0]);

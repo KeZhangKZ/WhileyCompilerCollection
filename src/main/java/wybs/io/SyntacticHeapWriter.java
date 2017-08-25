@@ -42,7 +42,6 @@ public abstract class SyntacticHeapWriter {
 		writeHeader();
 		// third, write syntactic items
 		out.write_uv(module.size());
-		System.out.println("WRITING: " + module.size() + " items");
 		for(int i=0;i!=module.size();++i) {
 			writeSyntacticItem(module.getSyntacticItem(i));
 		}
@@ -55,9 +54,6 @@ public abstract class SyntacticHeapWriter {
 	public void writeSyntacticItem(SyntacticItem item) throws IOException {
 		// Write opcode
 		out.write_u8(item.getOpcode());
-		System.out.print("WRITING: " + schema[item.getOpcode()].getMnemonic());
-		System.out.print(" OPERANDS: " + item.size());
-		System.out.println(" DATA: " + Arrays.toString(item.getData()));
 		// Write operands
 		writeOperands(item);
 		// Write data (if any)
@@ -77,7 +73,7 @@ public abstract class SyntacticHeapWriter {
 		default:
 			if(layout.ordinal() != item.size()) {
 				throw new IllegalArgumentException(
-						"invalid number of operands for " + item.getClass().getSimpleName() + " (got " + item.size()
+						"invalid number of operands for \"" + item.getClass().getSimpleName() + "\" (got " + item.size()
 								+ ", expecting " + layout.ordinal() + ")");
 			}
 		}
