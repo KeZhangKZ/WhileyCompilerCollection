@@ -115,19 +115,23 @@ public class SyntaxError extends RuntimeException {
 	 * source file is included.
 	 */
 	public void outputSourceError(PrintStream output, boolean brief) {
-		if (entry == null) {
+		Attribute.Span span;
+		if (entry == null || element == null) {
 			output.println("syntax error: " + getMessage());
-		} else {
+			return;
+		} else if(element instanceof Attribute.Span) {
+			span = (Attribute.Span) element;
+		} else  {
 			SyntacticHeap parent = element.getParent();
-			Attribute.Span span = parent.getParent(element,Attribute.Span.class);
-			EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);
-			if(enclosing == null) {
-				output.println("syntax error: " + getMessage());
-			} else if(brief) {
-				printBriefError(output,entry,enclosing,getMessage());
-			} else {
-				printFullError(output,entry,enclosing,getMessage());
-			}
+			span = parent.getParent(element,Attribute.Span.class);
+		}
+		EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);
+		if(enclosing == null) {
+			output.println("syntax error: " + getMessage());
+		} else if(brief) {
+			printBriefError(output,entry,enclosing,getMessage());
+		} else {
+			printFullError(output,entry,enclosing,getMessage());
 		}
 	}
 

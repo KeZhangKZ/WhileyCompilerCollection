@@ -107,7 +107,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		if (parent != null) {
 			return index;
 		} else {
-			throw new IllegalArgumentException("SyntacticItem not allocated to heap");
+			throw new IllegalArgumentException("SyntacticItem not allocated to heap (" + getClass().getName() + ")");
 		}
 	}
 
@@ -264,64 +264,6 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 			return 3;
 		} else {
 			throw new IllegalArgumentException("unknown datakind encountered");
-		}
-	}
-
-	// =========================================================================
-	// Bytecode Schemas
-	// =========================================================================
-
-	public enum Operands {
-		ZERO, ONE, TWO, MANY
-	}
-
-	public enum Blocks {
-		ZERO, ONE, TWO, MANY
-	}
-
-	public enum Extras {
-		STRING, // index into string pool
-		CONSTANT, // index into constant pool
-		TYPE, // index into type pool
-		NAME, // index into name pool
-		STRING_ARRAY, // determined on the fly
-		SWITCH_ARRAY, // determined on the fly
-	}
-
-	public static abstract class Schema {
-		private final Operands operands;
-		private final Blocks blocks;
-		private final Extras[] extras;
-
-		public Schema(Operands operands, Extras... extras) {
-			this.operands = operands;
-			this.blocks = Blocks.ZERO;
-			this.extras = extras;
-		}
-
-		public Schema(Operands operands, Blocks blocks, Extras... extras) {
-			this.operands = operands;
-			this.blocks = blocks;
-			this.extras = extras;
-		}
-
-		public Extras[] extras() {
-			return extras;
-		}
-
-		public Operands getOperands() {
-			return operands;
-		}
-
-		public Blocks getBlocks() {
-			return blocks;
-		}
-
-		public abstract AbstractSyntacticItem construct(int opcode, int[] operands, int[] blocks, Object[] extras);
-
-		@Override
-		public String toString() {
-			return "<" + operands + " operands, " + Arrays.toString(extras) + ">";
 		}
 	}
 }
