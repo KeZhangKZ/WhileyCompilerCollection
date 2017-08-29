@@ -104,7 +104,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	}
 
 	private <T extends SyntacticItem> T internalAllocate(T item, Map<SyntacticItem,SyntacticItem> map) {
-		SyntacticHeap parent = item.getParent();
+		SyntacticHeap parent = item.getHeap();
 		T allocated = (T) map.get(item);
 		if(allocated != null) {
 			return allocated;
@@ -277,7 +277,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	public static SyntacticItem substitute(SyntacticItem item, SyntacticItem from, SyntacticItem to) {
 		SyntacticItem nItem = substitute(item, from, to, new IdentityHashMap<>());
 		if(nItem != item) {
-			item.getParent().allocate(nItem);
+			item.getHeap().allocate(nItem);
 		}
 		return nItem;
 	}

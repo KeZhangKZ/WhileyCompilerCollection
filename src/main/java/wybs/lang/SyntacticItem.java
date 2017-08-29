@@ -22,7 +22,7 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 *
 	 * @return
 	 */
-	public SyntacticHeap getParent();
+	public SyntacticHeap getHeap();
 
 	/**
 	 * Allocated the given item to a syntactic heap. Note that an item can only

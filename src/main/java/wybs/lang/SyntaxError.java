@@ -122,7 +122,7 @@ public class SyntaxError extends RuntimeException {
 		} else if(element instanceof Attribute.Span) {
 			span = (Attribute.Span) element;
 		} else  {
-			SyntacticHeap parent = element.getParent();
+			SyntacticHeap parent = element.getHeap();
 			span = parent.getParent(element,Attribute.Span.class);
 		}
 		EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);

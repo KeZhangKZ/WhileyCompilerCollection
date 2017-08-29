@@ -52,7 +52,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	}
 
 	@Override
-	public SyntacticHeap getParent() {
+	public SyntacticHeap getHeap() {
 		return parent;
 	}
 
@@ -150,7 +150,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 					r += ", ";
 				}
 				SyntacticItem item = operands[i];
-				if(item != null && item.getParent() != null) {
+				if(item != null && item.getHeap() != null) {
 					r += item.getIndex();
 				} else {
 					r += "?";
