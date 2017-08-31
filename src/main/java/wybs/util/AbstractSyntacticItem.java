@@ -121,6 +121,16 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		return data;
 	}
 
+	public <S extends SyntacticItem> S match(Class<S> kind) {
+		for (int i = 0; i != size(); ++i) {
+			SyntacticItem operand = operands[i];
+			if (kind.isInstance(operand)) {
+				return (S) operand;
+			}
+		}
+		return null;
+	}
+
 	@Override
 	public int hashCode() {
 		int hash = getOpcode() ^ Arrays.hashCode(operands);

@@ -97,21 +97,13 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	 * @param <T>
 	 */
 	public static class Tuple<T extends SyntacticItem> extends AbstractSyntacticItem implements Iterable<T> {
-		/**
-		 * The kind is retained to ensure the proper array kind is constructed
-		 * when a tuple is cloned. It is somewhat annoying that we have to do
-		 * this, but there is not other way.
-		 */
-		private final Class<T> kind;
 
 		public Tuple(T... stmts) {
 			super(ITEM_tuple, stmts);
-			kind = (Class) stmts.getClass().getComponentType();
 		}
 
-		public Tuple(Class<T> kind, List<T> stmts) {
-			super(ITEM_tuple, ArrayUtils.toArray(kind, stmts));
-			this.kind = kind;
+		public Tuple(List<T> stmts) {
+			super(ITEM_tuple, ArrayUtils.toArray(SyntacticItem.class,stmts));
 		}
 
 		@Override
@@ -136,7 +128,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 		@Override
 		public Tuple<T> clone(SyntacticItem[] operands) {
-			return new Tuple(ArrayUtils.toArray(kind, operands));
+			return new Tuple(ArrayUtils.toArray(SyntacticItem.class, operands));
 		}
 
 		@Override
@@ -314,6 +306,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			public Bool clone(SyntacticItem[] operands) {
 				return new Bool(get());
 			}
+
+			@Override
+			public String toString() {
+				return Boolean.toString(get());
+			}
 		}
 
 		public static class Byte extends Value {
@@ -354,6 +351,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			public Int clone(SyntacticItem[] operands) {
 				return new Int(get());
 			}
+
+			@Override
+			public String toString() {
+				return get().toString();
+			}
 		}
 
 		public static class UTF8 extends Value {
@@ -368,6 +370,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			@Override
 			public UTF8 clone(SyntacticItem[] operands) {
 				return new UTF8(get());
+			}
+
+			@Override
+			public String toString() {
+				return new String(get());
 			}
 		}
 	}
@@ -492,7 +499,6 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		schema[ITEM_tuple] = new Schema(Operands.MANY,Data.ZERO, "ITEM_tuple") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				// FIXME: problem with kind here ???
 				return new Tuple<>(operands);
 			}
 		};
