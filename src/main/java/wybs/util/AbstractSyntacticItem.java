@@ -24,7 +24,7 @@ import wybs.lang.SyntacticItem;
 import wycc.util.ArrayUtils;
 
 public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
-		implements Comparable<SyntacticItem>, SyntacticItem {
+		implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
 	// Constants;
 	private SyntacticHeap parent;
 	private int index; // index in the parent
@@ -66,6 +66,26 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 
 		this.parent = heap;
 		this.index = index;
+	}
+
+	/**
+	 * Get the first syntactic item of a given kind which refers to this item.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> T getParent(Class<T> kind) {
+		return parent.getParent(this, kind);
+	}
+
+	/**
+	 * Get the first syntactic item of a given kind which refers to this item either indirectly or directly.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> T getAncestor(Class<T> kind) {
+		return parent.getAncestor(this, kind);
 	}
 
 	@Override
@@ -112,7 +132,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	}
 
 	@Override
-	public final SyntacticItem[] getOperands() {
+	public SyntacticItem[] getOperands() {
 		return operands;
 	}
 

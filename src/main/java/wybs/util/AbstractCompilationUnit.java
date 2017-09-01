@@ -219,6 +219,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return (Identifier) super.getOperand(i);
 		}
 
+		@Override
+		public Identifier[] getOperands() {
+			return (Identifier[]) super.getOperands();
+		}
+
 		public Identifier getLast() {
 			return getOperand(size()-1);
 		}

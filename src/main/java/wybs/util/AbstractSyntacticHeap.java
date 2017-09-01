@@ -98,6 +98,42 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 		return null;
 	}
 
+
+	/**
+	 * Get first ancestor of a syntactic item matching the given kind. If no item
+	 * was found, then null is returned.
+	 *
+	 * @param child
+	 * @param kind
+	 * @return
+	 */
+	@Override
+	public <T extends SyntacticItem> T getAncestor(SyntacticItem child, Class<T> kind) {
+		// FIXME: this could be optimised a *lot*
+		if (kind.isInstance(child)) {
+			return (T) child;
+		} else {
+			for (int i = 0; i != syntacticItems.size(); ++i) {
+				SyntacticItem parent = syntacticItems.get(i);
+				for (int j = 0; j != parent.size(); ++j) {
+					if (parent.getOperand(j) == child) {
+						// FIXME: this is not specifically efficient. It would
+						// be
+						// helpful if SyntacticItems actually contained
+						// references to
+						// their parent items.
+						T tmp = getAncestor(parent, kind);
+						if (tmp != null) {
+							return tmp;
+						}
+					}
+				}
+			}
+			// no match
+			return null;
+		}
+	}
+
 	@Override
 	public <T extends SyntacticItem> T allocate(T item) {
 		return internalAllocate(item, new HashMap<>());
