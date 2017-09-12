@@ -67,13 +67,13 @@ public class StdProject implements Build.Project {
 	protected final ArrayList<Build.Rule> rules;
 
 	public StdProject(Collection<Path.Root> roots) {
-		this.roots = new ArrayList<Path.Root>(roots);
-		this.rules = new ArrayList<Build.Rule>();
+		this.roots = new ArrayList<>(roots);
+		this.rules = new ArrayList<>();
 	}
 
 	public StdProject(Collection<Path.Root>... roots) {
-		this.rules = new ArrayList<Build.Rule>();
-		this.roots = new ArrayList<Path.Root>();
+		this.rules = new ArrayList<>();
+		this.roots = new ArrayList<>();
 		for(Collection<Path.Root> root : roots) {
 			this.roots.addAll(root);
 		}
@@ -138,6 +138,7 @@ public class StdProject implements Build.Project {
 	 * @throws IOException
 	 *             --- in case of some I/O failure.
 	 */
+	@Override
 	public boolean exists(Path.ID id, Content.Type<?> ct) throws IOException {
 		for(int i=0;i!=roots.size();++i) {
 			if(roots.get(i).exists(id, ct)) {
@@ -157,6 +158,7 @@ public class StdProject implements Build.Project {
 	 *             --- in case of some I/O failure.
 	 *
 	 */
+	@Override
 	public <T> Path.Entry<T> get(Path.ID id, Content.Type<T> ct) throws IOException {
 		for(int i=0;i!=roots.size();++i) {
 			Path.Entry<T> e = roots.get(i).get(id, ct);
@@ -177,8 +179,9 @@ public class StdProject implements Build.Project {
 	 * @param ct
 	 * @return
 	 */
+	@Override
 	public <T> ArrayList<Path.Entry<T>> get(Content.Filter<T> filter) throws IOException {
-		ArrayList<Path.Entry<T>> r = new ArrayList<Path.Entry<T>>();
+		ArrayList<Path.Entry<T>> r = new ArrayList<>();
 		for(int i=0;i!=roots.size();++i) {
 			r.addAll(roots.get(i).get(filter));
 		}
@@ -196,8 +199,9 @@ public class StdProject implements Build.Project {
 	 *            --- filter to match entries with.
 	 * @return
 	 */
+	@Override
 	public <T> HashSet<Path.ID> match(Content.Filter<T> filter) throws IOException {
-		HashSet<Path.ID> r = new HashSet<Path.ID>();
+		HashSet<Path.ID> r = new HashSet<>();
 		for(int i=0;i!=roots.size();++i) {
 			r.addAll(roots.get(i).match(filter));
 		}
@@ -246,12 +250,12 @@ public class StdProject implements Build.Project {
 	 */
 	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
 		Build.Graph graph = new StdBuildGraph();
-		
+
 		// Continue building all source files until there are none left. This is
 		// actually quite a naive implementation, as it ignores the potential
 		// need for staging dependencies.
 		do {
-			HashSet<Path.Entry<?>> generated = new HashSet<Path.Entry<?>>();
+			HashSet<Path.Entry<?>> generated = new HashSet<>();
 			for (Build.Rule r : rules) {
 				generated.addAll(r.apply(sources,graph));
 			}

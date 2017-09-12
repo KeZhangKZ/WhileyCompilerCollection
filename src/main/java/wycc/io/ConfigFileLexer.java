@@ -17,6 +17,7 @@ import java.util.List;
 import wycc.lang.ConfigFile;
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wyfs.lang.Path;
 
@@ -241,9 +242,7 @@ public class ConfigFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		SyntacticElement unknown = new SyntacticElement.Impl() {};
-		unknown.attributes().add(new Attribute.Source(index, index, -1));
-		throw new SyntaxError(msg, entry, unknown);
+		throw new SyntaxError(msg, entry, null);
 
 	}
 

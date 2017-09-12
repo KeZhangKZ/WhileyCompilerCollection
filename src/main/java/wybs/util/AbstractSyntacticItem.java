@@ -16,20 +16,22 @@ package wybs.util;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.List;
 
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wycc.util.ArrayUtils;
 
 public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
-		implements Comparable<SyntacticItem>, SyntacticItem {
+		implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
 	// Constants;
 	private SyntacticHeap parent;
 	private int index; // index in the parent
-	private int opcode;
-	private SyntacticItem[] operands;
-	protected Object data;
+	protected int opcode;
+	protected SyntacticItem[] operands;
+	protected byte[] data;
 
 	public AbstractSyntacticItem(int opcode) {
 		super();
@@ -38,39 +40,20 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		this.data = null;
 	}
 
-	public AbstractSyntacticItem(int opcode, SyntacticItem operand) {
-		this.opcode = opcode;
-		this.operands = new SyntacticItem[]{operand};
-		this.data = null;
-	}
-	public AbstractSyntacticItem(int opcode, SyntacticItem first, SyntacticItem second) {
-		this.opcode = opcode;
-		this.operands = new SyntacticItem[]{first,second};
-		this.data = null;
-	}
-	public AbstractSyntacticItem(int opcode, SyntacticItem first, SyntacticItem second, SyntacticItem third) {
-		this.opcode = opcode;
-		this.operands = new SyntacticItem[]{first,second,third};
-		this.data = null;
-	}
-	public AbstractSyntacticItem(int opcode, List<SyntacticItem> operands) {
-		this(opcode, operands.toArray(new SyntacticItem[operands.size()]));
-	}
-
-	public AbstractSyntacticItem(int opcode, SyntacticItem[] operands) {
+	public AbstractSyntacticItem(int opcode, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = null;
 	}
 
-	protected AbstractSyntacticItem(int opcode, Object data, SyntacticItem[] operands) {
+	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem[] operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = data;
 	}
 
 	@Override
-	public SyntacticHeap getParent() {
+	public SyntacticHeap getHeap() {
 		return parent;
 	}
 
@@ -84,6 +67,26 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 
 		this.parent = heap;
 		this.index = index;
+	}
+
+	/**
+	 * Get the first syntactic item of a given kind which refers to this item.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> T getParent(Class<T> kind) {
+		return parent.getParent(this, kind);
+	}
+
+	/**
+	 * Get the first syntactic item of a given kind which refers to this item either indirectly or directly.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> T getAncestor(Class<T> kind) {
+		return parent.getAncestor(this, kind);
 	}
 
 	@Override
@@ -116,9 +119,8 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		operands[ith] = child;
 	}
 
-	@Override
-	public SyntacticItem[] getOperands() {
-		return operands;
+	public <T> T[] toArray(Class<T> elementKind) {
+		return ArrayUtils.toArray(elementKind, operands);
 	}
 
 	@Override
@@ -126,20 +128,35 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		if (parent != null) {
 			return index;
 		} else {
-			throw new IllegalArgumentException("SyntacticItem not allocated to heap");
+			throw new IllegalArgumentException("SyntacticItem not allocated to heap (" + getClass().getName() + ")");
 		}
 	}
 
 	@Override
-	public Object getData() {
+	public SyntacticItem[] getOperands() {
+		return operands;
+	}
+
+	@Override
+	public byte[] getData() {
 		return data;
+	}
+
+	public <S extends SyntacticItem> S match(Class<S> kind) {
+		for (int i = 0; i != size(); ++i) {
+			SyntacticItem operand = operands[i];
+			if (kind.isInstance(operand)) {
+				return (S) operand;
+			}
+		}
+		return null;
 	}
 
 	@Override
 	public int hashCode() {
-		int hash = getOpcode() ^ Arrays.hashCode(getOperands());
+		int hash = getOpcode() ^ Arrays.hashCode(operands);
 		if (data != null) {
-			hash ^= data.hashCode();
+			hash ^= Arrays.hashCode(data);
 		}
 		return hash;
 	}
@@ -148,8 +165,8 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	public boolean equals(Object o) {
 		if (o instanceof AbstractSyntacticItem) {
 			AbstractSyntacticItem bo = (AbstractSyntacticItem) o;
-			return getOpcode() == bo.getOpcode() && Arrays.equals(getOperands(), bo.getOperands())
-					&& (data == bo.data || (data != null && data.equals(bo.data)));
+			return getOpcode() == bo.getOpcode() && Arrays.equals(operands, bo.operands)
+					&& Arrays.equals(data, bo.data);
 		}
 		return false;
 	}
@@ -164,7 +181,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 					r += ", ";
 				}
 				SyntacticItem item = operands[i];
-				if(item != null && item.getParent() != null) {
+				if(item != null && item.getHeap() != null) {
 					r += item.getIndex();
 				} else {
 					r += "?";
@@ -278,64 +295,6 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 			return 3;
 		} else {
 			throw new IllegalArgumentException("unknown datakind encountered");
-		}
-	}
-
-	// =========================================================================
-	// Bytecode Schemas
-	// =========================================================================
-
-	public enum Operands {
-		ZERO, ONE, TWO, MANY
-	}
-
-	public enum Blocks {
-		ZERO, ONE, TWO, MANY
-	}
-
-	public enum Extras {
-		STRING, // index into string pool
-		CONSTANT, // index into constant pool
-		TYPE, // index into type pool
-		NAME, // index into name pool
-		STRING_ARRAY, // determined on the fly
-		SWITCH_ARRAY, // determined on the fly
-	}
-
-	public static abstract class Schema {
-		private final Operands operands;
-		private final Blocks blocks;
-		private final Extras[] extras;
-
-		public Schema(Operands operands, Extras... extras) {
-			this.operands = operands;
-			this.blocks = Blocks.ZERO;
-			this.extras = extras;
-		}
-
-		public Schema(Operands operands, Blocks blocks, Extras... extras) {
-			this.operands = operands;
-			this.blocks = blocks;
-			this.extras = extras;
-		}
-
-		public Extras[] extras() {
-			return extras;
-		}
-
-		public Operands getOperands() {
-			return operands;
-		}
-
-		public Blocks getBlocks() {
-			return blocks;
-		}
-
-		public abstract AbstractSyntacticItem construct(int opcode, int[] operands, int[] blocks, Object[] extras);
-
-		@Override
-		public String toString() {
-			return "<" + operands + " operands, " + Arrays.toString(extras) + ">";
 		}
 	}
 }

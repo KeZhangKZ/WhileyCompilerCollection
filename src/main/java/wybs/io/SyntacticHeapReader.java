@@ -1,0 +1,158 @@
+// Copyright (c) 2011, David J. Pearce (djp@ecs.vuw.ac.nz)
+// All rights reserved.
+//
+// This software may be modified and distributed under the terms
+// of the BSD license.  See the LICENSE file for details.
+
+package wybs.io;
+
+import java.io.*;
+import java.math.BigInteger;
+import java.util.Arrays;
+
+import wybs.lang.SyntacticHeap;
+import wybs.lang.SyntacticItem;
+import wyfs.io.BinaryInputStream;
+
+/**
+ * <p>
+ * Responsible for writing a WyilFile to an output stream in binary form. The
+ * binary format is structured to given maximum flexibility and to avoid
+ * built-in limitations in terms of e.g. maximum sizes, etc.
+ * </p>
+ *
+ * @author David J. Pearce
+ *
+ */
+public abstract class SyntacticHeapReader {
+	protected final BinaryInputStream in;
+	protected final SyntacticItem.Schema[] schema;
+
+	public SyntacticHeapReader(InputStream output, SyntacticItem.Schema[] schema) {
+		this.in = new BinaryInputStream(output);
+		this.schema = schema;
+	}
+
+	public void close() throws IOException {
+		in.close();
+	}
+
+	public abstract SyntacticHeap read() throws IOException;
+
+	protected SyntacticItem[] readItems() throws IOException {
+		// first, write magic number
+		checkHeader();
+		// third, determine number of items
+		int size = in.read_uv();
+		Bytecode[] items = new Bytecode[size];
+		// third, read abstract syntactic items
+		for(int i=0;i!=items.length;++i) {
+			items[i] = readItem();
+		}
+		//
+		return constructItems(items);
+	}
+
+	protected abstract void checkHeader() throws IOException;
+
+	protected Bytecode readItem() throws IOException {
+		// read opcode
+		int opcode = in.read_u8();
+		// Write operands
+		int[] operands = readOperands(opcode);
+		// Write data (if any)
+		byte[] data = readData(opcode);
+		// Pad to next byte boundary
+		in.pad_u8();
+		//
+		return new Bytecode(opcode,operands,data);
+	}
+
+	protected int[] readOperands(int opcode) throws IOException {
+		// Determine operand layout
+		SyntacticItem.Operands layout = schema[opcode].getOperandLayout();
+		int[] operands;
+		int size;
+		// Determine number of operands according to layout
+		switch(layout) {
+		case MANY:
+			size = in.read_uv();
+			break;
+		default:
+			size = layout.ordinal();
+		}
+		//
+		operands = new int[size];
+		// Read operands
+		for (int i = 0; i != operands.length; ++i) {
+			operands[i] = in.read_uv();
+		}
+		//
+		return operands;
+	}
+
+	protected byte[] readData(int opcode) throws IOException {
+		// Determine operand layout
+		SyntacticItem.Data layout = schema[opcode].getDataLayout();
+		byte[] bytes;
+		int size;
+		// Determine number of bytes according to layout
+		switch(layout) {
+		case MANY:
+			size = in.read_uv();
+			break;
+		default:
+			size = layout.ordinal();
+		}
+		//
+		bytes = new byte[size];
+		// Read operands
+		for (int i = 0; i != bytes.length; ++i) {
+			bytes[i] = (byte) in.read_u8();
+		}
+		//
+		return bytes;
+	}
+
+	protected SyntacticItem[] constructItems(Bytecode[] bytecodes) {
+		SyntacticItem[] items = new SyntacticItem[bytecodes.length];
+		//
+		for(int i=0;i!=items.length;++i) {
+			constructItem(i,bytecodes,items);
+		}
+		//
+		return items;
+	}
+
+	protected void constructItem(int index, Bytecode[] bytecodes, SyntacticItem[] items) {
+		// FIXME: this fails in the presence of truly recursive items.
+		if (items[index] == null) {
+			// This item not yet constructed, therefore construct it!
+			Bytecode bytecode = bytecodes[index];
+			// Destructure bytecode
+			int opcode = bytecode.opcode;
+			int[] operands = bytecode.operands;
+			SyntacticItem[] operandItems = new SyntacticItem[operands.length];
+			byte[] data = bytecode.data;
+			// Recursively construct operands
+			for (int i = 0; i != operands.length; ++i) {
+				constructItem(operands[i], bytecodes, items);
+				operandItems[i] = items[operands[i]];
+			}
+			// Physically construct the item
+			items[index] = schema[bytecode.opcode].construct(opcode, operandItems, data);
+		}
+	}
+
+	private static class Bytecode {
+		public final int opcode;
+		public final int[] operands;
+		public final byte[] data;
+
+		public Bytecode(int opcode, int[] operands, byte[] data) {
+			this.opcode = opcode;
+			this.operands = operands;
+			this.data = data;
+		}
+	}
+}

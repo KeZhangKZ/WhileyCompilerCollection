@@ -65,6 +65,27 @@ public interface SyntacticHeap {
 	public <T extends SyntacticItem> T allocate(T item);
 
 	/**
+	 * Get first parent of a syntactic item matching the given kind. If no item
+	 * was found, then null is returned.
+	 *
+	 * @param child
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> T getParent(SyntacticItem child, Class<T> kind);
+
+	/**
+	 * Get first ancestor of a syntactic item matching the given kind. If no
+	 * item was found, then null is returned.
+	 *
+	 * @param child
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> T getAncestor(SyntacticItem child, Class<T> kind);
+
+
+	/**
 	 * Get the parent associated with this heap (if any).
 	 *
 	 * @return
