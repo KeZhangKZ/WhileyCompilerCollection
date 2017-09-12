@@ -1,6 +1,9 @@
 package wybs.util;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -8,6 +11,9 @@ import wybs.lang.CompilationUnit;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wybs.lang.SyntacticItem.Data;
+import wybs.lang.SyntacticItem.Operands;
+import wybs.lang.SyntacticItem.Schema;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
@@ -16,20 +22,27 @@ import wyfs.util.Trie;
 public class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
 		implements CompilationUnit {
 
-	public static final int CONST_null = 66;
-	public static final int CONST_bool = 67;
-	public static final int CONST_int = 68;
-	public static final int CONST_utf8 = 69;
+	// ITEMS: 0000000 (0) -- 00001111 (15)
+	public static final int ITEM_null = 0;
+	public static final int ITEM_bool = 1;
+	public static final int ITEM_int = 2;
+	public static final int ITEM_utf8 = 3;
+	public static final int ITEM_pair = 4;
+	public static final int ITEM_tuple = 5;
+	public static final int ITEM_ident = 6;
+	public static final int ITEM_name = 7;
 
-	public static final int ITEM_pair = 100;
-	public static final int ITEM_tuple = 101;
-	public static final int ITEM_ident = 103;
-	public static final int ITEM_path = 104;
-	public static final int ITEM_name = 105;
+	public static final int ATTR_span = 8;
+	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
 
 	public AbstractCompilationUnit(Path.Entry<T> entry) {
+		this.entry = entry;
+	}
+
+	public AbstractCompilationUnit(Path.Entry<T> entry, CompilationUnit other) {
+		super(other);
 		this.entry = entry;
 	}
 
@@ -84,21 +97,13 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	 * @param <T>
 	 */
 	public static class Tuple<T extends SyntacticItem> extends AbstractSyntacticItem implements Iterable<T> {
-		/**
-		 * The kind is retained to ensure the proper array kind is constructed
-		 * when a tuple is cloned. It is somewhat annoying that we have to do
-		 * this, but there is not other way.
-		 */
-		private final Class<T> kind;
 
 		public Tuple(T... stmts) {
 			super(ITEM_tuple, stmts);
-			kind = (Class) stmts.getClass().getComponentType();
 		}
 
-		public Tuple(Class<T> kind, List<T> stmts) {
-			super(ITEM_tuple, stmts.toArray(new SyntacticItem[stmts.size()]));
-			this.kind = kind;
+		public Tuple(List<T> stmts) {
+			super(ITEM_tuple, ArrayUtils.toArray(SyntacticItem.class,stmts));
 		}
 
 		@Override
@@ -106,14 +111,24 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return (T) super.getOperand(i);
 		}
 
-		@Override
-		public T[] getOperands() {
-			return (T[]) super.getOperands();
+		public <S extends SyntacticItem> Tuple<S> project(int index, Class<S> kind) {
+			int size = size();
+			S[] elements = (S[]) Array.newInstance(kind, size);
+			for (int i = 0; i != size; ++i) {
+				SyntacticItem element = getOperand(i);
+				SyntacticItem projected = element.getOperand(index);
+				if (kind.isInstance(projected)) {
+					elements[i] = (S) projected;
+				} else {
+					throw new IllegalArgumentException("invalid project kind: " + kind.getName());
+				}
+			}
+			return new Tuple<>(elements);
 		}
 
 		@Override
 		public Tuple<T> clone(SyntacticItem[] operands) {
-			return new Tuple(ArrayUtils.toArray(kind, operands));
+			return new Tuple(ArrayUtils.toArray(SyntacticItem.class, operands));
 		}
 
 		@Override
@@ -138,16 +153,15 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			// Create annonymous iterator for iterating over elements.
 			return new Iterator<T>() {
 				private int index = 0;
-				private final SyntacticItem[] operands = getOperands();
 
 				@Override
 				public boolean hasNext() {
-					return index < operands.length;
+					return index < size();
 				}
 
 				@Override
 				public T next() {
-					return (T) operands[index++];
+					return (T) getOperand(index++);
 				}
 
 			};
@@ -164,12 +178,17 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	 */
 	public static class Identifier extends AbstractSyntacticItem implements CompilationUnit.Identifier {
 		public Identifier(String name) {
-			super(ITEM_ident, name, new SyntacticItem[0]);
+			super(ITEM_ident, name.getBytes(StandardCharsets.UTF_8), new SyntacticItem[0]);
+		}
+
+		public Identifier(byte[] bytes) {
+			super(ITEM_ident, bytes, new SyntacticItem[0]);
 		}
 
 		@Override
 		public String get() {
-			return (String) data;
+			// FIXME: could cache this
+			return new String(data,StandardCharsets.UTF_8);
 		}
 
 		@Override
@@ -200,8 +219,21 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return (Identifier) super.getOperand(i);
 		}
 
-		public Identifier[] getComponents() {
-			return (Identifier[]) getOperands();
+		@Override
+		public Identifier[] getOperands() {
+			return (Identifier[]) super.getOperands();
+		}
+
+		public Identifier getLast() {
+			return getOperand(size()-1);
+		}
+
+		public Identifier[] getPath() {
+			Identifier[] components = new Identifier[size()-1];
+			for(int i=0;i!=components.length;++i) {
+				components[i] = getOperand(i);
+			}
+			return components;
 		}
 
 		@Override
@@ -213,7 +245,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		public String toString() {
 			String r = getOperand(0).get();
 			for (int i = 1; i != size(); ++i) {
-				r += "." + getOperand(i).get();
+				r += "::" + getOperand(i).get();
 			}
 			return r;
 		}
@@ -239,11 +271,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	 */
 	public abstract static class Value extends AbstractSyntacticItem {
 
-		public Value(int opcode) {
-			super(opcode);
-		}
-
-		public Value(int opcode, Object data) {
+		public Value(int opcode, byte... data) {
 			super(opcode, data, new SyntacticItem[0]);
 		}
 
@@ -256,13 +284,8 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 		public static class Null extends Value {
 			public Null() {
-				super(CONST_null);
+				super(ITEM_null);
 			}
-
-//			@Override
-//			public Type getType() {
-//				return new Type.Null();
-//			}
 
 			@Override
 			public Null clone(SyntacticItem[] operands) {
@@ -277,57 +300,73 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 		public static class Bool extends Value {
 			public Bool(boolean value) {
-				super(CONST_bool, value);
+				super(ITEM_bool, (byte) (value ? 1 : 0));
 			}
 
 			public boolean get() {
-				return (Boolean) data;
+				return (data[0] == 1);
 			}
-
-//			@Override
-//			public Type getType() {
-//				return new Type.Bool();
-//			}
 
 			@Override
 			public Bool clone(SyntacticItem[] operands) {
 				return new Bool(get());
 			}
+
+			@Override
+			public String toString() {
+				return Boolean.toString(get());
+			}
 		}
 
-		public static class Int extends Value {
-			public Int(BigInteger value) {
-				super(CONST_int, value);
+		public static class Byte extends Value {
+			public Byte(byte value) {
+				super(ITEM_byte, value);
 			}
+
+			public byte get() {
+				return data[0];
+			}
+
+			@Override
+			public Byte clone(SyntacticItem[] operands) {
+				return new Byte(get());
+			}
+		}
+
+
+		public static class Int extends Value {
 
 			public Int(long value) {
-				super(CONST_int, BigInteger.valueOf(value));
+				this(BigInteger.valueOf(value));
 			}
 
-//			@Override
-//			public Type getType() {
-//				return new Type.Int();
-//			}
+			public Int(BigInteger value) {
+				super(ITEM_int, value.toByteArray());
+			}
+
+			public Int(byte[] bytes) {
+				super(ITEM_int, bytes);
+			}
 
 			public BigInteger get() {
-				return (BigInteger) data;
+				return new BigInteger(data);
 			}
 
 			@Override
 			public Int clone(SyntacticItem[] operands) {
 				return new Int(get());
 			}
+
+			@Override
+			public String toString() {
+				return get().toString();
+			}
 		}
 
 		public static class UTF8 extends Value {
 			public UTF8(byte[] bytes) {
-				super(CONST_utf8, bytes);
+				super(ITEM_utf8, bytes);
 			}
-
-//			@Override
-//			public Type getType() {
-//				throw new UnsupportedOperationException();
-//			}
 
 			public byte[] get() {
 				return (byte[]) data;
@@ -337,6 +376,166 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			public UTF8 clone(SyntacticItem[] operands) {
 				return new UTF8(get());
 			}
+
+			@Override
+			public String toString() {
+				return new String(get());
+			}
 		}
+	}
+
+	// ============================================================
+	// Attributes
+	// ============================================================
+
+	/**
+	 * Attributes represent various additional pieces of information inferred
+	 * about a given item in the heap.  For example, source line information.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Attribute {
+
+		/**
+		 * A span associates a given syntactic item with a contiguous region of
+		 * text in the original source file.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public class Span extends AbstractSyntacticItem implements Attribute {
+
+			public Span(SyntacticItem item, int start, int end) {
+				this(item, new Value.Int(start), new Value.Int(end));
+			}
+
+			public Span(SyntacticItem target, Value.Int start, Value.Int end) {
+				super(ATTR_span, target, start, end);
+			}
+
+			/**
+			 * Get the item that this span is associated with.
+			 *
+			 * @return
+			 */
+			public SyntacticItem getItem() {
+				return getOperand(0);
+			}
+
+			/**
+			 * Get the integer offset from the start of the stream where this
+			 * span begins.
+			 *
+			 * @return
+			 */
+			public Value.Int getStart() {
+				return (Value.Int) getOperand(1);
+			}
+
+			/**
+			 * Get the integer offset from the start of the stream where this
+			 * span ends.
+			 *
+			 * @return
+			 */
+			public Value.Int getEnd() {
+				return (Value.Int) getOperand(2);
+			}
+
+			@Override
+			public Span clone(SyntacticItem[] operands) {
+				return new Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
+			}
+		}
+	}
+
+	// =========================================================================
+	// Schema
+	// =========================================================================
+
+	private static volatile SyntacticItem.Schema[] SCHEMA = null;
+
+	public static SyntacticItem.Schema[] getSchema() {
+		if(SCHEMA == null) {
+			SCHEMA = createSchema();
+		}
+		return SCHEMA;
+	}
+
+	private static SyntacticItem.Schema[] createSchema() {
+		SyntacticItem.Schema[] schema = new SyntacticItem.Schema[256];
+		// ==========================================================================
+		schema[ITEM_null] = new Schema(Operands.ZERO,Data.ZERO, "ITEM_null") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Null();
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_bool] = new Schema(Operands.ZERO,Data.ONE, "ITEM_bool") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Bool(data[0] == 1);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_int] = new Schema(Operands.ZERO,Data.MANY, "ITEM_int") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Int(data);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_utf8] = new Schema(Operands.ZERO,Data.MANY, "ITEM_utf8") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.UTF8(data);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_pair] = new Schema(Operands.TWO,Data.ZERO, "ITEM_pair") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Pair<>(operands[0],operands[1]);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_tuple] = new Schema(Operands.MANY,Data.ZERO, "ITEM_tuple") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Tuple<>(operands);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_ident] = new Schema(Operands.ZERO,Data.MANY, "ITEM_ident") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Identifier(data);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_name] = new Schema(Operands.MANY,Data.ZERO, "ITEM_name") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Name(ArrayUtils.toArray(Identifier.class, operands));
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_byte] = new Schema(Operands.ZERO,Data.ONE, "ITEM_byte") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Byte(data[0]);
+			}
+		};
+		// ==========================================================================
+		schema[ATTR_span] = new Schema(Operands.THREE, Data.ZERO, "ATTR_span") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Attribute.Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
+			}
+		};
+
+		return schema;
 	}
 }

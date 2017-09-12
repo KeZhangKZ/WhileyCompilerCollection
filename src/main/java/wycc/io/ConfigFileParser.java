@@ -22,6 +22,7 @@ import java.util.Set;
 import wybs.lang.Attribute;
 import wybs.lang.NameID;
 import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 
 import static wybs.lang.SyntaxError.*;
@@ -532,17 +533,8 @@ public class ConfigFileParser {
 		return new Attribute.Source(t1.start, t2.end(), 0);
 	}
 
-	private void syntaxError(String msg, SyntacticElement e) {
-		Attribute.Source loc = e.attribute(Attribute.Source.class);
-		throw new SyntaxError(msg, entry, e);
-	}
-
 	private void syntaxError(String msg, Token t) {
-		// FIXME: this is clearly not a sensible approach
-		SyntacticElement unknown = new SyntacticElement.Impl() {
-		};
-		unknown.attributes().add(new Attribute.Source(t.start, t.start + t.text.length() - 1, -1));
-		throw new SyntaxError(msg, entry, unknown);
+		throw new SyntaxError(msg, entry, null);
 
 	}
 

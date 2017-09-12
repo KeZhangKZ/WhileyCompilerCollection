@@ -22,7 +22,7 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 *
 	 * @return
 	 */
-	public SyntacticHeap getParent();
+	public SyntacticHeap getHeap();
 
 	/**
 	 * Allocated the given item to a syntactic heap. Note that an item can only
@@ -94,7 +94,7 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 *
 	 * @return
 	 */
-	public Object getData();
+	public byte[] getData();
 
 	/**
 	 * Create a new copy of the given syntactic item with the given operands.
@@ -105,4 +105,54 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 * @return
 	 */
 	public SyntacticItem clone(SyntacticItem[] operands);
+
+	// ============================================================
+	// Schema
+	// ============================================================
+
+	public enum Operands {
+		ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, MANY
+	}
+
+	public enum Data {
+		ZERO,
+		ONE,
+		TWO,
+		MANY
+	}
+
+	public static abstract class Schema {
+		private final Operands operands;
+		private final Data data;
+		private final String mnemonic;
+
+		public Schema(Operands operands, Data data) {
+			this(operands,data,"unknown");
+		}
+
+		public Schema(Operands operands, Data data, String mnemonic) {
+			this.operands = operands;
+			this.data = data;
+			this.mnemonic = mnemonic;
+		}
+
+		public Operands getOperandLayout() {
+			return operands;
+		}
+
+		public Data getDataLayout() {
+			return data;
+		}
+
+		public String getMnemonic() {
+			return mnemonic;
+		}
+
+		public abstract SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data);
+
+		@Override
+		public String toString() {
+			return "<" + operands + " operands, " + data + ">";
+		}
+	}
 }

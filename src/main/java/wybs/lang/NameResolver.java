@@ -67,25 +67,23 @@ public interface NameResolver {
 	 * corresponding declaration. If it find no such matches or if it finds more
 	 * than one match, then a corresponding error will be reported.
 	 * </p>
-	 *
-	 * @param name
-	 *            The name to be resolved in the given context.
-	 * @param kind
-	 *            The kind of declaration we are looking for, which can simply
-	 *            be <code>Declaration.Named</code> in the case we are looking
-	 *            for any kind of declaration.
-	 * @return
-	 */
-	public <T extends Declaration> T resolveExactly(Name name, Class<T> kind)
-			throws ResolutionError;
-
-	/**
 	 * <p>
-	 * Resolve a given name which occurs at some position in a compilation unit
-	 * into one or more named declarations. Depending on the context, we may be
-	 * looking for a specific kind of declaration. For example, for a function
-	 * invocation expression, we are looking for the corresponding function
-	 * declaration.
+	 * Resolution is determined by the context in which a given name is used.
+	 * For example, what imports are active in the enclosing file, as in the
+	 * following:
+	 * </p>
+	 *
+	 * <pre>
+	 * import std.*
+	 *
+	 * type nat is integer.uint
+	 * </pre>
+	 *
+	 * <p>
+	 * In resolving the name <code>integer.uint</code>, the resolver will
+	 * examine the package <code>std</code> to see whether a compilation unit
+	 * named "integer" exists. If so, it will then resolve the name
+	 * <code>integer.uint</code> to <code>std.integer.uint</code>.
 	 * </p>
 	 *
 	 * @param name
@@ -96,8 +94,44 @@ public interface NameResolver {
 	 *            for any kind of declaration.
 	 * @return
 	 */
-	public <T extends Declaration> List<T> resolveAll(Name name, Class<T> kind)
-			throws ResolutionError;
+	public <T extends Declaration> T resolveExactly(Name name, Class<T> kind) throws ResolutionError;
+
+	/**
+	 * <p>
+	 * Resolve a given name which occurs at some position in a compilation unit
+	 * into one or more named declarations. Depending on the context, we may be
+	 * looking for a specific kind of declaration. For example, for a function
+	 * invocation expression, we are looking for the corresponding function
+	 * declaration.
+	 * </p>
+	 * <p>
+	 * Resolution is determined by the context in which a given name is used.
+	 * For example, what imports are active in the enclosing file, as in the
+	 * following:
+	 * </p>
+	 *
+	 * <pre>
+	 * import std.*
+	 *
+	 * type nat is integer.uint
+	 * </pre>
+	 *
+	 * <p>
+	 * In resolving the name <code>integer.uint</code>, the resolver will
+	 * examine the package <code>std</code> to see whether a compilation unit
+	 * named "integer" exists. If so, it will then resolve the name
+	 * <code>integer.uint</code> to <code>std.integer.uint</code>.
+	 * </p>
+	 *
+	 * @param name
+	 *            The name to be resolved in the given context.
+	 * @param kind
+	 *            The kind of declaration we are looking for, which can simply
+	 *            be <code>Declaration.Named</code> in the case we are looking
+	 *            for any kind of declaration.
+	 * @return
+	 */
+	public <T extends Declaration> List<T> resolveAll(Name name, Class<T> kind) throws ResolutionError;
 
 	/**
 	 * A resolution error occurs when a given name cannot be successfully
@@ -117,7 +151,7 @@ public interface NameResolver {
 
 		public ResolutionError(Name name, String message) {
 			super(message);
-			if(name == null) {
+			if (name == null) {
 				throw new IllegalArgumentException("name is null");
 			}
 			this.name = name;
@@ -147,7 +181,7 @@ public interface NameResolver {
 		private static final long serialVersionUID = 1L;
 
 		public NameNotFoundError(Name name) {
-			super(name,"name \"" + name + "\" not found");
+			super(name, "name \"" + name + "\" not found");
 		}
 	}
 
@@ -165,7 +199,7 @@ public interface NameResolver {
 		private static final long serialVersionUID = 1L;
 
 		public AmbiguousNameError(Name name) {
-			super(name,"name \"" + name + "\" is ambiguous");
+			super(name, "name \"" + name + "\" is ambiguous");
 		}
 	}
 }
