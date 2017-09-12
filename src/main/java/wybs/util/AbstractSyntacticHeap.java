@@ -136,7 +136,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 
 	@Override
 	public <T extends SyntacticItem> T allocate(T item) {
-		return internalAllocate(item, new HashMap<>());
+		return internalAllocate(item, new IdentityHashMap<>());
 	}
 
 	private <T extends SyntacticItem> T internalAllocate(T item, Map<SyntacticItem,SyntacticItem> map) {
