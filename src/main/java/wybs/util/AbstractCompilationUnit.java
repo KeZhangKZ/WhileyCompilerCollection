@@ -71,11 +71,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		}
 
 		public K getFirst() {
-			return (K) getOperand(0);
+			return (K) get(0);
 		}
 
 		public V getSecond() {
-			return (V) getOperand(1);
+			return (V) get(1);
 		}
 
 		@Override
@@ -107,16 +107,16 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		}
 
 		@Override
-		public T getOperand(int i) {
-			return (T) super.getOperand(i);
+		public T get(int i) {
+			return (T) super.get(i);
 		}
 
 		public <S extends SyntacticItem> Tuple<S> project(int index, Class<S> kind) {
 			int size = size();
 			S[] elements = (S[]) Array.newInstance(kind, size);
 			for (int i = 0; i != size; ++i) {
-				SyntacticItem element = getOperand(i);
-				SyntacticItem projected = element.getOperand(index);
+				SyntacticItem element = get(i);
+				SyntacticItem projected = element.get(index);
 				if (kind.isInstance(projected)) {
 					elements[i] = (S) projected;
 				} else {
@@ -138,7 +138,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 				if (i != 0) {
 					r += ",";
 				}
-				SyntacticItem child = getOperand(i);
+				SyntacticItem child = get(i);
 				if (child == null) {
 					r += "?";
 				} else {
@@ -161,7 +161,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 				@Override
 				public T next() {
-					return (T) getOperand(index++);
+					return (T) get(index++);
 				}
 
 			};
@@ -215,23 +215,23 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		}
 
 		@Override
-		public Identifier getOperand(int i) {
-			return (Identifier) super.getOperand(i);
+		public Identifier get(int i) {
+			return (Identifier) super.get(i);
 		}
 
 		@Override
-		public Identifier[] getOperands() {
-			return (Identifier[]) super.getOperands();
+		public Identifier[] getAll() {
+			return (Identifier[]) super.getAll();
 		}
 
 		public Identifier getLast() {
-			return getOperand(size()-1);
+			return get(size()-1);
 		}
 
 		public Identifier[] getPath() {
 			Identifier[] components = new Identifier[size()-1];
 			for(int i=0;i!=components.length;++i) {
-				components[i] = getOperand(i);
+				components[i] = get(i);
 			}
 			return components;
 		}
@@ -243,9 +243,9 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 		@Override
 		public String toString() {
-			String r = getOperand(0).get();
+			String r = get(0).get();
 			for (int i = 1; i != size(); ++i) {
-				r += "::" + getOperand(i).get();
+				r += "::" + get(i).get();
 			}
 			return r;
 		}
@@ -254,9 +254,9 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		public NameID toNameID() {
 			Trie pkg = Trie.ROOT;
 			for (int i = 0; i < size() - 1; ++i) {
-				pkg = pkg.append(getOperand(i).get());
+				pkg = pkg.append(get(i).get());
 			}
-			String n = getOperand(size() - 1).get();
+			String n = get(size() - 1).get();
 			return new NameID(pkg, n);
 		}
 	}
@@ -420,7 +420,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			 * @return
 			 */
 			public SyntacticItem getItem() {
-				return getOperand(0);
+				return get(0);
 			}
 
 			/**
@@ -430,7 +430,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			 * @return
 			 */
 			public Value.Int getStart() {
-				return (Value.Int) getOperand(1);
+				return (Value.Int) get(1);
 			}
 
 			/**
@@ -440,7 +440,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			 * @return
 			 */
 			public Value.Int getEnd() {
-				return (Value.Int) getOperand(2);
+				return (Value.Int) get(2);
 			}
 
 			@Override

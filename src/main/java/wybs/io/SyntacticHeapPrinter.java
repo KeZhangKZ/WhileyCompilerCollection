@@ -24,7 +24,7 @@ public class SyntacticHeapPrinter {
 					if(j!=0) {
 						out.print(",");
 					}
-					out.print(item.getOperand(j).getIndex());
+					out.print(item.get(j).getIndex());
 				}
 				out.print(")");
 			}

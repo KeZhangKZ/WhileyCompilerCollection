@@ -110,7 +110,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	}
 
 	@Override
-	public SyntacticItem getOperand(int i) {
+	public SyntacticItem get(int i) {
 		return operands[i];
 	}
 
@@ -133,7 +133,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	}
 
 	@Override
-	public SyntacticItem[] getOperands() {
+	public SyntacticItem[] getAll() {
 		return operands;
 	}
 
@@ -208,8 +208,8 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 			return diff;
 		}
 		for (int i = 0; i != size(); ++i) {
-			SyntacticItem my_ith = getOperand(i);
-			SyntacticItem other_ith = other.getOperand(i);
+			SyntacticItem my_ith = get(i);
+			SyntacticItem other_ith = other.get(i);
 			if (my_ith == null || other_ith == null) {
 				if(other_ith == null) {
 					return 0;
