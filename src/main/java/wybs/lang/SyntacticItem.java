@@ -64,14 +64,14 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 * @param i
 	 * @return
 	 */
-	public SyntacticItem getOperand(int i);
+	public SyntacticItem get(int i);
 
 	/**
 	 * Return the top-level operands in this bytecode.
 	 *
 	 * @return
 	 */
-	public SyntacticItem[] getOperands();
+	public SyntacticItem[] getAll();
 
 	/**
 	 * Mutate the ith child of this item
