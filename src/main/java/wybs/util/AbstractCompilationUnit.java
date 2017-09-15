@@ -4,6 +4,7 @@ import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -102,7 +103,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			super(ITEM_tuple, stmts);
 		}
 
-		public Tuple(List<T> stmts) {
+		public Tuple(Collection<T> stmts) {
 			super(ITEM_tuple, ArrayUtils.toArray(SyntacticItem.class,stmts));
 		}
 
