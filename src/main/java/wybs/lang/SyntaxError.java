@@ -29,6 +29,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.util.jar.Attributes;
 
 import wyfs.lang.Path;
 import wybs.util.AbstractCompilationUnit.Attribute;
@@ -124,6 +125,14 @@ public class SyntaxError extends RuntimeException {
 		} else  {
 			SyntacticHeap parent = element.getHeap();
 			span = parent.getParent(element,Attribute.Span.class);
+			if(span == null) {
+				// FIXME: This is a terrible hack. Basically, we attempt to convert from the
+				// old-style attributes to the new style spans.
+				wybs.lang.Attribute.Source src = element.attribute(wybs.lang.Attribute.Source.class);
+				if(src != null) {
+					span = new Attribute.Span(null, src.start, src.end);
+				}
+			}
 		}
 		EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);
 		if(enclosing == null) {
