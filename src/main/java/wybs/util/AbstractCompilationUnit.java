@@ -134,6 +134,10 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 		@Override
 		public String toString() {
+			return "(" + toBareString() + ")";
+		}
+
+		public String toBareString() {
 			String r = "";
 			for (int i = 0; i != size(); ++i) {
 				if (i != 0) {
@@ -146,7 +150,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 					r += child.toString();
 				}
 			}
-			return "(" + r + ")";
+			return r;
 		}
 
 		@Override
