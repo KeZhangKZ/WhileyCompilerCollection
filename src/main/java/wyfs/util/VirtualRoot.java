@@ -1,3 +1,16 @@
+// Copyright 2011 The Whiley Project Developers
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wyfs.util;
 
 import java.io.ByteArrayInputStream;
@@ -76,7 +89,7 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 		 * Number of bytes in data actually used.
 		 */
 		private int length;
-		
+
 		/**
 		 * The last modified date. This is a time stamp used to determine when
 		 * the file was last modified in order to calculate which dependents
@@ -90,39 +103,47 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 			this.contentTypes = contentTypes;
 		}
 
+		@Override
 		public String location() {
 			return "~:" + id.toString();
 		}
 
+		@Override
 		public String suffix() {
 			return contentTypes.suffix(contentType);
 		}
 
+		@Override
 		public long lastModified() {
 			return lastModified;
 		}
 
+		@Override
 		public InputStream inputStream() {
 			return new ByteArrayInputStream(data,0,length);
 		}
 
+		@Override
 		public OutputStream outputStream() {
 			lastModified = System.currentTimeMillis();
 			data = new byte[0];
 			length = 0;
 			// create an output stream which will automatically resize the given
 			// array.
-			return new OutputStream() {		
+			return new OutputStream() {
+				@Override
 				public void write(byte[] bytes) {
 					data = new byte[bytes.length];
 					System.arraycopy(bytes, 0, data, 0, bytes.length);
 					length = data.length;
 				}
+				@Override
 				public void write(byte[] bytes, int off, int len) {
 					data = new byte[len];
 					System.arraycopy(bytes, off, data, 0, len);
 					length = data.length;
 				}
+				@Override
 				public void write(int b) {
 					if (length >= data.length) {
 						data = Arrays.copyOf(data, (data.length + 1) * 2);
@@ -132,6 +153,7 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 			};
 		}
 
+		@Override
 		public String toString() {
 			return location();
 		}
@@ -179,6 +201,7 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 			}
 		}
 
+		@Override
 		public String toString() {
 			return "~:" + id;
 		}

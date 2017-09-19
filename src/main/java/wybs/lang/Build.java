@@ -1,3 +1,16 @@
+// Copyright 2011 The Whiley Project Developers
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wybs.lang;
 
 import java.io.IOException;
@@ -163,7 +176,7 @@ public interface Build {
 	 * correspond to situations where one file at the same level uses symbols
 	 * from another.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
 	 *
 	 */
@@ -175,7 +188,7 @@ public interface Build {
 		 * compilation process. For example, a source file is compiled into a
 		 * binary or intermediate file. The latter is said to be derived from
 		 * the former.
-		 * 
+		 *
 		 * @param child
 		 *            The child entry which is derived from zero or more parent
 		 *            entries.
@@ -188,7 +201,7 @@ public interface Build {
 		 * child). A derivation indicates that one file (e.g. a source file)
 		 * generated another (e.g. a binary file) during the compilation
 		 * process.
-		 * 
+		 *
 		 * @param parent
 		 * @param child
 		 */
@@ -214,22 +227,22 @@ public interface Build {
 	 * the task to be configured and/or to ensure required platform dependencies
 	 * are met.
 	 * </p>
-	 * 
+	 *
 	 * @author David J. Pearce
-	 * 
+	 *
 	 */
 	public interface Task extends Feature {
 
 		/**
 		 * The unique identifier for this task through which it can be referred.
-		 * 
+		 *
 		 * @return
 		 */
 		// public String id();
 
 		/**
 		 * Get the project this build task instance is operating on.
-		 * 
+		 *
 		 * @return
 		 */
 		public Project project();
