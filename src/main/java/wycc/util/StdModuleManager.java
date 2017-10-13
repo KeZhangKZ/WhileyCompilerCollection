@@ -1,3 +1,16 @@
+// Copyright 2011 The Whiley Project Developers
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wycc.util;
 
 import java.io.File;
@@ -32,10 +45,10 @@ public class StdModuleManager {
 	/**
 	 * The list of activated modules
 	 */
-	private ArrayList<Descriptor> modules = new ArrayList<Descriptor>();
+	private ArrayList<Descriptor> modules = new ArrayList<>();
 
 	private HashMap<Class<? extends Module>,Module> instances = new HashMap<>();
-	
+
 	/**
 	 * The module context used to manage extension points for modules.
 	 *
@@ -45,7 +58,7 @@ public class StdModuleManager {
 
 	public StdModuleManager(Module.Context context,
 			List<Descriptor> modules) {
-		this.modules = new ArrayList<Descriptor>(modules);
+		this.modules = new ArrayList<>(modules);
 		this.context = context;
 	}
 
@@ -56,20 +69,20 @@ public class StdModuleManager {
 	/**
 	 * Get instance of given module within this context, or null if no
 	 * instance available.
-	 * 
+	 *
 	 * @param module
 	 * @return
 	 */
 	public <T extends Module> T getInstance(Class<T> module) {
 		return (T) instances.get(module);
 	}
-	
+
 	/**
 	 * Scan and activate all modules on the search path. As part of this, all
 	 * module dependencies will be checked.
 	 */
 	public void start() {
-		
+
 		// Construct the URLClassLoader which will be used to load
 		// classes within the modules.
 		URL[] urls = new URL[modules.size()];
@@ -100,7 +113,7 @@ public class StdModuleManager {
 			Descriptor module = modules.get(i);
 			try {
 				Class c = loader.loadClass(module.getActivator());
-				Module.Activator self = (Module.Activator) c.newInstance();				
+				Module.Activator self = (Module.Activator) c.newInstance();
 				Module instance = self.start(context);
 				instances.put(c, instance);
 				logger.logTimedMessage("Activated module " + module.getId() + " (v" + module.getVersion() + ")", 0, 0);

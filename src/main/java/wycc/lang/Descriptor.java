@@ -1,3 +1,16 @@
+// Copyright 2011 The Whiley Project Developers
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wycc.lang;
 
 import java.net.URL;
@@ -9,9 +22,9 @@ import java.util.List;
  * Represents meta-information about modules. That includes its version,
  * location, and dependencies. This information is obtained from the module.xml
  * file required for each module.
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public class Descriptor {
 	/**
@@ -55,12 +68,12 @@ public class Descriptor {
 		this.version = version;
 		this.location = location;
 		this.activator = activator;
-		this.dependencies = new ArrayList<SemanticDependency>(dependencies);
+		this.dependencies = new ArrayList<>(dependencies);
 	}
 
 	/**
 	 * Get the name of this module
-	 * 
+	 *
 	 * @return
 	 */
 	public String getName() {
@@ -69,7 +82,7 @@ public class Descriptor {
 
 	/**
 	 * Get the id of this module
-	 * 
+	 *
 	 * @return
 	 */
 	public String getId() {
@@ -78,7 +91,7 @@ public class Descriptor {
 
 	/**
 	 * Get the version of this module
-	 * 
+	 *
 	 * @return
 	 */
 	public SemanticVersion getVersion() {
@@ -89,7 +102,7 @@ public class Descriptor {
 	 * Get the name of the activator class for this module. This class is
 	 * instantiated when the module begins and used to control the start-up and
 	 * shutdown of the module.
-	 * 
+	 *
 	 * @return
 	 */
 	public String getActivator() {
@@ -98,7 +111,7 @@ public class Descriptor {
 
 	/**
 	 * Return the location of the module jar.
-	 * 
+	 *
 	 * @return
 	 */
 	public URL getLocation() {
@@ -107,7 +120,7 @@ public class Descriptor {
 
 	/**
 	 * Get the list of dependencies for this module.
-	 * 
+	 *
 	 * @return
 	 */
 	public List<SemanticDependency> getDependencies() {

@@ -1,3 +1,16 @@
+// Copyright 2011 The Whiley Project Developers
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 package wycc.lang;
 
 /**
@@ -5,9 +18,9 @@ package wycc.lang;
  * the minor component; and, the micro component. For example, "1.0.3" is a
  * version number whose major component is "1", whose minor component is "0"
  * and whose micro component is "3".
- * 
+ *
  * @author David J. Pearce
- * 
+ *
  */
 public final class SemanticVersion implements Comparable<SemanticVersion> {
 	/**
@@ -35,7 +48,7 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
 	 * Construct a version from a string in the format "xxx.yyy.zzz", where
 	 * "xxx" is the major number, "yyy" the minor number and "zzz" the micro
 	 * number.
-	 * 
+	 *
 	 * @param versionString
 	 */
 	public SemanticVersion(String versionString) {
@@ -49,6 +62,7 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
 		this.micro = Integer.parseInt(components[2]);
 	}
 
+	@Override
 	public boolean equals(Object o) {
 		if (o instanceof SemanticVersion) {
 			SemanticVersion v = (SemanticVersion) o;
@@ -57,6 +71,7 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
 		return false;
 	}
 
+	@Override
 	public int hashCode() {
 		return major ^ minor ^ micro;
 	}
@@ -80,6 +95,7 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
 		}
 	}
 
+	@Override
 	public String toString() {
 		return major + "." + minor + "." + micro;
 	}
