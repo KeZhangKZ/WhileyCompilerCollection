@@ -210,13 +210,13 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		for (int i = 0; i != size(); ++i) {
 			SyntacticItem my_ith = get(i);
 			SyntacticItem other_ith = other.get(i);
-			if (my_ith == null || other_ith == null) {
-				if(other_ith == null) {
-					return 0;
-				} else {
-					// null is below everything
-					return -1;
-				}
+			if (my_ith == null && other_ith == null) {
+				// skip
+			} else if(my_ith == null) {
+				// null is below everything
+				return -1;
+			} else if(other_ith == null) {
+				return 1;
 			} else {
 				diff = my_ith.compareTo(other_ith);
 				if (diff != 0) {
