@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
 import wybs.lang.NameID;
@@ -125,19 +126,13 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return (T) super.get(i);
 		}
 
-		public <S extends SyntacticItem> Tuple<S> project(int index, Class<S> kind) {
-			int size = size();
-			S[] elements = (S[]) Array.newInstance(kind, size);
-			for (int i = 0; i != size; ++i) {
-				SyntacticItem element = get(i);
-				SyntacticItem projected = element.get(index);
-				if (kind.isInstance(projected)) {
-					elements[i] = (S) projected;
-				} else {
-					throw new IllegalArgumentException("invalid project kind: " + kind.getName());
-				}
-			}
-			return new Tuple<>(elements);
+		public <S extends SyntacticItem> Tuple<S> map(Function<T,S> fn) {
+		  int size = size();
+      SyntacticItem[] elements = new SyntacticItem[size];
+      for (int i = 0; i != size; ++i) {
+        elements[i] = fn.apply(get(i));
+      }
+      return new Tuple<>((S[]) elements);
 		}
 
 		@Override
