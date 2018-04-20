@@ -126,13 +126,21 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return (T) super.get(i);
 		}
 
-		public <S extends SyntacticItem> Tuple<S> map(Function<T,S> fn) {
-		  int size = size();
-      SyntacticItem[] elements = new SyntacticItem[size];
-      for (int i = 0; i != size; ++i) {
-        elements[i] = fn.apply(get(i));
-      }
-      return new Tuple<>((S[]) elements);
+		public Tuple<T> get(int start, int end) {
+			SyntacticItem[] items = new SyntacticItem[end - start];
+			for (int i = start; i < end; ++i) {
+				items[i] = super.get(i);
+			}
+			return new Tuple(items);
+		}
+
+		public <S extends SyntacticItem> Tuple<S> map(Function<T, S> fn) {
+			int size = size();
+			SyntacticItem[] elements = new SyntacticItem[size];
+			for (int i = 0; i != size; ++i) {
+				elements[i] = fn.apply(get(i));
+			}
+			return new Tuple<>((S[]) elements);
 		}
 
 		@Override
@@ -174,7 +182,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 				@Override
 				public T next() {
-					return (T) get(index++);
+					return get(index++);
 				}
 
 			};
@@ -382,7 +390,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			}
 
 			public byte[] get() {
-				return (byte[]) data;
+				return data;
 			}
 
 			@Override
