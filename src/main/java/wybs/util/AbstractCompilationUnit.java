@@ -48,6 +48,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	public static final int ITEM_name = 7;
 
 	public static final int ATTR_span = 8;
+	public static final int ITEM_reference = 9;
 	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
@@ -70,6 +71,32 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	public SyntacticHeap getParent() {
 		return null;
 	}
+
+	/**
+	 * Represents a "backlink" or "crossref" in the tree. That is, a non-owning
+	 * reference which refers to another item. Copying a reference will not copy the
+	 * item to which it refers and, hence, care must be taken when cloning items
+	 * that contain them.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <T>
+	 */
+	public static class Ref<T extends SyntacticItem> extends AbstractSyntacticItem {
+		public Ref(T referent) {
+			super(ITEM_reference,referent);
+		}
+
+		public T get() {
+			return (T) get(0);
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new Ref(operands[0]);
+		}
+	}
+
 
 	/**
 	 * Represents a pair of items in a compilation unit.
