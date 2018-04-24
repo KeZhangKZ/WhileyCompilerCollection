@@ -48,7 +48,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	public static final int ITEM_name = 7;
 
 	public static final int ATTR_span = 8;
-	public static final int ITEM_reference = 9;
+	public static final int ITEM_ref = 9;
 	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
@@ -84,11 +84,27 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	 */
 	public static class Ref<T extends SyntacticItem> extends AbstractSyntacticItem {
 		public Ref(T referent) {
-			super(ITEM_reference,referent);
+			super(ITEM_ref,referent);
 		}
 
 		public T get() {
 			return (T) get(0);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof Ref) {
+				Ref<?> r = (Ref<?>) o;
+				return get() == r.get();
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			// NOTE: whilst this is far from ideal it is necessary to break potential cycles
+			// in the object graph.
+			return 0;
 		}
 
 		@Override
@@ -583,7 +599,13 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 				return new Attribute.Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
 			}
 		};
-
+		// ==========================================================================
+		schema[ITEM_ref] = new Schema(Operands.ONE,Data.ZERO, "ITEM_ref") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Ref(operands[0]);
+			}
+		};
 		return schema;
 	}
 }
