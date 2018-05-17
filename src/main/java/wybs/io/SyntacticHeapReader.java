@@ -139,15 +139,16 @@ public abstract class SyntacticHeapReader {
 			// Destructure bytecode
 			int opcode = bytecode.opcode;
 			int[] operands = bytecode.operands;
-			SyntacticItem[] operandItems = new SyntacticItem[operands.length];
 			byte[] data = bytecode.data;
+			// Construct empty item
+			SyntacticItem item = schema[bytecode.opcode].construct(opcode, new SyntacticItem[operands.length], data);
+			// Store item so can be accessed recursively
+			items[index] = item;
 			// Recursively construct operands
 			for (int i = 0; i != operands.length; ++i) {
 				constructItem(operands[i], bytecodes, items);
-				operandItems[i] = items[operands[i]];
+				item.setOperand(i, items[operands[i]]);
 			}
-			// Physically construct the item
-			items[index] = schema[bytecode.opcode].construct(opcode, operandItems, data);
 		}
 	}
 
