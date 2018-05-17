@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
 import wybs.lang.NameID;
@@ -47,6 +48,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	public static final int ITEM_name = 7;
 
 	public static final int ATTR_span = 8;
+	public static final int ITEM_ref = 9;
 	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
@@ -69,6 +71,48 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 	public SyntacticHeap getParent() {
 		return null;
 	}
+
+	/**
+	 * Represents a "backlink" or "crossref" in the tree. That is, a non-owning
+	 * reference which refers to another item. Copying a reference will not copy the
+	 * item to which it refers and, hence, care must be taken when cloning items
+	 * that contain them.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <T>
+	 */
+	public static class Ref<T extends SyntacticItem> extends AbstractSyntacticItem {
+		public Ref(T referent) {
+			super(ITEM_ref,referent);
+		}
+
+		public T get() {
+			return (T) get(0);
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof Ref) {
+				Ref<?> r = (Ref<?>) o;
+				return get() == r.get();
+			}
+			return false;
+		}
+
+		@Override
+		public int hashCode() {
+			// NOTE: whilst this is far from ideal it is necessary to break potential cycles
+			// in the object graph.
+			return 0;
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new Ref(operands[0]);
+		}
+	}
+
 
 	/**
 	 * Represents a pair of items in a compilation unit.
@@ -125,19 +169,21 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return (T) super.get(i);
 		}
 
-		public <S extends SyntacticItem> Tuple<S> project(int index, Class<S> kind) {
-			int size = size();
-			S[] elements = (S[]) Array.newInstance(kind, size);
-			for (int i = 0; i != size; ++i) {
-				SyntacticItem element = get(i);
-				SyntacticItem projected = element.get(index);
-				if (kind.isInstance(projected)) {
-					elements[i] = (S) projected;
-				} else {
-					throw new IllegalArgumentException("invalid project kind: " + kind.getName());
-				}
+		public Tuple<T> get(int start, int end) {
+			SyntacticItem[] items = new SyntacticItem[end - start];
+			for (int i = start; i < end; ++i) {
+				items[i] = super.get(i);
 			}
-			return new Tuple<>(elements);
+			return new Tuple(items);
+		}
+
+		public <S extends SyntacticItem> Tuple<S> map(Function<T, S> fn) {
+			int size = size();
+			SyntacticItem[] elements = new SyntacticItem[size];
+			for (int i = 0; i != size; ++i) {
+				elements[i] = fn.apply(get(i));
+			}
+			return new Tuple<>((S[]) elements);
 		}
 
 		@Override
@@ -179,7 +225,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 				@Override
 				public T next() {
-					return (T) get(index++);
+					return get(index++);
 				}
 
 			};
@@ -387,7 +433,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			}
 
 			public byte[] get() {
-				return (byte[]) data;
+				return data;
 			}
 
 			@Override
@@ -553,7 +599,13 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 				return new Attribute.Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
 			}
 		};
-
+		// ==========================================================================
+		schema[ITEM_ref] = new Schema(Operands.ONE,Data.ZERO, "ITEM_ref") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Ref(operands[0]);
+			}
+		};
 		return schema;
 	}
 }

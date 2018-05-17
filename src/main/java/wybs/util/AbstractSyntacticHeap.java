@@ -147,24 +147,24 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			// Item already allocated to this heap, hence nothing to do.
 			return item;
 		} else {
-			// Item not allocated to this heap. Therefore, recursively allocate
-			// all children.
-			SyntacticItem[] operands = new SyntacticItem[item.size()];
-			for (int i = 0; i != operands.length; ++i) {
-				SyntacticItem child = item.get(i);
-				if (child != null) {
-					child = internalAllocate(child,map);
-				}
-				operands[i] = child;
-			}
-			// Clone item prior to allocation
-			T nItem = (T) item.clone(operands);
 			// Determine index for allocation
 			int index = syntacticItems.size();
+			// Clone item prior to allocation
+			T nItem = (T) item.clone(new SyntacticItem[item.size()]);
+			// Allocate item
 			syntacticItems.add(nItem);
 			// ... and allocate item itself
 			nItem.allocate(this, index);
 			map.put(item, nItem);
+			// Item not allocated to this heap. Therefore, recursively allocate
+			// all children.
+			for (int i = 0; i != nItem.size(); ++i) {
+				SyntacticItem child = item.get(i);
+				if (child != null) {
+					child = internalAllocate(child,map);
+				}
+				nItem.setOperand(i, child);
+			}
 			return nItem;
 		}
 	}
