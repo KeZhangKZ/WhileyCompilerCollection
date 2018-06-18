@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import wybs.util.ResolveError;
 import wycc.lang.Command;
@@ -106,7 +107,18 @@ public class Build implements Command<Build.Result> {
 	public String getName() {
 		return "mbuild";
 	}
-//
+
+	@Override
+	public void initialise(Map<String, Object> configuration) {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void finalise() {
+		// TODO Auto-generated method stub
+
+	}
+
 //	public void build() {
 //		try {
 //			Path.Root packageRoot = getPackageRoot(name,version);
@@ -215,4 +227,5 @@ public class Build implements Command<Build.Result> {
 
 		return sources;
 	}
+
 }

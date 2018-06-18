@@ -6,9 +6,9 @@ import wyfs.lang.Path;
 public interface Package {
 
 	/**
-	 * A resolve is responsible for resolving a given package to a root. This
-	 * may involve, for example, downloading the package from an Internet
-	 * repository (e.g. GitHub) and expanding it into a registry cache.
+	 * A resolver is responsible for resolving a given package to a root. This might
+	 * be done, for example, by looking in the local package repository and, if not
+	 * found there, triggering an appropriate package installer.
 	 *
 	 * @author David J. Pearce
 	 *

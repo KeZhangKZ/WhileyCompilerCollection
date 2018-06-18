@@ -15,6 +15,7 @@ package wycc.commands;
 
 import java.io.PrintStream;
 import java.util.List;
+import java.util.Map;
 
 import wycc.WyTool;
 import wycc.lang.Command;
@@ -56,6 +57,16 @@ public class Help implements Command<String> {
 	@Override
 	public String getDescription() {
 		return "Display help information";
+	}
+
+	@Override
+	public void initialise(Map<String, Object> configuration) {
+		// Nothing to do here
+	}
+
+	@Override
+	public void finalise() {
+		// Nothing to do here
 	}
 
 	@Override

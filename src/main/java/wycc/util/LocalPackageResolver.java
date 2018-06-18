@@ -7,12 +7,20 @@ import wycc.lang.SemanticVersion;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 
-public abstract class AbstractPackageResolver implements Package.Resolver {
+/**
+ * The local package install maintains a local copy of all packages which can
+ * then be resolved against. It also maintains a list of installers which can be
+ * used in an attempt to obtain missing packages (e.g. by downloading them).
+ *
+ * @author David J. Pearce
+ *
+ */
+public abstract class LocalPackageResolver implements Package.Resolver {
 	public static final Path.ID BUILD_FILE_NAME = Trie.fromString("wy.toml");
 	protected final Logger logger;
 	protected final Path.Root root;
 
-	public AbstractPackageResolver(Logger logger, Path.Root root) {
+	public LocalPackageResolver(Logger logger, Path.Root root) {
 		this.logger = logger;
 		this.root = root;
 	}
