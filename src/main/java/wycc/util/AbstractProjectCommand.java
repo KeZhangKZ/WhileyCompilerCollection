@@ -8,6 +8,7 @@ package wycc.util;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,17 +46,17 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	/**
 	 * The locations in which (e.g. whiley) source files are found.
 	 */
-	protected Map<String,Path.Root> srcRoots;
+	protected final Map<String,Path.Root> srcRoots = new HashMap<>();
 
 	/**
 	 * The locations in which (e.g. wyil) intermediate binary files are found.
 	 */
-	protected Map<String,Path.Root> binRoots;
+	protected final Map<String,Path.Root> binRoots = new HashMap<>();
 
 	/**
 	 * The locations in which (e.g. stdlib) external files are found.
 	 */
-	protected Map<String,Path.Root> extRoots;
+	protected final Map<String,Path.Root> extRoots = new HashMap<>();
 
 	/**
 	 * The project which controls the namespacing
@@ -169,6 +170,13 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	protected void loadBuildFile() throws IOException {
 		// FIXME: having loaded the file, what do we do next?
 		Path.Entry<ConfigFile> buildFileEntry = projectRoot.get(BUILD_FILE_NAME, ConfigFile.ContentType);
+		System.out.println("GOT BUILD FILE: " + buildFileEntry);
+		if(buildFileEntry != null) {
+			ConfigFile config = buildFileEntry.read();
+			for(ConfigFile.Declaration d : config.getDeclarations()) {
+				System.out.println("HEADER: " + d.toString());
+			}
+		}
 	}
 
 	/**

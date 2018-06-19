@@ -20,11 +20,13 @@ import java.util.Map;
 
 import wybs.lang.SyntaxError;
 import wycc.commands.Build;
+import wycc.commands.Clean;
 import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.lang.ConfigFile;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -52,6 +54,8 @@ public class WyMain {
 			String suffix = e.suffix();
 
 			if (suffix.equals("wyml")) {
+				e.associate(ConfigFile.ContentType, null);
+			} else if (suffix.equals("toml")) {
 				e.associate(ConfigFile.ContentType, null);
 			}
 		}
@@ -103,7 +107,13 @@ public class WyMain {
 		} else {
 			// Yes, execute the given command
 			args = commandArgs.toArray(new String[commandArgs.size()]);
+			// Initialise the command
+			command.initialise(null);
+			// Execute command with given arguments
 			command.execute(args);
+			// Tear down command
+			command.finalise();
+			// Done
 			System.exit(0);
 		}
 	}
@@ -168,7 +178,8 @@ public class WyMain {
 		// The list of default commands available in the tool
 		Command[] defaultCommands = {
 				new Help(System.out,tool.getCommands()),
-				new Build(registry)
+				new Build(registry),
+				new Clean(registry,Logger.NULL)
 		};
 		// Register the default commands available in the tool
 		Module.Context context = tool.getContext();

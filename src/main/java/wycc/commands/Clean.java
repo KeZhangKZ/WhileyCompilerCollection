@@ -48,8 +48,7 @@ public class Clean extends AbstractProjectCommand<Clean.Result> {
 
 	@Override
 	public String getDescription() {
-		return "Responsible for removing all intermediate (e.g. binary) files generating\n" +
-				"during the build process, excluding those generated for any dependencies.";
+		return "Removing any intermediate (e.g. binary) files.";
 	}
 
 	@Override
