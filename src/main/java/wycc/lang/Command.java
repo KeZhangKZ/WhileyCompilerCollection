@@ -13,6 +13,7 @@
 // limitations under the License.
 package wycc.lang;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -43,12 +44,12 @@ public interface Command<T> extends Feature.Configurable {
 	 * @param configuration
 	 *            --- The list of configuration options passed to this command
 	 */
-	public void initialise(Map<String, Object> configuration);
+	public void initialise(Map<String, Object> configuration) throws IOException;
 
 	/**
 	 * Perform whatever destruction is necessary whence the command is complete.
 	 */
-	public void finalise();
+	public void finalise() throws IOException;
 
 	/**
 	 * Execute this command with the given arguments. Every invocation of this

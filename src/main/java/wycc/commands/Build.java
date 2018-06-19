@@ -16,19 +16,12 @@ package wycc.commands;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import wybs.util.ResolveError;
 import wycc.lang.Command;
-import wycc.lang.ConfigFile;
-import wycc.lang.SemanticVersion;
-import wycc.util.GitPackageResolver;
-import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 
 public class Build implements Command<Build.Result> {
@@ -63,19 +56,6 @@ public class Build implements Command<Build.Result> {
 
 	@Override
 	public Result execute(String... args) {
-		try {
-			DirectoryRoot buildRoot = new DirectoryRoot(".",registry);
-			DirectoryRoot registryRoot = new DirectoryRoot(REGISTRY_DIR,registry);
-			HashMap<String,String> fakePackageRegistry = new HashMap<>();
-			fakePackageRegistry.put("std", "https://github.com/Whiley/WhileyStandardLibrary");
-			GitPackageResolver packageResolver = new GitPackageResolver(Logger.NULL,registryRoot,fakePackageRegistry);
-			packageResolver.resolve("std", new SemanticVersion("0.2.0"));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} catch (ResolveError e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		return Result.SUCCESS;
 	}
 

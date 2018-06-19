@@ -14,10 +14,12 @@ import java.util.Map;
 import wybs.lang.Build;
 import wybs.util.StdProject;
 import wycc.lang.Command;
+import wycc.lang.ConfigFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.JarFileRoot;
+import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
 
 /**
@@ -29,14 +31,17 @@ import wyfs.util.VirtualRoot;
  *
  */
 public abstract class AbstractProjectCommand<T> implements Command<T> {
-
+	public static final Path.ID BUILD_FILE_NAME = Trie.fromString("wy");
 	/**
 	 * The master project content type registry. This is needed for the build
 	 * system to determine the content type of files it finds on the file
 	 * system.
 	 */
-	public final Content.Registry registry;
-
+	protected final Content.Registry registry;
+	/**
+	 * The root of the build project in question.
+	 */
+	protected Path.Root projectRoot;
 	/**
 	 * The locations in which (e.g. whiley) source files are found.
 	 */
@@ -112,9 +117,13 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	 * @throws IOException
 	 */
 	@Override
-	public void initialise(Map<String,Object> configuration) {
+	public void initialise(Map<String,Object> configuration) throws IOException {
+		// Locate the project root
+		locateProjectRoot();
 		// Load build file
-
+		loadBuildFile();
+		// Resolve dependencies
+		resolveDependencies();
 		// Finalise configuration
 		finaliseConfiguration(configuration);
 		// Add roots and construct project
@@ -127,6 +136,7 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 		this.project = new StdProject(roots);
 	}
 
+	@Override
 	public void finalise() {
 		// Flush all roots
 		for (Path.Root bin : binRoots.values()) {
@@ -139,17 +149,45 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	}
 
 	/**
+	 * Attempt to determine where the project root is. That might be the current
+	 * directory. But, if not, then we traverse up the directory tree looking
+	 * for a build file (e.g. wy.toml).
+	 * @throws IOException
+	 */
+	protected void locateProjectRoot() throws IOException {
+		// FIXME: should recurse up the directory tree
+		this.projectRoot = new DirectoryRoot(".",registry);
+	}
+
+	/**
+	 * Load the project file (e.g. wy.toml) which describes this project. This is
+	 * necessary to extract key information about the project (e.g. what
+	 * dependencies are required).
+	 *
+	 * @throws IOException
+	 */
+	protected void loadBuildFile() throws IOException {
+		// FIXME: having loaded the file, what do we do next?
+		Path.Entry<ConfigFile> buildFileEntry = projectRoot.get(BUILD_FILE_NAME, ConfigFile.ContentType);
+	}
+
+	/**
+	 * Resolve any dependencies needed for the project. If important dependencies
+	 * are not found, this will attempt to download them. The resulting dependencies
+	 * will then be registered as external roots.
+	 *
+	 * @throws IOException
+	 */
+	protected void resolveDependencies() throws IOException {
+
+	}
+
+	/**
 	 * Finalise the given configuration to ensure it is an consistent state.
 	 * This means, in particular, that roots which have not been defined by the
 	 * user are created as necessary.
 	 */
-	protected void finaliseConfiguration(Map<String,Object> configuration) throws IOException {
-		whileydir = getDirectoryRoot(whileydir,new DirectoryRoot(".",registry));
-		wyildir = getDirectoryRoot(wyildir,whileydir);
-		wyaldir = getAbstractRoot(wyaldir);
-		wycsdir = getAbstractRoot(wycsdir);
-	}
-
+	protected abstract void finaliseConfiguration(Map<String,Object> configuration);
 	/**
 	 * Construct a root which must correspond to a physical directory.
 	 *
