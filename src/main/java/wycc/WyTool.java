@@ -70,12 +70,15 @@ public class WyTool {
 	// Instance Fields
 	// ==================================================================
 
-	private final ArrayList<Command> commands;
+	/**
+	 * The list of commands registered with this tool.
+	 */
+	private final ArrayList<Command<?>> commands;
 
 	/**
 	 * The list of registered content types
 	 */
-	private final ArrayList<Content.Type> contentTypes;
+	private final ArrayList<Content.Type<?>> contentTypes;
 
 	/**
 	 *
@@ -132,10 +135,10 @@ public class WyTool {
 	 * @param name
 	 * @return
 	 */
-	public Command getCommand(String name) {
+	public Command<?> getCommand(String name) {
 		for (int i = 0; i != commands.size(); ++i) {
-			Command c = commands.get(i);
-			if (c.getName().equals(name)) {
+			Command<?> c = commands.get(i);
+			if (c.getDescriptor().getName().equals(name)) {
 				return c;
 			}
 		}
@@ -147,7 +150,7 @@ public class WyTool {
 	 *
 	 * @return
 	 */
-	public List<Command> getCommands() {
+	public List<Command<?>> getCommands() {
 		return commands;
 	}
 

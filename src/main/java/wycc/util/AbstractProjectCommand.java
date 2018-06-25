@@ -5,11 +5,9 @@
 // of the BSD license.  See the LICENSE file for details.
 package wycc.util;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import wybs.lang.Build;
@@ -19,7 +17,6 @@ import wycc.lang.ConfigFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;
-import wyfs.util.JarFileRoot;
 import wyfs.util.Trie;
 import wyfs.util.VirtualRoot;
 
@@ -174,7 +171,10 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 		if(buildFileEntry != null) {
 			ConfigFile config = buildFileEntry.read();
 			for(ConfigFile.Declaration d : config.getDeclarations()) {
-				System.out.println("HEADER: " + d.toString());
+				if(d instanceof ConfigFile.Section) {
+					ConfigFile.Section  s = (ConfigFile.Section) d;
+					System.out.println("SECTION: " + s.getName());
+				}
 			}
 		}
 	}
@@ -196,6 +196,7 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	 * user are created as necessary.
 	 */
 	protected abstract void finaliseConfiguration(Map<String,Object> configuration);
+
 	/**
 	 * Construct a root which must correspond to a physical directory.
 	 *

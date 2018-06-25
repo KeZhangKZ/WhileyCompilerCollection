@@ -17,14 +17,13 @@ import java.io.PrintStream;
 import java.util.List;
 import java.util.Map;
 
-import wycc.WyTool;
 import wycc.lang.Command;
 
 public class Help implements Command<String> {
 	private final PrintStream out;
-	private final List<Command> commands;
+	private final List<Command<?>> commands;
 
-	public Help(PrintStream out, List<Command> commands) {
+	public Help(PrintStream out, List<Command<?>> commands) {
 		this.commands = commands;
 		this.out = out;
 	}
@@ -50,13 +49,18 @@ public class Help implements Command<String> {
 	}
 
 	@Override
-	public String getName() {
-		return "help";
-	}
+	public Descriptor getDescriptor() {
+		return new Descriptor() {
+			@Override
+			public String getName() {
+				return "help";
+			}
 
-	@Override
-	public String getDescription() {
-		return "Display help information";
+			@Override
+			public String getDescription() {
+				return "Display help information";
+			}
+		};
 	}
 
 	@Override
@@ -75,16 +79,16 @@ public class Help implements Command<String> {
 			printUsage();
 		} else {
 			// Search for the command
-			Command command = null;
-			for(Command c : commands) {
-				if(c.getName().equals(args[0])) {
+			Command<?> command = null;
+			for(Command<?> c : commands) {
+				if(c.getDescriptor().getName().equals(args[0])) {
 					command = c;
 					break;
 				}
 			}
 			//
 			if(command == null) {
-				System.out.println("No entry for " + args[0]);
+				out.println("No entry for " + args[0]);
 			} else {
 				printCommandDetails(command);
 			}
@@ -93,19 +97,20 @@ public class Help implements Command<String> {
 		return null;
 	}
 
-	protected void printCommandDetails(Command command) {
-		System.out.println("NAME");
-		System.out.println("\t" + command.getName());
-		System.out.println();
-		System.out.println("DESCRIPTION");
-		System.out.println("\t" + command.getDescription());
-		System.out.println();
-		System.out.println("OPTIONS");
+	protected void printCommandDetails(Command<?> command) {
+		Command.Descriptor d = command.getDescriptor();
+		out.println("NAME");
+		out.println("\t" + d.getName());
+		out.println();
+		out.println("DESCRIPTION");
+		out.println("\t" + d.getDescription());
+		out.println();
+		out.println("OPTIONS");
 		String[] options = command.getOptions();
 		for(int i=0;i!=options.length;++i) {
 			String option = options[i];
-			System.out.println("\t--" + option);
-			System.out.println("\t\t" + command.describe(option));
+			out.println("\t--" + option);
+			out.println("\t\t" + command.describe(option));
 		}
 	}
 
@@ -113,17 +118,18 @@ public class Help implements Command<String> {
 	 * Print usage information to the console.
 	 */
 	protected void printUsage() {
-		System.out.println("usage: wy [--verbose] command [<options>] [<args>]");
-		System.out.println();
+		out.println("usage: wy [--verbose] command [<options>] [<args>]");
+		out.println();
 		int maxWidth = determineCommandNameWidth(commands);
-		System.out.println("Commands:");
-		for(Command c : commands) {
-			System.out.print("  ");
-			System.out.print(rightPad(c.getName(),maxWidth));
-			System.out.println("   " + c.getDescription());
+		out.println("Commands:");
+		for(Command<?> c : commands) {
+			Command.Descriptor d = c.getDescriptor();
+			out.print("  ");
+			out.print(rightPad(d.getName(),maxWidth));
+			out.println("   " + d.getDescription());
 		}
-		System.out.println();
-		System.out.println("Run `wy help COMMAND` for more information on a command");
+		out.println();
+		out.println("Run `wy help COMMAND` for more information on a command");
 	}
 
 	/**
@@ -162,10 +168,10 @@ public class Help implements Command<String> {
 	 * @param commands
 	 * @return
 	 */
-	private static int determineCommandNameWidth(List<Command> commands) {
+	private static int determineCommandNameWidth(List<Command<?>> commands) {
 		int max = 0;
-		for(Command c : commands) {
-			max = Math.max(max, c.getName().length());
+		for(Command<?> c : commands) {
+			max = Math.max(max, c.getDescriptor().getName().length());
 		}
 		return max;
 	}

@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 
 import wycc.lang.Command;
+import wycc.lang.Command.Descriptor;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -46,8 +47,19 @@ public class Build implements Command<Build.Result> {
 	}
 
 	@Override
-	public String getDescription() {
-		return "Perform build operations on an existing project";
+	public Descriptor getDescriptor() {
+		return new Descriptor() {
+
+			@Override
+			public String getName() {
+				return "build";
+			}
+
+			@Override
+			public String getDescription() {
+				return "Perform build operations on an existing project";
+			}
+		};
 	}
 
 	public String describeInit() {
@@ -81,11 +93,6 @@ public class Build implements Command<Build.Result> {
 	public Object get(String name) {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public String getName() {
-		return "mbuild";
 	}
 
 	@Override

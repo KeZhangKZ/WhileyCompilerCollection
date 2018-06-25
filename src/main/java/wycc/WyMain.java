@@ -176,14 +176,14 @@ public class WyMain {
 	 */
 	private static void registerDefaultCommands(WyTool tool, Content.Registry registry) {
 		// The list of default commands available in the tool
-		Command[] defaultCommands = {
+		Command<?>[] defaultCommands = {
 				new Help(System.out,tool.getCommands()),
 				new Build(registry),
 				new Clean(registry,Logger.NULL)
 		};
 		// Register the default commands available in the tool
 		Module.Context context = tool.getContext();
-		for(Command c : defaultCommands) {
+		for(Command<?> c : defaultCommands) {
 			context.register(wycc.lang.Command.class,c);
 		}
 	}

@@ -2,6 +2,7 @@ package wycc.commands;
 
 import java.util.Map;
 
+import wycc.lang.Command.Descriptor;
 import wycc.util.AbstractProjectCommand;
 import wycc.util.Logger;
 import wyfs.lang.Content.Registry;
@@ -30,15 +31,18 @@ public class New extends AbstractProjectCommand<New.Result> {
 	}
 
 	@Override
-	public String getName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public Descriptor getDescriptor() {
+		return new Descriptor() {
+			@Override
+			public String getName() {
+				return "new";
+			}
 
-	@Override
-	public String getDescription() {
-		// TODO Auto-generated method stub
-		return null;
+			@Override
+			public String getDescription() {
+				return "Create a new Whiley package.";
+			}
+		};
 	}
 
 	@Override
