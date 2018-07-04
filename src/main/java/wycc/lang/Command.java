@@ -35,12 +35,21 @@ public interface Command<T> extends Feature.Configurable {
 	public Descriptor getDescriptor();
 
 	/**
+	 * Get any sub-commands of this command.
+	 *
+	 * @return
+	 */
+	public List<Command<?>> getSubcommands();
+
+	/**
 	 * Perform whatever initialisation is necessary for a given configuration.
 	 *
-	 * @param configuration
-	 *            --- The list of configuration options passed to this command
+	 * @param options
+	 *            The set of options specifically supplied to this command. These
+	 *            are not part of the global project configuration and are specific
+	 *            to the given command in question. *
 	 */
-	public void initialise(Map<String, Object> configuration) throws IOException;
+	public void initialise(List<Option.Instance> options) throws IOException;
 
 	/**
 	 * Perform whatever destruction is necessary whence the command is complete.
@@ -115,13 +124,9 @@ public interface Command<T> extends Feature.Configurable {
 		 *            Enclosing environment for this tool. This provides access to the
 		 *            various important details cleaned from the configuration, such as
 		 *            the set of available build platforms and content types.
-		 * @param options
-		 *            The set of options specifically supplied to this command. These
-		 *            are not part of the global project configuration and are specific
-		 *            to the given command in question.
 		 * @return
 		 */
-		public Command<?> initialise(Environment environment, Map<String, Object> options);
+		public Command<?> initialise(Environment environment);
 	}
 
 	/**
@@ -144,5 +149,28 @@ public interface Command<T> extends Feature.Configurable {
 		 * @return
 		 */
 		public String getDescription();
+
+		/**
+		 * Construct a given option from a given argument string.
+		 *
+		 * @param arg
+		 * @return
+		 */
+		public Instance Initialise(String arg);
+
+		/**
+		 * Represents a concrete option value.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface Instance {
+			/**
+			 * Get the option from which this instance was created.
+			 *
+			 * @return
+			 */
+			public Option getOption();
+		}
 	}
 }

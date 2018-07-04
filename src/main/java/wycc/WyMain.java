@@ -16,6 +16,8 @@ package wycc;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 
 import wybs.lang.SyntaxError;
@@ -77,7 +79,9 @@ public class WyMain {
 			System.exit(-1);
 		}
 		WyTool tool = constructWyTool(whileyhome);
-		// process command-line options
+		// Process command-line options
+		Command command = processCommandLineOptions(args);
+		//
 		Command command = null;
 		ArrayList<String> commandArgs = new ArrayList<>();
 
