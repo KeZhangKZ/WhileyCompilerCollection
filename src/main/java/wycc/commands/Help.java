@@ -14,43 +14,28 @@
 package wycc.commands;
 
 import java.io.PrintStream;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import wycc.lang.Command;
 
-public class Help implements Command<String> {
+public class Help implements Command {
 	private final PrintStream out;
-	private final List<Command<?>> commands;
+	private final List<Command> commands;
 
-	public Help(PrintStream out, List<Command<?>> commands) {
+	public Help(PrintStream out, List<Command> commands) {
 		this.commands = commands;
 		this.out = out;
 	}
 
 	@Override
-	public String[] getOptions() {
-		return new String[]{};
-	}
-
-	@Override
-	public String describe(String name) {
-		throw new UnsupportedOperationException("");
-	}
-
-	@Override
-	public void set(String name, Object value) throws ConfigurationError {
-		throw new UnsupportedOperationException("");
-	}
-
-	@Override
-	public Object get(String name) {
-		throw new UnsupportedOperationException("");
+	public List<Command> getSubcommands() {
+		return Collections.EMPTY_LIST;
 	}
 
 	@Override
 	public Descriptor getDescriptor() {
-		return new Descriptor() {
+		return new Command.Descriptor() {
 			@Override
 			public String getName() {
 				return "help";
@@ -60,11 +45,23 @@ public class Help implements Command<String> {
 			public String getDescription() {
 				return "Display help information";
 			}
+
+			@Override
+			public List<Option> getOptions() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Command initialise(Environment environment) {
+				// TODO Auto-generated method stub
+				return null;
+			}
 		};
 	}
 
 	@Override
-	public void initialise(Map<String, Object> configuration) {
+	public void initialise(List<Command.Option.Instance> configuration) {
 		// Nothing to do here
 	}
 
@@ -74,30 +71,30 @@ public class Help implements Command<String> {
 	}
 
 	@Override
-	public String execute(String... args) {
-		if(args.length == 0) {
+	public boolean execute(List<String> args) {
+		if(args.size() == 0) {
 			printUsage();
 		} else {
 			// Search for the command
-			Command<?> command = null;
-			for(Command<?> c : commands) {
-				if(c.getDescriptor().getName().equals(args[0])) {
+			Command command = null;
+			for(Command c : commands) {
+				if(c.getDescriptor().getName().equals(args.get(0))) {
 					command = c;
 					break;
 				}
 			}
 			//
 			if(command == null) {
-				out.println("No entry for " + args[0]);
+				out.println("No entry for " + args.get(0));
 			} else {
 				printCommandDetails(command);
 			}
 		}
 		//
-		return null;
+		return true;
 	}
 
-	protected void printCommandDetails(Command<?> command) {
+	protected void printCommandDetails(Command command) {
 		Command.Descriptor d = command.getDescriptor();
 		out.println("NAME");
 		out.println("\t" + d.getName());
@@ -106,11 +103,11 @@ public class Help implements Command<String> {
 		out.println("\t" + d.getDescription());
 		out.println();
 		out.println("OPTIONS");
-		String[] options = command.getOptions();
-		for(int i=0;i!=options.length;++i) {
-			String option = options[i];
-			out.println("\t--" + option);
-			out.println("\t\t" + command.describe(option));
+		List<Command.Option> options = d.getOptions();
+		for(int i=0;i!=options.size();++i) {
+			Command.Option option = options.get(i);
+			out.println("\t--" + option.getName());
+			out.println("\t\t" + option.getDescription());
 		}
 	}
 
@@ -122,10 +119,10 @@ public class Help implements Command<String> {
 		out.println();
 		int maxWidth = determineCommandNameWidth(commands);
 		out.println("Commands:");
-		for(Command<?> c : commands) {
+		for (Command c : commands) {
 			Command.Descriptor d = c.getDescriptor();
 			out.print("  ");
-			out.print(rightPad(d.getName(),maxWidth));
+			out.print(rightPad(d.getName(), maxWidth));
 			out.println("   " + d.getDescription());
 		}
 		out.println();
@@ -168,9 +165,9 @@ public class Help implements Command<String> {
 	 * @param commands
 	 * @return
 	 */
-	private static int determineCommandNameWidth(List<Command<?>> commands) {
+	private static int determineCommandNameWidth(List<Command> commands) {
 		int max = 0;
-		for(Command<?> c : commands) {
+		for (Command c : commands) {
 			max = Math.max(max, c.getDescriptor().getName().length());
 		}
 		return max;

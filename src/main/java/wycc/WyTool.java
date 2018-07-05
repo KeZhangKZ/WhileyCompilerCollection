@@ -13,34 +13,23 @@
 // limitations under the License.
 package wycc;
 
-import java.io.File;
-import java.io.PrintStream;
 import java.util.*;
-
-import wybs.lang.Build;
 import wycc.lang.Command;
 import wycc.lang.Feature;
 import wycc.lang.Module;
 import wycc.util.Logger;
-import wycc.util.OptArg;
-import wycc.util.Pair;
 import wycc.util.StdModuleContext;
-import wycc.util.StdModuleManager;
 import wyfs.lang.Content;
 
-
 public class WyTool {
-
 	/**
 	 * The major version for this module application
 	 */
 	public static final int MAJOR_VERSION;
-
 	/**
 	 * The minor version for this module application
 	 */
 	public static final int MINOR_VERSION;
-
 	/**
 	 * The minor revision for this module application
 	 */
@@ -73,7 +62,7 @@ public class WyTool {
 	/**
 	 * The list of commands registered with this tool.
 	 */
-	private final ArrayList<Command<?>> commands;
+	private final ArrayList<Command> commands;
 
 	/**
 	 * The list of registered content types
@@ -107,7 +96,7 @@ public class WyTool {
 	}
 
 	public void set(String option, Object value) throws Feature.ConfigurationError {
-		switch(option) {
+		switch (option) {
 		case "verbose":
 			setVerbose();
 			break;
@@ -135,9 +124,9 @@ public class WyTool {
 	 * @param name
 	 * @return
 	 */
-	public Command<?> getCommand(String name) {
+	public Command getCommand(String name) {
 		for (int i = 0; i != commands.size(); ++i) {
-			Command<?> c = commands.get(i);
+			Command c = commands.get(i);
 			if (c.getDescriptor().getName().equals(name)) {
 				return c;
 			}
@@ -150,8 +139,18 @@ public class WyTool {
 	 *
 	 * @return
 	 */
-	public List<Command<?>> getCommands() {
+	public List<Command> getCommands() {
 		return commands;
+	}
+
+	/**
+	 * Get the content registry associated with this tool instance.
+	 *
+	 * @return
+	 */
+	public Content.Registry getRegistry() {
+		// TODO: fixme
+		return null;
 	}
 
 	// ==================================================================

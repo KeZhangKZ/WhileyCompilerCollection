@@ -25,7 +25,7 @@ import wyfs.lang.Content;
  * @author David J. Pearce
  *
  */
-public interface Command<T> extends Feature.Configurable {
+public interface Command extends Feature {
 
 	/**
 	 * Get a descriptor for this command.
@@ -39,7 +39,7 @@ public interface Command<T> extends Feature.Configurable {
 	 *
 	 * @return
 	 */
-	public List<Command<?>> getSubcommands();
+	public List<Command> getSubcommands();
 
 	/**
 	 * Perform whatever initialisation is necessary for a given configuration.
@@ -62,7 +62,7 @@ public interface Command<T> extends Feature.Configurable {
 	 * any calls are made to <code>finalise()</code>. Observer, however, that this
 	 * command may be executed multiple times.
 	 */
-	public T execute(String... args);
+	public boolean execute(List<String> args);
 
 	/**
 	 * The environment provides access to the various bits of useful information.
@@ -126,7 +126,7 @@ public interface Command<T> extends Feature.Configurable {
 		 *            the set of available build platforms and content types.
 		 * @return
 		 */
-		public Command<?> initialise(Environment environment);
+		public Command initialise(Environment environment);
 	}
 
 	/**
@@ -172,5 +172,38 @@ public interface Command<T> extends Feature.Configurable {
 			 */
 			public Option getOption();
 		}
+	}
+
+	public interface Template {
+		/**
+		 * Get the command being described by this template.
+		 *
+		 * @return
+		 */
+		public Command getCommand();
+
+		/**
+		 * Get the options described by this template, in the order in which they should
+		 * be applied.
+		 *
+		 * @return
+		 */
+		public List<Option.Instance> getOptions();
+
+		/**
+		 * Get the arguments described by this template, in the order in which they
+		 * should be applied.
+		 *
+		 * @return
+		 */
+		public List<String> getArguments();
+
+		/**
+		 * Get the child template (if any) given for this template. If no template, then
+		 * this returns <code>null</code>.
+		 *
+		 * @return
+		 */
+		public Template getChild();
 	}
 }

@@ -16,6 +16,7 @@ package wycc.commands;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -25,16 +26,7 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 
-public class Build implements Command<Build.Result> {
-	/**
-	 * Result kind for this command
-	 *
-	 */
-	public enum Result {
-		SUCCESS,
-		ERRORS,
-		INTERNAL_FAILURE
-	}
+public class Build implements Command {
 	//
 	private final Content.Registry registry;
 
@@ -59,44 +51,33 @@ public class Build implements Command<Build.Result> {
 			public String getDescription() {
 				return "Perform build operations on an existing project";
 			}
+
+			@Override
+			public List<Option> getOptions() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public Command initialise(Environment environment) {
+				// TODO Auto-generated method stub
+				return null;
+			}
 		};
 	}
 
-	public String describeInit() {
-		return "Initialise a new build project";
+	@Override
+	public List<Command> getSubcommands() {
+		return Collections.EMPTY_LIST;
 	}
 
 	@Override
-	public Result execute(String... args) {
-		return Result.SUCCESS;
+	public boolean execute(List<String> args) {
+		return false;
 	}
 
 	@Override
-	public String[] getOptions() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String describe(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void set(String name, Object value) throws ConfigurationError {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public Object get(String name) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void initialise(Map<String, Object> configuration) {
+	public void initialise(List<Option.Instance> configuration) {
 		// TODO Auto-generated method stub
 	}
 
@@ -214,5 +195,4 @@ public class Build implements Command<Build.Result> {
 
 		return sources;
 	}
-
 }
