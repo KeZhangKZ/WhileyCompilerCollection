@@ -22,7 +22,6 @@ import java.util.Map;
 
 import wybs.lang.SyntaxError;
 import wycc.commands.Build;
-import wycc.commands.Clean;
 import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.lang.ConfigFile;
@@ -87,6 +86,7 @@ public class WyMain {
 			// Not applicable, print usage information via the help sub-system.
 			tool.getCommand("help").execute(Collections.EMPTY_LIST);
 		} else {
+			// FIXME: obviously broken
 			Command command = pipeline.getCommand();
 			// Initialise the command
 			command.initialise(pipeline.getOptions());
@@ -140,14 +140,13 @@ public class WyMain {
 	 */
 	private static void registerDefaultCommands(WyTool tool, Content.Registry registry) {
 		// The list of default commands available in the tool
-		Command<?>[] defaultCommands = {
+		Command[] defaultCommands = {
 				new Help(System.out,tool.getCommands()),
-				new Build(registry),
-				new Clean(registry,Logger.NULL)
+				new Build(registry)
 		};
 		// Register the default commands available in the tool
 		Module.Context context = tool.getContext();
-		for(Command<?> c : defaultCommands) {
+		for(Command c : defaultCommands) {
 			context.register(wycc.lang.Command.class,c);
 		}
 	}
@@ -185,45 +184,6 @@ public class WyMain {
 		} else {
 			System.out.println("No plugin configuration found");
 			System.exit(-1);
-		}
-	}
-
-	/**
-	 * Parse an option which is either a string of the form "--name" or
-	 * "--name=data". Here, name is an arbitrary string and data is a string
-	 * representing a data value.
-	 *
-	 * @param arg
-	 *            The option argument to be parsed.
-	 * @return
-	 */
-	private static Pair<String,Object> parseOption(String arg) {
-		arg = arg.substring(2);
-		String[] split = arg.split("=");
-		Object data = null;
-		if(split.length > 1) {
-			data = parseData(split[1]);
-		}
-		return new Pair<>(split[0],data);
-	}
-
-	/**
-	 * Parse a given string representing a data value into an instance of Data.
-	 *
-	 * @param str
-	 *            The string to be parsed.
-	 * @return
-	 */
-	private static Object parseData(String str) {
-		if (str.equals("true")) {
-			return true;
-		} else if (str.equals("false")) {
-			return false;
-		} else if (Character.isDigit(str.charAt(0))) {
-			// number
-			return Integer.parseInt(str);
-		} else {
-			return str;
 		}
 	}
 

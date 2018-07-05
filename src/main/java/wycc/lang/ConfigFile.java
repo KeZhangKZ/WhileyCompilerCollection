@@ -62,7 +62,7 @@ public class ConfigFile extends AbstractCompilationUnit {
 
 		@Override
 		public String getSuffix() {
-			return "wyml";
+			return "toml";
 		}
 	};
 

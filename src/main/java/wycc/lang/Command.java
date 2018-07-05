@@ -39,7 +39,7 @@ public interface Command extends Feature {
 	 *
 	 * @return
 	 */
-	public List<Command> getSubcommands();
+	public List<Command> getCommands();
 
 	/**
 	 * Perform whatever initialisation is necessary for a given configuration.

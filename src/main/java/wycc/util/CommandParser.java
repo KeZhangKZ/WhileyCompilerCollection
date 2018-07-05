@@ -60,7 +60,7 @@ public class CommandParser {
 	 *
 	 * @param args
 	 */
-	protected Command.Template parse(String[] args) {
+	public Command.Template parse(String[] args) {
 		return parse(root,args,0);
 	}
 
@@ -80,8 +80,8 @@ public class CommandParser {
 			String arg = args[index];
 			if (isLongOption(arg)) {
 				options.add(parseLongOption(root, args[index]));
-			} else if (isCommand(arg, root.getSubcommands())) {
-				Command cmd = getCommand(arg, root.getSubcommands());
+			} else if (isCommand(arg, root.getCommands())) {
+				Command cmd = getCommand(arg, root.getCommands());
 				sub = parse(cmd, args, index + 1);
 				break;
 			} else {
@@ -120,6 +120,47 @@ public class CommandParser {
 		}
 		throw new IllegalArgumentException("invalid command: " + arg);
 	}
+
+
+	/**
+	 * Parse an option which is either a string of the form "--name" or
+	 * "--name=data". Here, name is an arbitrary string and data is a string
+	 * representing a data value.
+	 *
+	 * @param arg
+	 *            The option argument to be parsed.
+	 * @return
+	 */
+	private static Pair<String,Object> parseOption(String arg) {
+		arg = arg.substring(2);
+		String[] split = arg.split("=");
+		Object data = null;
+		if(split.length > 1) {
+			data = parseData(split[1]);
+		}
+		return new Pair<>(split[0],data);
+	}
+
+	/**
+	 * Parse a given string representing a data value into an instance of Data.
+	 *
+	 * @param str
+	 *            The string to be parsed.
+	 * @return
+	 */
+	private static Object parseData(String str) {
+		if (str.equals("true")) {
+			return true;
+		} else if (str.equals("false")) {
+			return false;
+		} else if (Character.isDigit(str.charAt(0))) {
+			// number
+			return Integer.parseInt(str);
+		} else {
+			return str;
+		}
+	}
+
 
 	protected static class ConcreteTemplate implements Command.Template {
 		private final Command cmd;

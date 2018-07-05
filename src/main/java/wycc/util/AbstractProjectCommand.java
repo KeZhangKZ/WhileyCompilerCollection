@@ -147,39 +147,6 @@ public abstract class AbstractProjectCommand<T> implements Command<T> {
 	}
 
 	/**
-	 * Attempt to determine where the project root is. That might be the current
-	 * directory. But, if not, then we traverse up the directory tree looking
-	 * for a build file (e.g. wy.toml).
-	 * @throws IOException
-	 */
-	protected void locateProjectRoot() throws IOException {
-		// FIXME: should recurse up the directory tree
-		this.projectRoot = new DirectoryRoot(".",registry);
-	}
-
-	/**
-	 * Load the project file (e.g. wy.toml) which describes this project. This is
-	 * necessary to extract key information about the project (e.g. what
-	 * dependencies are required).
-	 *
-	 * @throws IOException
-	 */
-	protected void loadBuildFile() throws IOException {
-		// FIXME: having loaded the file, what do we do next?
-		Path.Entry<ConfigFile> buildFileEntry = projectRoot.get(BUILD_FILE_NAME, ConfigFile.ContentType);
-		System.out.println("GOT BUILD FILE: " + buildFileEntry);
-		if(buildFileEntry != null) {
-			ConfigFile config = buildFileEntry.read();
-			for(ConfigFile.Declaration d : config.getDeclarations()) {
-				if(d instanceof ConfigFile.Section) {
-					ConfigFile.Section  s = (ConfigFile.Section) d;
-					System.out.println("SECTION: " + s.getName());
-				}
-			}
-		}
-	}
-
-	/**
 	 * Resolve any dependencies needed for the project. If important dependencies
 	 * are not found, this will attempt to download them. The resulting dependencies
 	 * will then be registered as external roots.

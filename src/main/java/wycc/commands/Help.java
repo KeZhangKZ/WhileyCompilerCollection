@@ -29,7 +29,7 @@ public class Help implements Command {
 	}
 
 	@Override
-	public List<Command> getSubcommands() {
+	public List<Command> getCommands() {
 		return Collections.EMPTY_LIST;
 	}
 
