@@ -36,37 +36,15 @@ import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 
 /**
- * Provides a command-line interface to the Whiley Compiler Collection. This
- * supports loading and configuring modules, as well as compiling files.
+ * Provides a command-line interface to the Whiley Compiler Collection. This is
+ * responsible for various tasks, such as loading various configuration files
+ * from disk, activating plugins, parsing command-line arguments and actually
+ * activating the tool itself.
  *
  * @author David J. Pearce
  *
  */
 public class WyMain {
-	/**
-	 * Default implementation of a content registry. This associates whiley and
-	 * wyil files with their respective content types.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class Registry implements Content.Registry {
-		@Override
-		public void associate(Path.Entry e) {
-			String suffix = e.suffix();
-
-			if (suffix.equals("wyml")) {
-				e.associate(ConfigFile.ContentType, null);
-			} else if (suffix.equals("toml")) {
-				e.associate(ConfigFile.ContentType, null);
-			}
-		}
-
-		@Override
-		public String suffix(Content.Type<?> t) {
-			return t.getSuffix();
-		}
-	}
 
 	// ==================================================================
 	// Main Method
@@ -78,7 +56,15 @@ public class WyMain {
 			System.err.println("error: WHILEYHOME environment variable not set");
 			System.exit(-1);
 		}
-		WyTool tool = constructWyTool(whileyhome);
+		// Construct instance of the wy tool
+		WyTool tool = new WyTool();
+		// Register default commands (e.g. help, clean, build, etc)
+		registerDefaultCommands(tool,tool.getRegistry());
+		// Read the global configuration file
+		ConfigFile global = readGlobalConfiguration(tool, whileyhome);
+		// Active plugins to ensure that all platforms and content types are registered.
+		activateDefaultPlugins(tool, global);
+		// Read the local configuration file
 		// Process command-line options
 		Command.Template pipeline = new CommandParser(tool,tool.getRegistry()).parse(args);
 		// Execute the command (if applicable)
@@ -86,7 +72,7 @@ public class WyMain {
 			// Not applicable, print usage information via the help sub-system.
 			tool.getCommand("help").execute(Collections.EMPTY_LIST);
 		} else {
-			// FIXME: obviously broken
+			// FIXME: obviously broken because can have multiple levels of commands.
 			Command command = pipeline.getCommand();
 			// Initialise the command
 			command.initialise(pipeline.getOptions());
@@ -103,20 +89,25 @@ public class WyMain {
 	// Helpers
 	// ==================================================================
 
-	private static WyTool constructWyTool(String whileyhome) throws IOException {
-		WyTool tool = new WyTool();
-		Registry registry = new Registry();
-		// Register default commands
-		registerDefaultCommands(tool,registry);
-		// Attempt to read global configuration
-		DirectoryRoot globalConfigDir = new DirectoryRoot(whileyhome, registry);
+	/**
+	 * Read the global configuration file. This contains, amongst other things, the
+	 * list of all plugins which should be activated.
+	 *
+	 * @param whileyhome
+	 * @return
+	 * @throws IOException
+	 */
+	private static ConfigFile readGlobalConfiguration(WyTool tool, String whileyhome) throws IOException {
+		DirectoryRoot globalConfigDir = new DirectoryRoot(whileyhome, tool.getRegistry());
 		ConfigFile global = readConfigFile("config", globalConfigDir);
 		if (global == null) {
 			System.err.println("Unable to read global configuration file");
+			System.exit(-1);;
 		} else {
-			activateDefaultPlugins(tool, global);
+			System.out.println("*** NOT ACTIVATING PLUGINS");
+
 		}
-		return tool;
+		return global;
 	}
 
 	private static ConfigFile readConfigFile(String name, Path.Root root) throws IOException {

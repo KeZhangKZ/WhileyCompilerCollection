@@ -102,14 +102,13 @@ public class WyTool implements Command {
 
 		@Override
 		public void associate(Entry<?> e) {
-			for (Content.Type ct : contentTypes) {
+			for (Content.Type<?> ct : contentTypes) {
 				if (ct.getSuffix().equals(e.suffix())) {
-					e.associate(ct, null);
+					e.associate((Content.Type) ct, null);
 					return;
 				}
 			}
-			// Perhaps need a generic binary content type here?
-			throw new IllegalArgumentException("unknown content type");
+			e.associate((Content.Type) Content.BinaryFile, null);
 		}
 	};
 

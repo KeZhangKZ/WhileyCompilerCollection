@@ -67,6 +67,29 @@ public class Content {
 	}
 
 	/**
+	 * Represents a generic binary file of unknown content. This is useful for
+	 * associating anything which the given content registry does not recognise.
+	 */
+	public static Content.Type<byte[]> BinaryFile = new Content.Type<byte[]>() {
+
+		@Override
+		public String getSuffix() {
+			return "???";
+		}
+
+		@Override
+		public byte[] read(Entry<byte[]> e, InputStream input) throws IOException {
+			return e.read();
+		}
+
+		@Override
+		public void write(OutputStream output, byte[] bytes) throws IOException {
+			output.write(bytes);
+		}
+
+	};
+
+	/**
 	 * A generic mechanism for selecting a subset of content based on a path
 	 * filter and a content type. For example, one might specify an
 	 * includes="whiley/**\/*.whiley" filter on a given root to identify which
