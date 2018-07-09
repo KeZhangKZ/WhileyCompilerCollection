@@ -36,10 +36,10 @@ import static wybs.lang.SyntaxError.*;
 import static wycc.io.ConfigFileLexer.Token.Kind.*;
 
 import wycc.io.ConfigFileLexer.Token;
-import wycc.lang.ConfigFile;
-import wycc.lang.ConfigFile.*;
+import wycc.util.ConfigFile;
 import wycc.util.Pair;
 import wycc.util.Triple;
+import wycc.util.ConfigFile.*;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 

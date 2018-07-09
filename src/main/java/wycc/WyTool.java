@@ -16,10 +16,10 @@ package wycc;
 import java.io.IOException;
 import java.util.*;
 import wycc.lang.Command;
-import wycc.lang.ConfigFile;
 import wycc.lang.Command.Option.Instance;
 import wycc.lang.Feature;
 import wycc.lang.Module;
+import wycc.util.ConfigFile;
 import wycc.util.Logger;
 import wycc.util.StdModuleContext;
 import wyfs.lang.Content;
@@ -196,8 +196,7 @@ public class WyTool implements Command {
 	 * @return
 	 */
 	public Content.Registry getRegistry() {
-		// TODO: fixme
-		return null;
+		return registry;
 	}
 
 	// ==================================================================

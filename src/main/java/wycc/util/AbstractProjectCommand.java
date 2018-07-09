@@ -13,7 +13,6 @@ import java.util.Map;
 import wybs.lang.Build;
 import wybs.util.StdProject;
 import wycc.lang.Command;
-import wycc.lang.ConfigFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.DirectoryRoot;

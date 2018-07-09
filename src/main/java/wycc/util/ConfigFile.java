@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.lang;
+package wycc.util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,7 +28,7 @@ import wycc.io.ConfigFileParser;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
-public class ConfigFile extends AbstractCompilationUnit {
+public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 	// =========================================================================
 	// Content Type
 	// =========================================================================
@@ -42,8 +42,7 @@ public class ConfigFile extends AbstractCompilationUnit {
 		}
 
 		@Override
-		public ConfigFile read(Path.Entry<ConfigFile> e, InputStream inputstream)
-				throws IOException {
+		public ConfigFile read(Path.Entry<ConfigFile> e, InputStream inputstream) throws IOException {
 			ConfigFileLexer lexer = new ConfigFileLexer(e);
 			ConfigFileParser parser = new ConfigFileParser(e, lexer.scan());
 			return parser.read();
@@ -90,9 +89,9 @@ public class ConfigFile extends AbstractCompilationUnit {
 	 *
 	 * @return
 	 */
-	public Map<String,Object> toMap() {
-		HashMap<String,Object> map = new HashMap<>();
-		toMap(declarations,map);
+	public Map<String, Object> toMap() {
+		HashMap<String, Object> map = new HashMap<>();
+		toMap(declarations, map);
 		return map;
 	}
 
@@ -128,6 +127,12 @@ public class ConfigFile extends AbstractCompilationUnit {
 		}
 	}
 
+	/**
+	 * Maps a given key to a given value.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
 	public static class KeyValuePair extends SyntacticElement.Impl implements Declaration {
 		private final String key;
 		private final Object value;
