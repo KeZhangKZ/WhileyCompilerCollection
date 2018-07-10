@@ -11,13 +11,14 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.lang;
+package wycc.cfg;
 
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
 import wyfs.lang.Path;
+import wyfs.lang.Path.ID;
 
 /**
  * A configuration provides a generic key-value store for which the backing is
@@ -34,7 +35,7 @@ public interface Configuration {
 	 *
 	 * @return
 	 */
-	public Schema getSchema();
+	public Schema getConfigurationSchema();
 
 	/**
 	 * Get the value associated with a given key. If no such key exists, an
@@ -65,6 +66,20 @@ public interface Configuration {
 		 * @return
 		 */
 		public Set<Path.ID> getRequiredKeys();
+
+		/**
+		 * Get the complete set of keys known to this schema.
+		 * @return
+		 */
+		public Set<Path.ID> getKnownKeys();
+
+		/**
+		 * Check whether the give key is known to this schema or not.
+		 *
+		 * @param key
+		 * @return
+		 */
+		public boolean isKnownKey(Path.ID key);
 
 		/**
 		 * Get the descriptor associated with a given key.
@@ -104,7 +119,7 @@ public interface Configuration {
 			}
 			map.put(key, optional[i]);
 		}
-
+		// Finally construct the schema
 		return new Schema() {
 			@Override
 			public Set<Path.ID> getRequiredKeys() {
@@ -113,7 +128,21 @@ public interface Configuration {
 
 			@Override
 			public KeyValueDescriptor<?> getDescriptor(Path.ID key) {
-				return map.get(key);
+				KeyValueDescriptor<?> d = map.get(key);
+				if(d == null) {
+					throw new IllegalArgumentException("invalid key \"" + key + "\"");
+				}
+				return d;
+			}
+
+			@Override
+			public Set<ID> getKnownKeys() {
+				return map.keySet();
+			}
+
+			@Override
+			public boolean isKnownKey(ID key) {
+				return map.containsKey(key);
 			}
 		};
 	}

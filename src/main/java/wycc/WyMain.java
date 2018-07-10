@@ -22,13 +22,13 @@ import java.util.Collections;
 import java.util.Map;
 
 import wybs.lang.SyntaxError;
+import wycc.cfg.ConfigFile;
 import wycc.commands.Build;
 import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
 import wycc.util.CommandParser;
-import wycc.util.ConfigFile;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
