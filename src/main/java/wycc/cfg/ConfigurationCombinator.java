@@ -13,10 +13,13 @@
 // limitations under the License.
 package wycc.cfg;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import wycc.cfg.Configuration.Schema;
+import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
 
 /**
@@ -42,10 +45,19 @@ public class ConfigurationCombinator implements Configuration {
 	}
 
 	@Override
+	public List<ID> matchAll(Filter filter) {
+		ArrayList<ID> results = new ArrayList<>();
+		for(int i=0;i!=configurations.length;++i) {
+			results.addAll(configurations[i].matchAll(filter));
+		}
+		return results;
+	}
+
+	@Override
 	public <T> T get(Class<T> kind, ID key) {
 		for (int i = 0; i != configurations.length; ++i) {
 			Configuration config = configurations[i];
-			if (config.getConfigurationSchema().isKnownKey(key)) {
+			if (config.getConfigurationSchema().isKey(key)) {
 				return config.get(kind, key);
 			}
 		}
@@ -56,7 +68,7 @@ public class ConfigurationCombinator implements Configuration {
 	public <T> void write(ID key, T value) {
 		for (int i = 0; i != configurations.length; ++i) {
 			Configuration config = configurations[i];
-			if (config.getConfigurationSchema().isKnownKey(key)) {
+			if (config.getConfigurationSchema().isKey(key)) {
 				config.write(key, value);
 				return;
 			}
@@ -70,44 +82,14 @@ public class ConfigurationCombinator implements Configuration {
 		for (int i = 0; i != schemas.length; ++i) {
 			schemas[i] = configurations[i].getConfigurationSchema();
 		}
-		// Sanity check schemas
-		HashSet<ID> keys = new HashSet<>();
-		for(int i=0;i!=schemas.length;++i) {
-			Schema s = schemas[i];
-			Set<ID> ks = s.getKnownKeys();
-			for(ID k : ks) {
-				if(keys.contains(k)) {
-					throw new IllegalArgumentException("conflicting configurations for key: " + k);
-				}
-			}
-			//
-			keys.addAll(ks);
-		}
+		// FIXME: Sanity check schemas?
 		//
 		return new Schema() {
 
 			@Override
-			public Set<ID> getRequiredKeys() {
-				HashSet<ID> keys = new HashSet<>();
+			public boolean isKey(ID key) {
 				for(int i=0;i!=schemas.length;++i) {
-					keys.addAll(schemas[i].getRequiredKeys());
-				}
-				return keys;
-			}
-
-			@Override
-			public Set<ID> getKnownKeys() {
-				HashSet<ID> keys = new HashSet<>();
-				for(int i=0;i!=schemas.length;++i) {
-					keys.addAll(schemas[i].getKnownKeys());
-				}
-				return keys;
-			}
-
-			@Override
-			public boolean isKnownKey(ID key) {
-				for(int i=0;i!=schemas.length;++i) {
-					if(schemas[i].isKnownKey(key)) {
+					if(schemas[i].isKey(key)) {
 						return true;
 					}
 				}
@@ -119,7 +101,7 @@ public class ConfigurationCombinator implements Configuration {
 				for (int i = 0; i != schemas.length; ++i) {
 					Schema schema = schemas[i];
 					//
-					if (schema.isKnownKey(key)) {
+					if (schema.isKey(key)) {
 						return schema.getDescriptor(key);
 					}
 				}
@@ -128,5 +110,4 @@ public class ConfigurationCombinator implements Configuration {
 			}
 		};
 	}
-
 }

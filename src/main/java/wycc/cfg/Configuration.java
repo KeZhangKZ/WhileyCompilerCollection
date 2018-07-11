@@ -13,11 +13,14 @@
 // limitations under the License.
 package wycc.cfg;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import wyfs.lang.Path;
+import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
 
 /**
@@ -55,6 +58,14 @@ public interface Configuration {
 	public <T> void write(Path.ID key, T value);
 
 	/**
+	 * Determine all matching keys in this configuration.
+	 *
+	 * @param filter
+	 * @return
+	 */
+	public List<Path.ID> matchAll(Path.Filter filter);
+
+	/**
 	 * Determines what values are permitted and required for this configuration.
 	 *
 	 * @author David J. Pearce
@@ -62,24 +73,12 @@ public interface Configuration {
 	 */
 	public interface Schema {
 		/**
-		 * Get the minimum set of required keys for this schema.
-		 * @return
-		 */
-		public Set<Path.ID> getRequiredKeys();
-
-		/**
-		 * Get the complete set of keys known to this schema.
-		 * @return
-		 */
-		public Set<Path.ID> getKnownKeys();
-
-		/**
 		 * Check whether the give key is known to this schema or not.
 		 *
 		 * @param key
 		 * @return
 		 */
-		public boolean isKnownKey(Path.ID key);
+		public boolean isKey(Path.ID key);
 
 		/**
 		 * Get the descriptor associated with a given key.
@@ -91,6 +90,46 @@ public interface Configuration {
 	}
 
 	/**
+	 * Represents a simple empty configuration. This is useful for handling cases
+	 * where e.g. a configuration file cannot be located.
+	 */
+	public static final Configuration EMPTY = new Configuration() {
+
+		@Override
+		public Schema getConfigurationSchema() {
+			return new Schema() {
+
+				@Override
+				public boolean isKey(ID key) {
+					return false;
+				}
+
+				@Override
+				public KeyValueDescriptor<?> getDescriptor(ID key) {
+					throw new IllegalArgumentException("invalid key access: " + key);
+				}
+
+			};
+		}
+
+		@Override
+		public <T> T get(Class<T> kind, ID key) {
+			throw new IllegalArgumentException("invalid key access: " + key);
+		}
+
+		@Override
+		public <T> void write(ID key, T value) {
+			throw new IllegalArgumentException("invalid key access: " + key);
+		}
+
+		@Override
+		public List<ID> matchAll(Filter filter) {
+			return Collections.EMPTY_LIST;
+		}
+
+	};
+
+	/**
 	 * Construct a schema from a given array of KeyValueDescriptors.
 	 *
 	 * @param required
@@ -99,50 +138,30 @@ public interface Configuration {
 	 *            The set of optional key-value pairs.
 	 * @return
 	 */
-	public static Schema fromArray(KeyValueDescriptor<?>[] required, KeyValueDescriptor<?>[] optional) {
-		HashMap<Path.ID, KeyValueDescriptor<?>> map = new HashMap<>();
-		HashSet<Path.ID> keys = new HashSet<>();
-		// Check that all required keys have matching descriptors.
-		for (int i = 0; i != required.length; ++i) {
-			Path.ID key = required[i].getKey();
-			keys.add(key);
-			if (map.containsKey(key)) {
-				throw new RuntimeException("multiple key-value descriptions for " + key);
-			}
-			map.put(key, required[i]);
-		}
-		// Put all other descriptors in
-		for (int i = 0; i != required.length; ++i) {
-			Path.ID key = optional[i].getKey();
-			if (map.containsKey(key)) {
-				throw new RuntimeException("multiple key-value descriptions for " + key);
-			}
-			map.put(key, optional[i]);
-		}
+	public static Schema fromArray(KeyValueDescriptor<?>... descriptors) {
 		// Finally construct the schema
 		return new Schema() {
-			@Override
-			public Set<Path.ID> getRequiredKeys() {
-				return keys;
-			}
 
 			@Override
 			public KeyValueDescriptor<?> getDescriptor(Path.ID key) {
-				KeyValueDescriptor<?> d = map.get(key);
-				if(d == null) {
-					throw new IllegalArgumentException("invalid key \"" + key + "\"");
+				for(int i=0;i!=descriptors.length;++i) {
+					KeyValueDescriptor<?> descriptor = descriptors[i];
+					if(descriptor.getFilter().matches(key)) {
+						return descriptor;
+					}
 				}
-				return d;
+				throw new IllegalArgumentException("invalid key \"" + key + "\"");
 			}
 
 			@Override
-			public Set<ID> getKnownKeys() {
-				return map.keySet();
-			}
-
-			@Override
-			public boolean isKnownKey(ID key) {
-				return map.containsKey(key);
+			public boolean isKey(ID key) {
+				for(int i=0;i!=descriptors.length;++i) {
+					KeyValueDescriptor<?> descriptor = descriptors[i];
+					if(descriptor.getFilter().matches(key)) {
+						return true;
+					}
+				}
+				return false;
 			}
 		};
 	}
@@ -157,11 +176,11 @@ public interface Configuration {
 	 */
 	public interface KeyValueDescriptor<T> {
 		/**
-		 * Get the key associated with this descriptor.
+		 * Get the key filter associated with this descriptor.
 		 *
 		 * @return
 		 */
-		public Path.ID getKey();
+		public Path.Filter getFilter();
 
 		/**
 		 * Get the description associated with this descriptor.
@@ -197,16 +216,18 @@ public interface Configuration {
 	 * @param <T>
 	 */
 	public static abstract class AbstractDescriptor<T> implements KeyValueDescriptor<T> {
-		private Path.ID key;
+		private Path.Filter key;
 		private String description;
 		private Class<T> type;
 
-		public AbstractDescriptor(Path.ID key, String description, Class<T> type) {
+		public AbstractDescriptor(Path.Filter key, String description, Class<T> type) {
+			this.key = key;
+			this.description = description;
 			this.type = type;
 		}
 
 		@Override
-		public Path.ID getKey() {
+		public Path.Filter getFilter() {
 			return key;
 		}
 
@@ -234,7 +255,7 @@ public interface Configuration {
 	 * @param description
 	 * @return
 	 */
-	public static KeyValueDescriptor<String> UNBOUND_STRING(Path.ID key, String description) {
+	public static KeyValueDescriptor<String> UNBOUND_STRING(Path.Filter key, String description) {
 		return new AbstractDescriptor<String>(key,description,String.class) {
 
 		};
@@ -248,7 +269,7 @@ public interface Configuration {
 	 * @param description
 	 * @return
 	 */
-	public static KeyValueDescriptor<Integer> UNBOUND_INTEGER(Path.ID key, String description) {
+	public static KeyValueDescriptor<Integer> UNBOUND_INTEGER(Path.Filter key, String description) {
 		return new AbstractDescriptor<Integer>(key,description,Integer.class) {
 
 		};
@@ -262,7 +283,7 @@ public interface Configuration {
 	 * @param description
 	 * @return
 	 */
-	public static KeyValueDescriptor<Boolean> UNBOUND_BOOLEAN(Path.ID key, String description) {
+	public static KeyValueDescriptor<Boolean> UNBOUND_BOOLEAN(Path.Filter key, String description) {
 		return new AbstractDescriptor<Boolean>(key,description,Boolean.class) {
 
 		};
@@ -278,7 +299,7 @@ public interface Configuration {
 	 *            No valid value is below this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Integer> BOUND_INTEGER(Path.ID key, String description, final int low) {
+	public static KeyValueDescriptor<Integer> BOUND_INTEGER(Path.Filter key, String description, final int low) {
 		 return new AbstractDescriptor<Integer>(key, description, Integer.class) {
 				@Override
 				public boolean isValid(Integer value) {
@@ -300,7 +321,7 @@ public interface Configuration {
 	 *            No valid value is above this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Integer> BOUND_INTEGER(Path.ID key, String description, final int low,
+	public static KeyValueDescriptor<Integer> BOUND_INTEGER(Path.Filter key, String description, final int low,
 			final int high) {
 		return new AbstractDescriptor<Integer>(key, description, Integer.class) {
 			@Override

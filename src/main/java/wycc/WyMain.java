@@ -19,10 +19,14 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import wybs.lang.SyntaxError;
 import wycc.cfg.ConfigFile;
+import wycc.cfg.Configuration;
+import wycc.cfg.Configuration.KeyValueDescriptor;
+import wycc.cfg.ConfigurationCombinator;
 import wycc.commands.Build;
 import wycc.commands.Help;
 import wycc.lang.Command;
@@ -47,30 +51,55 @@ import wyfs.util.Trie;
  */
 public class WyMain {
 
+	/**
+	 * Schema for system configuration (i.e. which applies to all users).
+	 */
+	public static Configuration.Schema SYSTEM_CONFIG_SCHEMA = Configuration.fromArray(
+			Configuration.UNBOUND_STRING(Trie.fromString("plugins/*"), "list of globally installed plugins"));
+
+	/**
+	 * Schema for global configuration (i.e. which applies to all projects for a given user).
+	 */
+	public static Configuration.Schema GLOBAL_CONFIG_SCHEMA = Configuration.fromArray(
+			Configuration.UNBOUND_STRING(Trie.fromString("user/name"), "username"),
+			Configuration.UNBOUND_STRING(Trie.fromString("user/email"), "email"));
+
+	/**
+	 * Schema for local configuration (i.e. which applies to a single project for a given user).
+	 */
+	public static Configuration.Schema LOCAL_CONFIG_SCHEMA = Configuration.fromArray(
+			// Required items
+			Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package"),
+			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package"),
+			// Optional items
+			Configuration.UNBOUND_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on")
+	);
+
+
 	// ==================================================================
 	// Main Method
 	// ==================================================================
 
 	public static void main(String[] args) throws IOException {
-		String whileyhome = System.getenv("WHILEYHOME");
-		if (whileyhome == null) {
-			System.err.println("error: WHILEYHOME environment variable not set");
-			System.exit(-1);
-		}
 		// Construct instance of the wy tool
 		WyTool tool = new WyTool();
+		// Determine the locations to find configuration files.
+		Path.Root systemRoot = determineSystemRoot(tool);
+		Path.Root globalRoot = determineGlobalRoot(tool);
+		Path.Root localRoot = determineLocalRoot(tool);
 		// Register default commands (e.g. help, clean, build, etc)
 		registerDefaultCommands(tool, tool.getRegistry());
 		// Read the global configuration file
-		ConfigFile global = readConfigFile("config", new DirectoryRoot(whileyhome, tool.getRegistry()));
+		Configuration system = readConfigFile("config", systemRoot, SYSTEM_CONFIG_SCHEMA);
 		// Active plugins to ensure that all platforms and content types are registered.
-		//activateDefaultPlugins(tool, global);
-		// Determine project root
-		Path.Root root = determineProjectRoot(tool.getRegistry());
+		activateDefaultPlugins(tool, system);
+		// Read the global configuration file
+		Configuration global = readConfigFile("wy", globalRoot, GLOBAL_CONFIG_SCHEMA);
 		// Read the local configuration file
-		ConfigFile local = readConfigFile("wy", root);
-		// Construct the command environment
-		Command.Environment environment = constructCommandEnvironment(tool, global,local);
+		Configuration local = readConfigFile("wy", localRoot, LOCAL_CONFIG_SCHEMA);
+		// Construct the merged configuration
+		Configuration configuration = new ConfigurationCombinator(local,global,system);
+		//Command.Environment environment = constructCommandEnvironment(tool, global,local);
 		// Process command-line options
 		Command.Template pipeline = new CommandParser(tool, tool.getRegistry()).parse(args);
 		// Execute the command (if applicable)
@@ -97,6 +126,38 @@ public class WyMain {
 	// ==================================================================
 
 	/**
+	 * Determine the system root. That is, the installation directory for the
+	 * compiler itself.
+	 *
+	 * @param tool
+	 * @return
+	 * @throws IOException
+	 */
+	private static Path.Root determineSystemRoot(WyTool tool) throws IOException {
+		String whileyhome = System.getenv("WHILEYHOME");
+		if (whileyhome == null) {
+			System.err.println("error: WHILEYHOME environment variable not set");
+			System.exit(-1);
+		}
+		return new DirectoryRoot(whileyhome, tool.getRegistry());
+	}
+
+	/**
+	 * Determine the global root. That is, the hidden whiley directory in the user's
+	 * home directory (e.g. ~/.whiley).
+	 *
+	 * @param tool
+	 * @return
+	 * @throws IOException
+	 */
+	private static Path.Root determineGlobalRoot(WyTool tool) throws IOException {
+		String userhome = System.getProperty("user.home");
+		String whileydir = userhome + File.separator + ".whiley";
+		return new DirectoryRoot(whileydir, tool.getRegistry());
+	}
+
+
+	/**
 	 * Determine where the root of this project is. This is the nearest enclosing
 	 * directory containing a "wy.toml" file. The point is that we may be operating
 	 * in some subdirectory of the project and want the tool to automatically search
@@ -105,21 +166,21 @@ public class WyMain {
 	 * @return
 	 * @throws IOException
 	 */
-	private static Path.Root determineProjectRoot(Content.Registry registry) throws IOException {
+	private static Path.Root determineLocalRoot(WyTool tool) throws IOException {
 		// Determine current working directory
 		File dir = new File(System.getProperty("user.dir"));
 		// Traverse up the directory hierarchy
-		while (dir.exists() && dir.isDirectory()) {
+		while (dir != null && dir.exists() && dir.isDirectory()) {
 			File wyf = new File(dir + File.separator + "wy.toml");
 			if (wyf.exists()) {
-				return new DirectoryRoot(dir, registry);
+				return new DirectoryRoot(dir, tool.getRegistry());
 			}
 			// Traverse back up the directory hierarchy looking for a suitable directory.
 			dir = dir.getParentFile();
 		}
 		// If we get here then it means we didn't find a root, therefore just use
 		// current directory.
-		return new DirectoryRoot(".", registry);
+		return new DirectoryRoot(".", tool.getRegistry());
 	}
 
 	/**
@@ -130,20 +191,22 @@ public class WyMain {
 	 * @return
 	 * @throws IOException
 	 */
-	private static ConfigFile readConfigFile(String name, Path.Root root) throws IOException {
-		Path.Entry<ConfigFile> global = root.get(Trie.fromString(name), ConfigFile.ContentType);
-		if (global == null) {
-			System.err.println("Unable to read configuration file " + name + ".toml");
-			System.exit(-1);
-		} else {
-			try {
-				return global.read();
-			} catch (SyntaxError e) {
-				e.outputSourceError(System.err, false);
-				System.exit(-1);
-			}
+	private static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema schema) throws IOException {
+		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
+		if (config == null) {
+			System.err.println("Unable to read configuration file " + root + "/" + name + ".toml");
+			return Configuration.EMPTY;
 		}
-		return null;
+		try {
+			// Read the configuration file
+			ConfigFile cf = config.read();
+			// Construct configuration according to given schema
+			return cf.toConfiguration(schema);
+		} catch (SyntaxError e) {
+			e.outputSourceError(System.err, false);
+			System.exit(-1);
+			return null;
+		}
 	}
 
 	/**
@@ -170,35 +233,26 @@ public class WyMain {
 	 * @param locations
 	 * @return
 	 */
-	private static void activateDefaultPlugins(WyTool tool, ConfigFile global) {
-		Map<String, Object> plugins = (Map<String, Object>) global.toMap().get("plugins");
-		if (plugins != null) {
-			Module.Context context = tool.getContext();
-			// create the context and manager
-
-			// start modules
-			for (String name : plugins.keySet()) {
-				String activator = (String) plugins.get(name);
-				try {
-					Class<?> c = Class.forName(activator);
-					Module.Activator instance = (Module.Activator) c.newInstance();
-					instance.start(context);
-				} catch (ClassNotFoundException e) {
-					e.printStackTrace();
-				} catch (InstantiationException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-				}
+	private static void activateDefaultPlugins(WyTool tool, Configuration global) {
+		// Determine the set of install plugins
+		List<Path.ID> plugins = global.matchAll(Trie.fromString("plugins/*"));
+		// create the context and manager
+		Module.Context context = tool.getContext();
+		// start modules
+		for (Path.ID id : plugins) {
+			String activator = global.get(String.class, id);
+			try {
+				Class<?> c = Class.forName(activator);
+				Module.Activator instance = (Module.Activator) c.newInstance();
+				instance.start(context);
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
+			} catch (InstantiationException e) {
+				e.printStackTrace();
+			} catch (IllegalAccessException e) {
+				e.printStackTrace();
 			}
-		} else {
-			System.out.println("No plugin configuration found");
-			System.exit(-1);
 		}
-	}
-
-	private static Command.Environment constructCommandEnvironment(WyTool tool, ConfigFile global, ConfigFile local) {
-
 	}
 
 	/**

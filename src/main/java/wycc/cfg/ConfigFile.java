@@ -28,7 +28,9 @@ import wybs.util.AbstractCompilationUnit;
 import wycc.cfg.Configuration.KeyValueDescriptor;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
+import wyfs.util.Trie;
 
 public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 	// =========================================================================
@@ -255,6 +257,29 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 			}
 			// Update the relevant key-value pair
 			insert(key,value,declarations);
+		}
+
+		@Override
+		public List<ID> matchAll(Path.Filter filter) {
+			ArrayList<ID> matches = new ArrayList<>();
+			match(Trie.ROOT,filter,declarations,matches);
+			return matches;
+		}
+
+		private void match(Trie id, Path.Filter filter, List<Declaration> declarations, ArrayList<ID> matches) {
+			for (int i = 0; i != declarations.size(); ++i) {
+				Declaration decl = declarations.get(i);
+				if (decl instanceof Section) {
+					Section section = (Section) decl;
+					match(id.append(section.getName()), filter, section.getContents(), matches);
+				} else if (decl instanceof KeyValuePair) {
+					KeyValuePair kvp = (KeyValuePair) decl;
+					Trie match = id.append(kvp.getKey());
+					if (filter.matches(match)) {
+						matches.add(match);
+					}
+				}
+			}
 		}
 	}
 }
