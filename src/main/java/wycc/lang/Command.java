@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import wycc.cfg.Configuration;
 import wyfs.lang.Content;
 
 /**
@@ -25,7 +26,7 @@ import wyfs.lang.Content;
  * @author David J. Pearce
  *
  */
-public interface Command extends Feature {
+public interface Command {
 
 	/**
 	 * Get a descriptor for this command.
@@ -35,21 +36,12 @@ public interface Command extends Feature {
 	public Descriptor getDescriptor();
 
 	/**
-	 * Get any sub-commands of this command.
-	 *
-	 * @return
-	 */
-	public List<Command> getCommands();
-
-	/**
 	 * Perform whatever initialisation is necessary for a given configuration.
 	 *
-	 * @param options
-	 *            The set of options specifically supplied to this command. These
-	 *            are not part of the global project configuration and are specific
-	 *            to the given command in question. *
+	 * @param configuration
+	 *            The overall system configuration.
 	 */
-	public void initialise(List<Option.Instance> options) throws IOException;
+	public void initialise(Configuration configuration) throws IOException;
 
 	/**
 	 * Perform whatever destruction is necessary whence the command is complete.
@@ -94,7 +86,7 @@ public interface Command extends Feature {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Descriptor {
+	public interface Descriptor extends Feature {
 		/**
 		 * Get the name of this command. This should uniquely identify the command in
 		 * question.
@@ -115,7 +107,14 @@ public interface Command extends Feature {
 		 *
 		 * @return
 		 */
-		public List<Option> getOptions();
+		public Configuration.Schema getConfigurationSchema();
+
+		/**
+		 * Get descriptors for any sub-commands of this command.
+		 *
+		 * @return
+		 */
+		public List<Descriptor> getCommands();
 
 		/**
 		 * Initialise the corresponding command in a given environment.
@@ -129,66 +128,13 @@ public interface Command extends Feature {
 		public Command initialise(Environment environment);
 	}
 
-	/**
-	 * Describes a configurable option for a given command.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Option {
-		/**
-		 * Get the option name.
-		 *
-		 * @return
-		 */
-		public String getName();
-
-		/**
-		 * Get a suitable description for the option.
-		 *
-		 * @return
-		 */
-		public String getDescription();
-
-		/**
-		 * Construct a given option from a given argument string.
-		 *
-		 * @param arg
-		 * @return
-		 */
-		public Instance Initialise(String arg);
-
-		/**
-		 * Represents a concrete option value.
-		 *
-		 * @author David J. Pearce
-		 *
-		 */
-		public interface Instance {
-			/**
-			 * Get the option from which this instance was created.
-			 *
-			 * @return
-			 */
-			public Option getOption();
-		}
-	}
-
 	public interface Template {
 		/**
 		 * Get the command being described by this template.
 		 *
 		 * @return
 		 */
-		public Command getCommand();
-
-		/**
-		 * Get the options described by this template, in the order in which they should
-		 * be applied.
-		 *
-		 * @return
-		 */
-		public List<Option.Instance> getOptions();
+		public Command.Descriptor getCommandDescriptor();
 
 		/**
 		 * Get the arguments described by this template, in the order in which they

@@ -13,6 +13,7 @@
 // limitations under the License.
 package wycc.cfg;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -87,6 +88,13 @@ public interface Configuration {
 		 * @return
 		 */
 		public KeyValueDescriptor<?> getDescriptor(Path.ID key);
+
+		/**
+		 * Get the list of all descriptors in this schema.
+		 *
+		 * @return
+		 */
+		public List<KeyValueDescriptor<?>> getDescriptors();
 	}
 
 	/**
@@ -97,19 +105,7 @@ public interface Configuration {
 
 		@Override
 		public Schema getConfigurationSchema() {
-			return new Schema() {
-
-				@Override
-				public boolean isKey(ID key) {
-					return false;
-				}
-
-				@Override
-				public KeyValueDescriptor<?> getDescriptor(ID key) {
-					throw new IllegalArgumentException("invalid key access: " + key);
-				}
-
-			};
+			return EMPTY_SCHEMA;
 		}
 
 		@Override
@@ -127,6 +123,27 @@ public interface Configuration {
 			return Collections.EMPTY_LIST;
 		}
 
+	};
+
+	/**
+	 * A simple schema which contains no keys.
+	 */
+	public static final Configuration.Schema EMPTY_SCHEMA = new Configuration.Schema() {
+
+		@Override
+		public boolean isKey(ID key) {
+			return false;
+		}
+
+		@Override
+		public KeyValueDescriptor<?> getDescriptor(ID key) {
+			throw new IllegalArgumentException("invalid key: " + key);
+		}
+
+		@Override
+		public List<KeyValueDescriptor<?>> getDescriptors() {
+			return Collections.EMPTY_LIST;
+		}
 	};
 
 	/**
@@ -162,6 +179,11 @@ public interface Configuration {
 					}
 				}
 				return false;
+			}
+
+			@Override
+			public List<KeyValueDescriptor<?>> getDescriptors() {
+				return Arrays.asList(descriptors);
 			}
 		};
 	}

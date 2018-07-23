@@ -108,6 +108,15 @@ public class ConfigurationCombinator implements Configuration {
 				//
 				throw new IllegalArgumentException("invalid key accesss: " + key);
 			}
+
+			@Override
+			public List<KeyValueDescriptor<?>> getDescriptors() {
+				ArrayList<KeyValueDescriptor<?>> descriptors = new ArrayList<>();
+				for (int i = 0; i != schemas.length; ++i) {
+					descriptors.addAll(schemas[i].getDescriptors());
+				}
+				return descriptors;
+			}
 		};
 	}
 }

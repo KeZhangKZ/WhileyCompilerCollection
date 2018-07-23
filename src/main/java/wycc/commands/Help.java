@@ -17,9 +17,41 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 
+import wycc.cfg.Configuration;
+import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.lang.Command;
+import wyfs.lang.Path.ID;
 
 public class Help implements Command {
+	public static final Command.Descriptor DESCRIPTOR = new Command.Descriptor() {
+		@Override
+		public String getName() {
+			return "help";
+		}
+
+		@Override
+		public String getDescription() {
+			return "Display help information";
+		}
+
+		@Override
+		public Configuration.Schema getConfigurationSchema() {
+			return Configuration.EMPTY_SCHEMA;
+		}
+
+		@Override
+		public List<Descriptor> getCommands() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Command initialise(Environment environment) {
+			System.out.println("Help.initialise() called");
+			// TODO Auto-generated method stub
+			return null;
+		}
+	};
+	//
 	private final PrintStream out;
 	private final List<Command> commands;
 
@@ -29,39 +61,12 @@ public class Help implements Command {
 	}
 
 	@Override
-	public List<Command> getCommands() {
-		return Collections.EMPTY_LIST;
-	}
-
-	@Override
 	public Descriptor getDescriptor() {
-		return new Command.Descriptor() {
-			@Override
-			public String getName() {
-				return "help";
-			}
-
-			@Override
-			public String getDescription() {
-				return "Display help information";
-			}
-
-			@Override
-			public List<Option> getOptions() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public Command initialise(Environment environment) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-		};
+		return DESCRIPTOR;
 	}
 
 	@Override
-	public void initialise(List<Command.Option.Instance> configuration) {
+	public void initialise(Configuration configuration) {
 		// Nothing to do here
 	}
 
@@ -72,19 +77,20 @@ public class Help implements Command {
 
 	@Override
 	public boolean execute(List<String> args) {
-		if(args.size() == 0) {
+		System.out.println("Help.execute " + args + " called");
+		if (args.size() == 0) {
 			printUsage();
 		} else {
 			// Search for the command
 			Command command = null;
-			for(Command c : commands) {
-				if(c.getDescriptor().getName().equals(args.get(0))) {
+			for (Command c : commands) {
+				if (c.getDescriptor().getName().equals(args.get(0))) {
 					command = c;
 					break;
 				}
 			}
 			//
-			if(command == null) {
+			if (command == null) {
 				out.println("No entry for " + args.get(0));
 			} else {
 				printCommandDetails(command);
@@ -103,10 +109,11 @@ public class Help implements Command {
 		out.println("\t" + d.getDescription());
 		out.println();
 		out.println("OPTIONS");
-		List<Command.Option> options = d.getOptions();
-		for(int i=0;i!=options.size();++i) {
-			Command.Option option = options.get(i);
-			out.println("\t--" + option.getName());
+		Configuration.Schema schema = d.getConfigurationSchema();
+		List<Configuration.KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
+		for (int i = 0; i != descriptors.size(); ++i) {
+			Configuration.KeyValueDescriptor<?> option = descriptors.get(i);
+			out.println("\t--" + option.getFilter());
 			out.println("\t\t" + option.getDescription());
 		}
 	}

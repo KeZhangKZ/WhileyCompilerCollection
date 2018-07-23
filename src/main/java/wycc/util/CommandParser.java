@@ -17,8 +17,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wycc.lang.Command;
-import wycc.lang.Command.Option;
-import wycc.lang.Command.Option.Instance;
 import wycc.lang.Command.Template;
 import wyfs.lang.Content;
 
@@ -45,13 +43,10 @@ public class CommandParser {
 	/**
 	 * The list of command roots.
 	 */
-	private final Command root;
+	private final Command.Descriptor root;
 
-	private final Content.Registry registry;
-
-	public CommandParser(Command root, Content.Registry registry) {
+	public CommandParser(Command.Descriptor root) {
 		this.root = root;
-		this.registry = registry;
 	}
 
 	/**
@@ -71,17 +66,16 @@ public class CommandParser {
 	 * @param args
 	 * @param index
 	 */
-	protected Command.Template parse(Command root, String[] args, int index) {
-		ArrayList<Command.Option.Instance> options = new ArrayList<>();
+	protected Command.Template parse(Command.Descriptor root, String[] args, int index) {
 		ArrayList<String> arguments = new ArrayList<>();
 		//
 		Command.Template sub = null;
 		while (index < args.length) {
 			String arg = args[index];
 			if (isLongOption(arg)) {
-				options.add(parseLongOption(root, args[index]));
+				throw new UnsupportedOperationException("implement me");
 			} else if (isCommand(arg, root.getCommands())) {
-				Command cmd = getCommand(arg, root.getCommands());
+				Command.Descriptor cmd = getCommandDescriptor(arg, root.getCommands());
 				sub = parse(cmd, args, index + 1);
 				break;
 			} else {
@@ -90,32 +84,28 @@ public class CommandParser {
 			index = index + 1;
 		}
 		//
-		return new ConcreteTemplate(root, options,arguments,sub);
+		return new ConcreteTemplate(root, arguments,sub);
 	}
 
 	protected boolean isLongOption(String arg) {
 		return arg.startsWith("--");
 	}
 
-	public Option.Instance parseLongOption(Command cmd, String arg) {
-		throw new IllegalArgumentException("to do");
-	}
-
-	protected boolean isCommand(String arg, List<Command> commands) {
-		for (int i = 0; i != commands.size(); ++i) {
-			Command cmd = commands.get(i);
-			if (arg.equals(cmd.getDescriptor().getName())) {
+	protected boolean isCommand(String arg, List<Command.Descriptor> descriptors) {
+		for (int i = 0; i != descriptors.size(); ++i) {
+			Command.Descriptor descriptor = descriptors.get(i);
+			if (arg.equals(descriptor.getName())) {
 				return true;
 			}
 		}
 		return false;
 	}
 
-	protected Command getCommand(String arg, List<Command> commands) {
-		for (int i = 0; i != commands.size(); ++i) {
-			Command cmd = commands.get(i);
-			if (arg.equals(cmd.getDescriptor().getName())) {
-				return cmd;
+	protected Command.Descriptor getCommandDescriptor(String arg, List<Command.Descriptor> descriptors) {
+		for (int i = 0; i != descriptors.size(); ++i) {
+			Command.Descriptor descriptor = descriptors.get(i);
+			if (arg.equals(descriptor.getName())) {
+				return descriptor;
 			}
 		}
 		throw new IllegalArgumentException("invalid command: " + arg);
@@ -161,28 +151,21 @@ public class CommandParser {
 		}
 	}
 
-
 	protected static class ConcreteTemplate implements Command.Template {
-		private final Command cmd;
-		private final List<Option.Instance> options;
+		private final Command.Descriptor descriptor;
 		private final List<String> arguments;
 		private final Command.Template sub;
 
-		public ConcreteTemplate(Command cmd, List<Option.Instance> options, List<String> arguments, Command.Template sub) {
-			this.cmd = cmd;
-			this.options = options;
+		public ConcreteTemplate(Command.Descriptor descriptor, List<String> arguments,
+				Command.Template sub) {
+			this.descriptor = descriptor;
 			this.arguments = arguments;
 			this.sub = sub;
 		}
 
 		@Override
-		public Command getCommand() {
-			return cmd;
-		}
-
-		@Override
-		public List<Instance> getOptions() {
-			return options;
+		public Command.Descriptor getCommandDescriptor() {
+			return descriptor;
 		}
 
 		@Override
@@ -194,6 +177,5 @@ public class CommandParser {
 		public Template getChild() {
 			return sub;
 		}
-
 	}
 }

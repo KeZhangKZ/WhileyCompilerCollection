@@ -17,7 +17,11 @@ import java.io.IOException;
 import java.util.*;
 
 import wycc.cfg.ConfigFile;
+import wycc.cfg.Configuration;
 import wycc.lang.Command;
+import wycc.lang.Command.Descriptor;
+import wycc.lang.Command.Environment;
+import wycc.lang.Command.Option;
 import wycc.lang.Command.Option.Instance;
 import wycc.lang.Feature;
 import wycc.lang.Module;
@@ -31,7 +35,6 @@ import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 
 public class WyTool implements Command {
-	public static final Path.ID BUILD_FILE_NAME = Trie.fromString("wy");
 	/**
 	 * The major version for this module application
 	 */
@@ -68,64 +71,36 @@ public class WyTool implements Command {
 	// ==================================================================
 	// Instance Fields
 	// ==================================================================
-
-	/**
-	 * The list of commands registered with this tool.
-	 */
-	private final ArrayList<Command> commands;
-
-	/**
-	 * The list of registered content types
-	 */
-	private final ArrayList<Content.Type<?>> contentTypes;
-
-	/**
-	 *
-	 */
-	private StdModuleContext context = null;
-
-	/**
-	 * The root of the project in question. From this, all relative paths are
-	 * determined.
-	 */
-	protected Path.Root projectRoot;
-
 	/**
 	 * The master registry which provides knowledge of all file types used within
 	 * the system.
 	 */
-	protected Content.Registry registry = new Content.Registry() {
+	protected final Content.Registry registry;
 
-		@Override
-		public String suffix(Type<?> t) {
-			return t.getSuffix();
-		}
-
-		@Override
-		public void associate(Entry<?> e) {
-			for (Content.Type<?> ct : contentTypes) {
-				if (ct.getSuffix().equals(e.suffix())) {
-					e.associate((Content.Type) ct, null);
-					return;
-				}
-			}
-			e.associate((Content.Type) Content.BinaryFile, null);
-		}
-	};
+	/**
+	 * The system root identifies the location of all files and configuration data
+	 * that are global to all users.
+	 */
+	protected Path.Root systemRoot;
+	/**
+	 * The global root identifies the location of all user-specific but project
+	 * non-specific files and other configuration data. For example, this is where
+	 * the cache of installed packages lives.
+	 */
+	protected Path.Root globalRoot;
+	/**
+	 * The root of the project itself. From this, all relative paths within the
+	 * project are determined. For example, the location of source files or the the
+	 * build configuration file, etc.
+	 */
+	protected Path.Root localRoot;
 
 	// ==================================================================
 	// Constructors
 	// ==================================================================
 
-	public WyTool() {
-		this.commands = new ArrayList<>();
-		this.contentTypes = new ArrayList<>();
-		this.context = new StdModuleContext();
-		// Add default content types
-		this.contentTypes.add(ConfigFile.ContentType);
-		// create extension points
-		createTemplateExtensionPoint();
-		createContentTypeExtensionPoint();
+	public WyTool(Content.Registry registry) {
+		this.registry = registry;
 	}
 
 	// ==================================================================
@@ -134,20 +109,12 @@ public class WyTool implements Command {
 
 	@Override
 	public Descriptor getDescriptor() {
-		// FIXME: unsure what the descriptor for this should do!
-		return null;
-	}
-
-	@Override
-	public List<Command> getCommands() {
-		return commands;
+		throw new IllegalArgumentException("ha --- do something!");
 	}
 
 	@Override
 	public void initialise(List<Instance> options) throws IOException {
-		locateProjectRoot();
-		// Load project build file
-		loadBuildFile();
+		// Activate all plugins
 		// Configure project
 		// Find dependencies
 	}
@@ -155,41 +122,19 @@ public class WyTool implements Command {
 	@Override
 	public void finalise() throws IOException {
 		// Flush any roots
+		// Deactivate plugins
+		// Write back configuration files?
 	}
 
 	@Override
 	public boolean execute(List<String> args) {
-		return getCommand("help").execute(args);
+		//
+		return false;
 	}
 
 	// ==================================================================
 	// Other
 	// ==================================================================
-
-	/**
-	 * Get the module context associated with this tool instance
-	 *
-	 * @return
-	 */
-	public Module.Context getContext() {
-		return context;
-	}
-
-	/**
-	 * Get a particular command.
-	 *
-	 * @param name
-	 * @return
-	 */
-	public Command getCommand(String name) {
-		for (int i = 0; i != commands.size(); ++i) {
-			Command c = commands.get(i);
-			if (c.getDescriptor().getName().equals(name)) {
-				return c;
-			}
-		}
-		return null;
-	}
 
 	/**
 	 * Get the content registry associated with this tool instance.
@@ -205,69 +150,43 @@ public class WyTool implements Command {
 	// ==================================================================
 
 
-	/**
-	 * Attempt to determine where the project root is. That might be the current
-	 * directory. But, if not, then we traverse up the directory tree looking
-	 * for a build file (e.g. wy.toml).
-	 * @throws IOException
-	 */
-	protected void locateProjectRoot() throws IOException {
-		// FIXME: should recurse up the directory tree
-		this.projectRoot = new DirectoryRoot(".", registry);
+	public static final Command.Descriptor getDescriptor(Content.Registry registry, List<Command.Descriptor> descriptors) {
+		return new Descriptor(registry,descriptors);
 	}
 
-	/**
-	 * Load the project file (e.g. wy.toml) which describes this project. This is
-	 * necessary to extract key information about the project (e.g. what
-	 * dependencies are required).
-	 *
-	 * @throws IOException
-	 */
-	protected void loadBuildFile() throws IOException {
-		// FIXME: having loaded the file, what do we do next?
-		Path.Entry<ConfigFile> buildFileEntry = projectRoot.get(BUILD_FILE_NAME, ConfigFile.ContentType);
-		System.out.println("GOT BUILD FILE: " + buildFileEntry);
-		if(buildFileEntry != null) {
-			ConfigFile config = buildFileEntry.read();
-			for(ConfigFile.Declaration d : config.getDeclarations()) {
-				if(d instanceof ConfigFile.Section) {
-					ConfigFile.Section  s = (ConfigFile.Section) d;
-					System.out.println("SECTION: " + s.getName());
-				}
-			}
+	private static class Descriptor implements Command.Descriptor {
+		private final Content.Registry registry;
+		private final List<Command.Descriptor> descriptors;
+
+		public Descriptor(Content.Registry registry, List<Command.Descriptor> descriptors) {
+			this.registry = registry;
+			this.descriptors = descriptors;
 		}
-	}
 
+		@Override
+		public Command initialise(Environment environment) {
+			return new WyTool(registry);
+		}
 
-	/**
-	 * Create the Build.Template extension point. This is where plugins register
-	 * their primary functionality for constructing a specific build project.
-	 *
-	 * @param context
-	 * @param templates
-	 */
-	private void createTemplateExtensionPoint() {
-		context.create(Command.class, new Module.ExtensionPoint<Command>() {
-			@Override
-			public void register(Command command) {
-				commands.add(command);
-			}
-		});
-	}
+		@Override
+		public List<Option> getOptions() {
+			return Collections.EMPTY_LIST;
+		}
 
-	/**
-	 * Create the Content.Type extension point.
-	 *
-	 * @param context
-	 * @param templates
-	 */
-	private void createContentTypeExtensionPoint() {
-		context.create(Content.Type.class, new Module.ExtensionPoint<Content.Type>() {
-			@Override
-			public void register(Content.Type contentType) {
-				contentTypes.add(contentType);
-			}
-		});
-	}
+		@Override
+		public String getName() {
+			return "wy";
+		}
+
+		@Override
+		public String getDescription() {
+			return "Command-line interface for the Whiley Compiler Collection";
+		}
+
+		@Override
+		public List<Command.Descriptor> getCommands() {
+			return descriptors;
+		}
+	};
 
 }
