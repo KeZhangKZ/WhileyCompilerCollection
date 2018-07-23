@@ -20,9 +20,20 @@ import java.util.List;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.lang.Command;
+import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
+import wyfs.util.Trie;
 
 public class Help implements Command {
+	/**
+	 * Identifies the configuration key which holds the list of system commands.
+	 * This is necessary for determining what commands are available.
+	 */
+	private static Path.ID SYSTEM_COMMANDS_ID = Trie.fromString("system/commands");
+
+	/**
+	 * The descriptor for this command.
+	 */
 	public static final Command.Descriptor DESCRIPTOR = new Command.Descriptor() {
 		@Override
 		public String getName() {
@@ -45,18 +56,20 @@ public class Help implements Command {
 		}
 
 		@Override
-		public Command initialise(Environment environment) {
-			System.out.println("Help.initialise() called");
-			// TODO Auto-generated method stub
-			return null;
+		public Command initialise(Configuration configuration) {
+			List<Command.Descriptor> descriptors = configuration.get(List.class, SYSTEM_COMMANDS_ID);
+			// FIXME: should have some framework for output, rather than hard-coding
+			// System.out.
+			return new Help(System.out, descriptors);
 		}
 	};
 	//
 	private final PrintStream out;
-	private final List<Command> commands;
+	private final List<Command.Descriptor> descriptors;
 
-	public Help(PrintStream out, List<Command> commands) {
-		this.commands = commands;
+	public Help(PrintStream out, List<Command.Descriptor> descriptors) {
+		System.out.println("DESCRIPTORS: " + descriptors);
+		this.descriptors = descriptors;
 		this.out = out;
 	}
 
@@ -66,7 +79,7 @@ public class Help implements Command {
 	}
 
 	@Override
-	public void initialise(Configuration configuration) {
+	public void initialise() {
 		// Nothing to do here
 	}
 
@@ -82,9 +95,9 @@ public class Help implements Command {
 			printUsage();
 		} else {
 			// Search for the command
-			Command command = null;
-			for (Command c : commands) {
-				if (c.getDescriptor().getName().equals(args.get(0))) {
+			Command.Descriptor command = null;
+			for (Command.Descriptor c : descriptors) {
+				if (c.getName().equals(args.get(0))) {
 					command = c;
 					break;
 				}
@@ -100,16 +113,15 @@ public class Help implements Command {
 		return true;
 	}
 
-	protected void printCommandDetails(Command command) {
-		Command.Descriptor d = command.getDescriptor();
+	protected void printCommandDetails(Command.Descriptor descriptor) {
 		out.println("NAME");
-		out.println("\t" + d.getName());
+		out.println("\t" + descriptor.getName());
 		out.println();
 		out.println("DESCRIPTION");
-		out.println("\t" + d.getDescription());
+		out.println("\t" + descriptor.getDescription());
 		out.println();
 		out.println("OPTIONS");
-		Configuration.Schema schema = d.getConfigurationSchema();
+		Configuration.Schema schema = descriptor.getConfigurationSchema();
 		List<Configuration.KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
 		for (int i = 0; i != descriptors.size(); ++i) {
 			Configuration.KeyValueDescriptor<?> option = descriptors.get(i);
@@ -124,10 +136,9 @@ public class Help implements Command {
 	protected void printUsage() {
 		out.println("usage: wy [--verbose] command [<options>] [<args>]");
 		out.println();
-		int maxWidth = determineCommandNameWidth(commands);
+		int maxWidth = determineCommandNameWidth(descriptors);
 		out.println("Commands:");
-		for (Command c : commands) {
-			Command.Descriptor d = c.getDescriptor();
+		for (Command.Descriptor d : descriptors) {
 			out.print("  ");
 			out.print(rightPad(d.getName(), maxWidth));
 			out.println("   " + d.getDescription());
@@ -154,7 +165,7 @@ public class Help implements Command {
 	/**
 	 * Left pad a given string with spaces to ensure the resulting string is
 	 * exactly n characters wide. This assumes the given string has at most n
-	 * characters already.
+	 * characters already.  No, this is not its own library.
 	 *
 	 * @param str
 	 *            String to left-pad
@@ -169,13 +180,13 @@ public class Help implements Command {
 	/**
 	 * Determine the maximum width of any configured command name
 	 *
-	 * @param commands
+	 * @param descriptors
 	 * @return
 	 */
-	private static int determineCommandNameWidth(List<Command> commands) {
+	private static int determineCommandNameWidth(List<Command.Descriptor> descriptors) {
 		int max = 0;
-		for (Command c : commands) {
-			max = Math.max(max, c.getDescriptor().getName().length());
+		for (Command.Descriptor d : descriptors) {
+			max = Math.max(max, d.getName().length());
 		}
 		return max;
 	}

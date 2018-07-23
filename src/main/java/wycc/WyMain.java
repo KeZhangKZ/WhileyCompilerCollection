@@ -27,6 +27,7 @@ import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.cfg.ConfigurationCombinator;
+import wycc.cfg.HashMapConfiguration;
 import wycc.commands.Build;
 import wycc.commands.Help;
 import wycc.lang.Command;
@@ -53,6 +54,14 @@ import wyfs.util.Trie;
  *
  */
 public class WyMain {
+	/**
+	 * Schema for system configuration (i.e. which applies to all users).
+	 */
+	public static Configuration.Schema SYSTEM_RUNTIME_SCHEMA = Configuration.fromArray(
+			Configuration.UNBOUND_STRING(Trie.fromString("system/commands"), "list of available commands"),
+			Configuration.UNBOUND_STRING(Trie.fromString("system/platforms"), "list of available platforms"),
+			Configuration.UNBOUND_STRING(Trie.fromString("system/content_types"), "list of available content types"));
+
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
 	 */
@@ -87,7 +96,7 @@ public class WyMain {
 	private ArrayList<Content.Type<?>> contentTypes = new ArrayList<>();
 
 	/**
-	 * List of all known commands registered by plugins
+	 * List of all known commands registered by plugins.
 	 */
 	private ArrayList<Command.Descriptor> commandDescriptors = new ArrayList<>();
 
@@ -120,7 +129,8 @@ public class WyMain {
 	private final StdModuleContext context = new StdModuleContext();
 
 	/**
-	 * The configuration for this execution.
+	 * The complete configuration for this execution. This basically contains
+	 * everything configurable about the system.
 	 */
 	private final Configuration configuration;
 
@@ -135,6 +145,8 @@ public class WyMain {
 		createTemplateExtensionPoint();
 		createContentTypeExtensionPoint();
 		activateDefaultPlugins(configuration);
+		// Configure list of runtime attributes
+		configureRuntimeAttributes();
 	}
 
 	public void execute(String[] args) throws IOException {
@@ -207,13 +219,23 @@ public class WyMain {
 		}
 	}
 
+	/**
+	 * Populate the list of runtime attributes with actual values. For example, the
+	 * list of recognised content-types.
+	 */
+	private void configureRuntimeAttributes() {
+		configuration.write(Trie.fromString("system/commands"), commandDescriptors);
+		// configuration.write(Trie.fromString("system/platforms"), platforms);
+		configuration.write(Trie.fromString("system/content_types"), contentTypes);
+	}
+
 	public void execute(Command.Template template) throws IOException {
 		// Access the descriptor
 		Command.Descriptor descriptor = template.getCommandDescriptor();
 		// Construct an instance of the command
-		Command command = descriptor.initialise(null);
+		Command command = descriptor.initialise(configuration);
 		// Initialise the command
-		command.initialise(template.getOptions());
+		command.initialise();
 		// Determine whether or not to execute this command
 		if (template.getChild() != null) {
 			// Indicates a sub-command is actually being executed.
@@ -225,6 +247,7 @@ public class WyMain {
 		// Tear down command
 		command.finalise();
 	}
+
 	// ==================================================================
 	// Main Method
 	// ==================================================================
@@ -251,8 +274,10 @@ public class WyMain {
 		Configuration global = readConfigFile("wy", globalDir, GLOBAL_CONFIG_SCHEMA);
 		// Read the local configuration file
 		Configuration local = readConfigFile("wy", localDir, LOCAL_CONFIG_SCHEMA);
+		// Create the dynamic configuration
+		Configuration runtime = new HashMapConfiguration(SYSTEM_RUNTIME_SCHEMA);
 		// Construct the merged configuration
-		return new ConfigurationCombinator(local, global, system);
+		return new ConfigurationCombinator(runtime, local, global, system);
 	}
 
 	// ==================================================================

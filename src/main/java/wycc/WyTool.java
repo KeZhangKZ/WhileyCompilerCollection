@@ -16,25 +16,18 @@ package wycc;
 import java.io.IOException;
 import java.util.*;
 
-import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
+import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
-import wycc.lang.Command.Descriptor;
-import wycc.lang.Command.Environment;
-import wycc.lang.Command.Option;
-import wycc.lang.Command.Option.Instance;
-import wycc.lang.Feature;
-import wycc.lang.Module;
-import wycc.util.Logger;
-import wycc.util.StdModuleContext;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Content.Type;
-import wyfs.lang.Path.Entry;
-import wyfs.util.DirectoryRoot;
-import wyfs.util.Trie;
 
 public class WyTool implements Command {
+	/**
+	 * Options specifically required by the tool.
+	 */
+	public static Configuration.Schema SCHEMA = Configuration.fromArray();
+
 	/**
 	 * The major version for this module application
 	 */
@@ -108,12 +101,13 @@ public class WyTool implements Command {
 	// ==================================================================
 
 	@Override
-	public Descriptor getDescriptor() {
-		throw new IllegalArgumentException("ha --- do something!");
+	public Command.Descriptor getDescriptor() {
+		// FIXME: this is broken because it doesn't include sub-descriptors.
+		return getDescriptor(registry,Collections.EMPTY_LIST);
 	}
 
 	@Override
-	public void initialise(List<Instance> options) throws IOException {
+	public void initialise() throws IOException {
 		// Activate all plugins
 		// Configure project
 		// Find dependencies
@@ -164,13 +158,14 @@ public class WyTool implements Command {
 		}
 
 		@Override
-		public Command initialise(Environment environment) {
-			return new WyTool(registry);
+		public Schema getConfigurationSchema() {
+			// TODO Auto-generated method stub
+			return null;
 		}
 
 		@Override
-		public List<Option> getOptions() {
-			return Collections.EMPTY_LIST;
+		public Command initialise(Configuration configuration) {
+			return new WyTool(registry);
 		}
 
 		@Override

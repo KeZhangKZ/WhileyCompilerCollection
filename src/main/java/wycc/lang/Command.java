@@ -38,10 +38,8 @@ public interface Command {
 	/**
 	 * Perform whatever initialisation is necessary for a given configuration.
 	 *
-	 * @param configuration
-	 *            The overall system configuration.
 	 */
-	public void initialise(Configuration configuration) throws IOException;
+	public void initialise() throws IOException;
 
 	/**
 	 * Perform whatever destruction is necessary whence the command is complete.
@@ -55,28 +53,6 @@ public interface Command {
 	 * command may be executed multiple times.
 	 */
 	public boolean execute(List<String> args);
-
-	/**
-	 * The environment provides access to the various bits of useful information.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Environment {
-		/**
-		 * Get the content registry used in the enclosing environment.
-		 *
-		 * @return
-		 */
-		public Content.Registry getContentRegistry();
-
-		/**
-		 * Get the list of content types used in the enclosing environment.
-		 *
-		 * @return
-		 */
-		public List<Content.Type<?>> getContentTypes();
-	}
 
 	/**
 	 * Provides a descriptive information about this command. This includes
@@ -119,13 +95,13 @@ public interface Command {
 		/**
 		 * Initialise the corresponding command in a given environment.
 		 *
-		 * @param environment
-		 *            Enclosing environment for this tool. This provides access to the
-		 *            various important details cleaned from the configuration, such as
-		 *            the set of available build platforms and content types.
+		 * @param configuration
+		 *            Provides access to the various important details gleaned from the
+		 *            configuration, such as the set of available build platforms and
+		 *            content types.
 		 * @return
 		 */
-		public Command initialise(Environment environment);
+		public Command initialise(Configuration configuration);
 	}
 
 	public interface Template {
