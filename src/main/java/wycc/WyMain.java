@@ -29,6 +29,7 @@ import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.cfg.ConfigurationCombinator;
 import wycc.cfg.HashMapConfiguration;
 import wycc.commands.Build;
+import wycc.commands.Config;
 import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.lang.Feature.ConfigurationError;
@@ -139,6 +140,7 @@ public class WyMain {
 		this.contentTypes.add(ConfigFile.ContentType);
 		// Add default commands
 		this.commandDescriptors.add(Help.DESCRIPTOR);
+		this.commandDescriptors.add(Config.DESCRIPTOR);
 		this.commandDescriptors.add(Build.DESCRIPTOR);
 		//
 		this.configuration = configuration;

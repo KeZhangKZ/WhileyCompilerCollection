@@ -62,6 +62,7 @@ public class Help implements Command {
 		@Override
 		public Command initialise(Configuration configuration) {
 			System.out.println("ALL KEYS: " + configuration.matchAll(Trie.fromString("**")));
+			System.out.println("GOT: " + configuration.getConfigurationSchema().isKey(Trie.fromString("width")));
 			List<Command.Descriptor> descriptors = configuration.get(List.class, SYSTEM_COMMANDS_ID);
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
