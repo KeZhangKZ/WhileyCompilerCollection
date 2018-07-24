@@ -31,6 +31,10 @@ public class Help implements Command {
 	 */
 	private static Path.ID SYSTEM_COMMANDS_ID = Trie.fromString("system/commands");
 
+	public static final Configuration.Schema SCHEMA = Configuration
+			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width (if specified)", 0));
+
+
 	/**
 	 * The descriptor for this command.
 	 */
@@ -47,7 +51,7 @@ public class Help implements Command {
 
 		@Override
 		public Configuration.Schema getConfigurationSchema() {
-			return Configuration.EMPTY_SCHEMA;
+			return SCHEMA;
 		}
 
 		@Override
@@ -57,6 +61,7 @@ public class Help implements Command {
 
 		@Override
 		public Command initialise(Configuration configuration) {
+			System.out.println("ALL KEYS: " + configuration.matchAll(Trie.fromString("**")));
 			List<Command.Descriptor> descriptors = configuration.get(List.class, SYSTEM_COMMANDS_ID);
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
@@ -68,7 +73,6 @@ public class Help implements Command {
 	private final List<Command.Descriptor> descriptors;
 
 	public Help(PrintStream out, List<Command.Descriptor> descriptors) {
-		System.out.println("DESCRIPTORS: " + descriptors);
 		this.descriptors = descriptors;
 		this.out = out;
 	}
@@ -90,7 +94,6 @@ public class Help implements Command {
 
 	@Override
 	public boolean execute(List<String> args) {
-		System.out.println("Help.execute " + args + " called");
 		if (args.size() == 0) {
 			printUsage();
 		} else {

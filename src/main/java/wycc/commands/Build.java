@@ -13,62 +13,56 @@
 // limitations under the License.
 package wycc.commands;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
+import wycc.cfg.Configuration;
+import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
-import wycc.lang.Command.Descriptor;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
 
 public class Build implements Command {
-	//
-	private final Content.Registry registry;
 
-	private static final String REGISTRY_DIR = System.getProperty("user.home")
-			+ "/.wy/registry".replaceAll("/", File.separator);
-	private static final Path.ID BUILD_FILE = Trie.fromString("wy");
+	/**
+	 * The descriptor for this command.
+	 */
+	public static final Command.Descriptor DESCRIPTOR = new Command.Descriptor() {
+		@Override
+		public String getName() {
+			return "build";
+		}
 
-	public Build(Content.Registry registry) {
-		this.registry = registry;
+		@Override
+		public String getDescription() {
+			return "Perform build operations on an existing project";
+		}
+
+		@Override
+		public Schema getConfigurationSchema() {
+			return Configuration.EMPTY_SCHEMA;
+		}
+
+		@Override
+		public List<Descriptor> getCommands() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Command initialise(Configuration configuration) {
+			return new Build();
+		}
+
+	};
+
+	public Build() {
 	}
 
 	@Override
 	public Descriptor getDescriptor() {
-		return new Descriptor() {
-
-			@Override
-			public String getName() {
-				return "build";
-			}
-
-			@Override
-			public String getDescription() {
-				return "Perform build operations on an existing project";
-			}
-
-			@Override
-			public List<Option> getOptions() {
-				// TODO Auto-generated method stub
-				return null;
-			}
-
-			@Override
-			public Command initialise(Environment environment) {
-				// TODO Auto-generated method stub
-				return null;
-			}
-		};
-	}
-
-	@Override
-	public List<Command> getCommands() {
-		return Collections.EMPTY_LIST;
+		return DESCRIPTOR;
 	}
 
 	@Override
@@ -77,7 +71,7 @@ public class Build implements Command {
 	}
 
 	@Override
-	public void initialise(List<Option.Instance> configuration) {
+	public void initialise() {
 		// TODO Auto-generated method stub
 	}
 
@@ -169,17 +163,17 @@ public class Build implements Command {
 	// =======================================================================
 
 	/**
-	 * Generate the list of source files which need to be recompiled. By
-	 * default, this is done by comparing modification times of each whiley file
-	 * against its corresponding wyil file. Wyil files which are out-of-date are
-	 * scheduled to be recompiled.
+	 * Generate the list of source files which need to be recompiled. By default,
+	 * this is done by comparing modification times of each whiley file against its
+	 * corresponding wyil file. Wyil files which are out-of-date are scheduled to be
+	 * recompiled.
 	 *
 	 * @return
 	 * @throws IOException
 	 */
 	public static <T, S> List<Path.Entry<T>> getModifiedSourceFiles(Path.Root sourceDir,
 			Content.Filter<T> sourceIncludes, Path.Root binaryDir, Content.Type<S> binaryContentType)
-					throws IOException {
+			throws IOException {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
 		ArrayList<Path.Entry<T>> sources = new ArrayList<>();

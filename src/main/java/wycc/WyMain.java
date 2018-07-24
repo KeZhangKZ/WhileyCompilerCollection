@@ -139,6 +139,7 @@ public class WyMain {
 		this.contentTypes.add(ConfigFile.ContentType);
 		// Add default commands
 		this.commandDescriptors.add(Help.DESCRIPTOR);
+		this.commandDescriptors.add(Build.DESCRIPTOR);
 		//
 		this.configuration = configuration;
 		//
