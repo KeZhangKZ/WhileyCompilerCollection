@@ -82,6 +82,7 @@ public class WyMain {
 	public static Configuration.Schema LOCAL_CONFIG_SCHEMA = Configuration.fromArray(
 			// Required items
 			Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package"),
+			Configuration.UNBOUND_STRING(Trie.fromString("package/author"), "Author of this package"),
 			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package"),
 			// Optional items
 			Configuration.UNBOUND_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on")
@@ -272,7 +273,7 @@ public class WyMain {
 		// Determine project directory
 		String localDir = determineLocalRoot();
 		// Read the system configuration file
-		Configuration system = readConfigFile("config", systemDir, SYSTEM_CONFIG_SCHEMA);
+		Configuration system = readConfigFile("wy", systemDir, SYSTEM_CONFIG_SCHEMA);
 		// Read the global configuration file
 		Configuration global = readConfigFile("wy", globalDir, GLOBAL_CONFIG_SCHEMA);
 		// Read the local configuration file

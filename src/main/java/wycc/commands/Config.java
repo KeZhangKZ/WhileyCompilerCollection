@@ -90,8 +90,7 @@ public class Config implements Command {
 		for(Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
 			out.print(key);
 			out.print("=");
-			//out.print(configuration.get(Object.class, key));
-			out.println();
+			out.println(configuration.get(Object.class, key));
 		}
 		return false;
 	}

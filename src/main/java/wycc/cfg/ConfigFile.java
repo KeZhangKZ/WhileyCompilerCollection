@@ -231,15 +231,17 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		public <T> T get(Class<T> kind, ID key) {
 			// Get the descriptor for this key
 			Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);
+			// Find the key-value pair
+			KeyValuePair kvp = getKeyValuePair(key, declarations);
+			// Extract the value
+			Object value = kvp.getValue();
 			// Sanity check the expected kind
-			if (kind != descriptor.getType()) {
+			if (!kind.isInstance(value)) {
 				throw new IllegalArgumentException("incompatible key access: expected " + kind.getSimpleName() + " got "
 						+ descriptor.getType().getSimpleName());
 			}
-			// Find the key-value pair
-			KeyValuePair kvp = getKeyValuePair(key, declarations);
 			// Convert into value
-			return (T) kvp.getValue();
+			return (T) value;
 		}
 
 		@Override
