@@ -15,10 +15,12 @@ package wycc.commands;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import wycc.cfg.Configuration;
+import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -32,6 +34,9 @@ import wyfs.util.Trie;
  *
  */
 public class Config implements Command {
+	// ================================================================================
+	// config
+	// ================================================================================
 
 	public static final Configuration.Schema SCHEMA = Configuration.fromArray();
 	/**
@@ -49,17 +54,25 @@ public class Config implements Command {
 		}
 
 		@Override
+		public List<Option.Descriptor> getOptionDescriptors() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
 		public Configuration.Schema getConfigurationSchema() {
 			return SCHEMA;
 		}
 
 		@Override
 		public List<Descriptor> getCommands() {
-			return Collections.EMPTY_LIST;
+			return Arrays.asList(new Descriptor[] {
+					LIST_DESCRIPTOR
+			});
 		}
 
 		@Override
-		public Command initialise(Configuration configuration) {
+		public Command initialise(Command.Environment environment, Configuration configuration,
+				List<Command.Option> options) {
 			return new Config(System.out, configuration);
 		}
 	};
@@ -78,21 +91,76 @@ public class Config implements Command {
 	}
 
 	@Override
-	public void initialise() throws IOException {
-	}
-
-	@Override
-	public void finalise() throws IOException {
-	}
-
-	@Override
 	public boolean execute(List<String> args) {
-		for(Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
-			out.print(key);
-			out.print("=");
-			out.println(configuration.get(Object.class, key));
-		}
+		Help.print(System.out,DESCRIPTOR);
 		return false;
 	}
 
+	// ================================================================================
+	// config list
+	// ================================================================================
+
+	/**
+	 * Descriptor for the list sub-command.
+	 */
+	public static final Command.Descriptor LIST_DESCRIPTOR = new Command.Descriptor() {
+
+		@Override
+		public String getName() {
+			return "list";
+		}
+
+		@Override
+		public String getDescription() {
+			return "list current configuration";
+		}
+
+		@Override
+		public List<Option.Descriptor> getOptionDescriptors() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Schema getConfigurationSchema() {
+			return Configuration.fromArray();
+		}
+
+		@Override
+		public List<Descriptor> getCommands() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Command initialise(Environment environment, Configuration configuration, List<Command.Option> options) {
+			// TODO Auto-generated method stub
+			return null;
+		}
+
+	};
+
+	//
+	public static class ListCmd implements Command {
+		private final PrintStream out;
+		private final Configuration configuration;
+
+		public ListCmd(PrintStream out, Configuration configuration) {
+			this.out = out;
+			this.configuration = configuration;
+		}
+
+		@Override
+		public Descriptor getDescriptor() {
+			return LIST_DESCRIPTOR;
+		}
+
+		@Override
+		public boolean execute(List<String> args) {
+			for(Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
+				out.print(key);
+				out.print("=");
+				out.println(configuration.get(Object.class, key));
+			}
+			return false;
+		}
+	}
 }

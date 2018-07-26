@@ -14,26 +14,21 @@
 package wycc.commands;
 
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import wycc.cfg.Configuration;
-import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.lang.Command;
-import wyfs.lang.Path;
-import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 
 public class Help implements Command {
-	/**
-	 * Identifies the configuration key which holds the list of system commands.
-	 * This is necessary for determining what commands are available.
-	 */
-	private static Path.ID SYSTEM_COMMANDS_ID = Trie.fromString("system/commands");
 
 	public static final Configuration.Schema SCHEMA = Configuration
 			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width (if specified)", 0));
 
+	public static final List<Option.Descriptor> OPTIONS = Arrays
+			.asList(Command.OPTION_INTEGER("width", "fix display width"));
 
 	/**
 	 * The descriptor for this command.
@@ -50,6 +45,11 @@ public class Help implements Command {
 		}
 
 		@Override
+		public List<Option.Descriptor> getOptionDescriptors() {
+			return OPTIONS;
+		}
+
+		@Override
 		public Configuration.Schema getConfigurationSchema() {
 			return SCHEMA;
 		}
@@ -60,10 +60,10 @@ public class Help implements Command {
 		}
 
 		@Override
-		public Command initialise(Configuration configuration) {
-			System.out.println("ALL KEYS: " + configuration.matchAll(Trie.fromString("**")));
-			System.out.println("GOT: " + configuration.getConfigurationSchema().isKey(Trie.fromString("width")));
-			List<Command.Descriptor> descriptors = configuration.get(List.class, SYSTEM_COMMANDS_ID);
+		public Command initialise(Command.Environment environment, Configuration configuration,
+				List<Command.Option> options) {
+			System.out.println("OPTIONS: " + options);
+			List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
 			return new Help(System.out, descriptors);
@@ -84,16 +84,6 @@ public class Help implements Command {
 	}
 
 	@Override
-	public void initialise() {
-		// Nothing to do here
-	}
-
-	@Override
-	public void finalise() {
-		// Nothing to do here
-	}
-
-	@Override
 	public boolean execute(List<String> args) {
 		if (args.size() == 0) {
 			printUsage();
@@ -110,14 +100,14 @@ public class Help implements Command {
 			if (command == null) {
 				out.println("No entry for " + args.get(0));
 			} else {
-				printCommandDetails(command);
+				print(out,command);
 			}
 		}
 		//
 		return true;
 	}
 
-	protected void printCommandDetails(Command.Descriptor descriptor) {
+	public static void print(PrintStream out, Command.Descriptor descriptor) {
 		out.println("NAME");
 		out.println("\t" + descriptor.getName());
 		out.println();
@@ -125,6 +115,22 @@ public class Help implements Command {
 		out.println("\t" + descriptor.getDescription());
 		out.println();
 		out.println("OPTIONS");
+		List<Option.Descriptor> options = descriptor.getOptionDescriptors();
+		for (int i = 0; i != options.size(); ++i) {
+			Option.Descriptor option = options.get(i);
+			out.println("\t--" + option.getName());
+			out.println("\t\t" + option.getDescription());
+		}
+		out.println();
+		out.println("SUBCOMMANDS");
+		List<Command.Descriptor> commands = descriptor.getCommands();
+		for (int i = 0; i != commands.size(); ++i) {
+			Command.Descriptor d = commands.get(i);
+			out.println("\t" + d.getName());
+			out.println("\t\t" + d.getDescription());
+		}
+		out.println();
+		out.println("CONFIGURATION");
 		Configuration.Schema schema = descriptor.getConfigurationSchema();
 		List<Configuration.KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
 		for (int i = 0; i != descriptors.size(); ++i) {

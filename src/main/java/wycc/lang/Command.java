@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 
 import wycc.cfg.Configuration;
+import wycc.lang.Command.Option;
 import wyfs.lang.Content;
 
 /**
@@ -34,17 +35,6 @@ public interface Command {
 	 * @return
 	 */
 	public Descriptor getDescriptor();
-
-	/**
-	 * Perform whatever initialisation is necessary for a given configuration.
-	 *
-	 */
-	public void initialise() throws IOException;
-
-	/**
-	 * Perform whatever destruction is necessary whence the command is complete.
-	 */
-	public void finalise() throws IOException;
 
 	/**
 	 * Execute this command with the given arguments. Every invocation of this
@@ -83,6 +73,13 @@ public interface Command {
 		 *
 		 * @return
 		 */
+		public List<Option.Descriptor> getOptionDescriptors();
+
+		/**
+		 * Get the list of configurable options for this command.
+		 *
+		 * @return
+		 */
 		public Configuration.Schema getConfigurationSchema();
 
 		/**
@@ -95,13 +92,101 @@ public interface Command {
 		/**
 		 * Initialise the corresponding command in a given environment.
 		 *
+		 * @param environment
+		 *            Provides access to the various runtime features provided by the
+		 *            environment.
 		 * @param configuration
 		 *            Provides access to the various important details gleaned from the
 		 *            configuration, such as the set of available build platforms and
 		 *            content types.
+		 * @param options
+		 *            List of option modifiers for this command.
 		 * @return
 		 */
-		public Command initialise(Configuration configuration);
+		public Command initialise(Environment environment, Configuration configuration, List<Option> options);
+	}
+
+	/**
+	 * The environment provides access to the various bits of useful information.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Environment {
+		/**
+		 * Get the content registry used in the enclosing environment.
+		 *
+		 * @return
+		 */
+		public Content.Registry getContentRegistry();
+
+		/**
+		 * Get the list of content types used in the enclosing environment.
+		 *
+		 * @return
+		 */
+		public List<Content.Type<?>> getContentTypes();
+
+		/**
+		 * Get the list of available command descriptors.
+		 *
+		 * @return
+		 */
+		public List<Command.Descriptor> getCommandDescriptors();
+	}
+
+	/**
+	 * Describes a configurable option for a given command.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Option {
+
+		/**
+		 * Get the descriptor from which this instance was created.
+		 *
+		 * @return
+		 */
+		public Option.Descriptor getDescriptor();
+
+		/**
+		 * Get the value associate with this option.
+		 *
+		 * @param kind
+		 * @return
+		 */
+		public <T> T get(Class<T> kind);
+
+		/**
+		 * Provides a descriptor for the option.
+		 *
+		 * @author David J. Pearce
+		 *
+		 */
+		public interface Descriptor {
+			/**
+			 * Get the option name.
+			 *
+			 * @return
+			 */
+			public String getName();
+
+			/**
+			 * Get a suitable description for the option.
+			 *
+			 * @return
+			 */
+			public String getDescription();
+
+			/**
+			 * Construct a given option from a given argument string.
+			 *
+			 * @param arg
+			 * @return
+			 */
+			public Option Initialise(String arg);
+		}
 	}
 
 	public interface Template {
@@ -111,6 +196,14 @@ public interface Command {
 		 * @return
 		 */
 		public Command.Descriptor getCommandDescriptor();
+
+		/**
+		 * Get the options described by this template, in the order in which they should
+		 * be applied.
+		 *
+		 * @return
+		 */
+		public List<Option> getOptions();
 
 		/**
 		 * Get the arguments described by this template, in the order in which they
@@ -127,5 +220,70 @@ public interface Command {
 		 * @return
 		 */
 		public Template getChild();
+	}
+
+	/**
+	 * A generic class for handling option descriptors.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static abstract class AbstractOptionDescriptor implements Option.Descriptor {
+		private final String name;
+		private final String description;
+
+		AbstractOptionDescriptor(String name, String description) {
+			this.name = name;
+			this.description = description;
+		}
+
+		@Override
+		public String getName() {
+			return name;
+		}
+
+		@Override
+		public String getDescription() {
+			return description;
+		}
+	}
+
+	public static class OptionValue implements Option {
+		private final Option.Descriptor descriptor;
+		private final Object contents;
+
+		public OptionValue(Option.Descriptor descriptor, Object contents) {
+			this.descriptor = descriptor;
+			this.contents = contents;
+		}
+
+		@Override
+		public Descriptor getDescriptor() {
+			return descriptor;
+		}
+
+		@Override
+		public <T> T get(Class<T> kind) {
+			if(kind.isInstance(contents)) {
+				return (T) contents;
+			} else {
+				throw new IllegalArgumentException(
+						"expected option value " + kind.getSimpleName() + ", got " + contents);
+			}
+		}
+
+		@Override
+		public String toString() {
+			return descriptor.getName() + "=" + contents;
+		}
+	}
+
+	public static Option.Descriptor OPTION_INTEGER(String name, String description) {
+		return new AbstractOptionDescriptor(name,description) {
+			@Override
+			public Option Initialise(String arg) {
+				return new OptionValue(this, Integer.parseInt(arg));
+			}
+		};
 	}
 }

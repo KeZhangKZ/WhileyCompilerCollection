@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import wycc.lang.Command;
+import wycc.lang.Command.Option;
 import wycc.lang.Command.Template;
 import wyfs.lang.Content;
 
@@ -67,13 +68,14 @@ public class CommandParser {
 	 * @param index
 	 */
 	protected Command.Template parse(Command.Descriptor root, String[] args, int index) {
+		ArrayList<Command.Option> options = new ArrayList<>();
 		ArrayList<String> arguments = new ArrayList<>();
 		//
 		Command.Template sub = null;
 		while (index < args.length) {
 			String arg = args[index];
 			if (isLongOption(arg)) {
-				throw new UnsupportedOperationException("implement me");
+				options.add(parseLongOption(root, args[index]));
 			} else if (isCommand(arg, root.getCommands())) {
 				Command.Descriptor cmd = getCommandDescriptor(arg, root.getCommands());
 				sub = parse(cmd, args, index + 1);
@@ -84,11 +86,32 @@ public class CommandParser {
 			index = index + 1;
 		}
 		//
-		return new ConcreteTemplate(root, arguments,sub);
+		return new ConcreteTemplate(root, options, arguments,sub);
 	}
 
 	protected boolean isLongOption(String arg) {
 		return arg.startsWith("--");
+	}
+
+	public Option parseLongOption(Command.Descriptor cmd, String arg) {
+		List<Option.Descriptor> descriptors = cmd.getOptionDescriptors();
+		arg = arg.replace("--", "");
+		String[] splits = arg.split("=");
+		String key = splits[0];
+		String value = "true";
+		if (splits.length > 1) {
+			value = splits[1];
+		} else if (splits.length > 2) {
+			throw new IllegalArgumentException("invalid option: " + arg);
+		}
+		for (int i = 0; i != descriptors.size(); ++i) {
+			Option.Descriptor descriptor = descriptors.get(i);
+			if (descriptor.getName().equals(key)) {
+				// matched
+				return descriptor.Initialise(value);
+			}
+		}
+		throw new IllegalArgumentException("invalid option: " + arg);
 	}
 
 	protected boolean isCommand(String arg, List<Command.Descriptor> descriptors) {
@@ -153,12 +176,14 @@ public class CommandParser {
 
 	protected static class ConcreteTemplate implements Command.Template {
 		private final Command.Descriptor descriptor;
+		private final List<Option> options;
 		private final List<String> arguments;
 		private final Command.Template sub;
 
-		public ConcreteTemplate(Command.Descriptor descriptor, List<String> arguments,
+		public ConcreteTemplate(Command.Descriptor descriptor,  List<Option> options, List<String> arguments,
 				Command.Template sub) {
 			this.descriptor = descriptor;
+			this.options = options;
 			this.arguments = arguments;
 			this.sub = sub;
 		}
@@ -176,6 +201,11 @@ public class CommandParser {
 		@Override
 		public Template getChild() {
 			return sub;
+		}
+
+		@Override
+		public List<Option> getOptions() {
+			return options;
 		}
 	}
 }

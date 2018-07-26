@@ -40,6 +40,7 @@ import wycc.util.Pair;
 import wycc.util.StdModuleContext;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Content.Registry;
 import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
 import wyfs.util.DirectoryRoot;
@@ -54,7 +55,7 @@ import wyfs.util.Trie;
  * @author David J. Pearce
  *
  */
-public class WyMain {
+public class WyMain implements Command.Environment {
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
 	 */
@@ -149,8 +150,21 @@ public class WyMain {
 		createTemplateExtensionPoint();
 		createContentTypeExtensionPoint();
 		activateDefaultPlugins(configuration);
-		// Configure list of runtime attributes
-		configureRuntimeAttributes();
+	}
+
+	@Override
+	public Registry getContentRegistry() {
+		return registry;
+	}
+
+	@Override
+	public List<Type<?>> getContentTypes() {
+		return contentTypes;
+	}
+
+	@Override
+	public List<Command.Descriptor> getCommandDescriptors() {
+		return commandDescriptors;
 	}
 
 	public void execute(String[] args) throws IOException {
@@ -223,23 +237,11 @@ public class WyMain {
 		}
 	}
 
-	/**
-	 * Populate the list of runtime attributes with actual values. For example, the
-	 * list of recognised content-types.
-	 */
-	private void configureRuntimeAttributes() {
-		configuration.write(Trie.fromString("system/commands"), commandDescriptors);
-		// configuration.write(Trie.fromString("system/platforms"), platforms);
-		configuration.write(Trie.fromString("system/content_types"), contentTypes);
-	}
-
 	public void execute(Command.Template template) throws IOException {
 		// Access the descriptor
 		Command.Descriptor descriptor = template.getCommandDescriptor();
 		// Construct an instance of the command
-		Command command = descriptor.initialise(configuration);
-		// Initialise the command
-		command.initialise();
+		Command command = descriptor.initialise(this, configuration, template.getOptions());
 		// Determine whether or not to execute this command
 		if (template.getChild() != null) {
 			// Indicates a sub-command is actually being executed.
@@ -248,8 +250,6 @@ public class WyMain {
 			// Execute command with given arguments
 			command.execute(template.getArguments());
 		}
-		// Tear down command
-		command.finalise();
 	}
 
 	// ==================================================================
@@ -409,4 +409,5 @@ public class WyMain {
 			printStackTrace(out, err.getCause());
 		}
 	}
+
 }

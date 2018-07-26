@@ -106,14 +106,12 @@ public class WyTool implements Command {
 		return getDescriptor(registry,Collections.EMPTY_LIST);
 	}
 
-	@Override
 	public void initialise() throws IOException {
 		// Activate all plugins
 		// Configure project
 		// Find dependencies
 	}
 
-	@Override
 	public void finalise() throws IOException {
 		// Flush any roots
 		// Deactivate plugins
@@ -164,7 +162,13 @@ public class WyTool implements Command {
 		}
 
 		@Override
-		public Command initialise(Configuration configuration) {
+		public List<Option.Descriptor> getOptionDescriptors() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Command initialise(Command.Environment environment, Configuration configuration,
+				List<Command.Option> options) {
 			return new WyTool(registry);
 		}
 

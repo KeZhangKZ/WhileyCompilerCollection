@@ -41,6 +41,11 @@ public class Build implements Command {
 		}
 
 		@Override
+		public List<Option.Descriptor> getOptionDescriptors() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
 		public Schema getConfigurationSchema() {
 			return Configuration.EMPTY_SCHEMA;
 		}
@@ -51,7 +56,8 @@ public class Build implements Command {
 		}
 
 		@Override
-		public Command initialise(Configuration configuration) {
+		public Command initialise(Command.Environment environment, Configuration configuration,
+				List<Command.Option> options) {
 			return new Build();
 		}
 
@@ -68,17 +74,6 @@ public class Build implements Command {
 	@Override
 	public boolean execute(List<String> args) {
 		return false;
-	}
-
-	@Override
-	public void initialise() {
-		// TODO Auto-generated method stub
-	}
-
-	@Override
-	public void finalise() {
-		// TODO Auto-generated method stub
-
 	}
 
 //	public void build() {
