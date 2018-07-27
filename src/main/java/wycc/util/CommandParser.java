@@ -86,7 +86,8 @@ public class CommandParser {
 			index = index + 1;
 		}
 		//
-		Command.Options optionMap = new OptionsMap(options.toArray(new Option[options.size()]));
+
+		Command.Options optionMap = new OptionsMap(options, root.getOptionDescriptors());
 		//
 		return new ConcreteTemplate(root, optionMap, arguments, sub);
 	}
@@ -212,18 +213,29 @@ public class CommandParser {
 	}
 
 	private static class OptionsMap implements Command.Options {
+		private Option.Descriptor[] descriptors;
 		private Option[] options;
 
-		public OptionsMap(Option... options) {
-			this.options = options;
+		public OptionsMap(List<Option> options, List<Option.Descriptor> descriptors) {
+			this.options = options.toArray(new Option[options.size()]);
+			this.descriptors = descriptors.toArray(new Option.Descriptor[descriptors.size()]);
 		}
 
 		@Override
 		public <T> T get(String name, Class<T> kind) {
+			// Check for given values
 			for (int i = 0; i != options.length; ++i) {
 				Option option = options[i];
 				if (option.getDescriptor().getName().equals(name)) {
 					return option.get(kind);
+				}
+			}
+			// Check for default values
+			for (int i = 0; i != descriptors.length; ++i) {
+				Option.Descriptor d = descriptors[i];
+				Object val = d.getDefaultValue();
+				if (kind.isInstance(val)) {
+					return (T) val;
 				}
 			}
 			throw new IllegalArgumentException("invalid option " + name);

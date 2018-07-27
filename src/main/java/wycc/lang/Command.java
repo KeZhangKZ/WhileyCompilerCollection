@@ -190,11 +190,24 @@ public interface Command {
 			public String getName();
 
 			/**
+			 * Get the description for the argument
+			 * @return
+			 */
+			public String getArgumentDescription();
+
+			/**
 			 * Get a suitable description for the option.
 			 *
 			 * @return
 			 */
 			public String getDescription();
+
+			/**
+			 * Get the default value for this option (or null if no suitable default).
+			 *
+			 * @return
+			 */
+			public Object getDefaultValue();
 
 			/**
 			 * Construct a given option from a given argument string.
@@ -247,11 +260,15 @@ public interface Command {
 	 */
 	public static abstract class AbstractOptionDescriptor implements Option.Descriptor {
 		private final String name;
+		private final String argDescription;
 		private final String description;
+		private final Object defaultValue;
 
-		AbstractOptionDescriptor(String name, String description) {
+		AbstractOptionDescriptor(String name, String argDescription, String description, Object defaultValue) {
 			this.name = name;
+			this.argDescription = argDescription;
 			this.description = description;
+			this.defaultValue = defaultValue;
 		}
 
 		@Override
@@ -260,8 +277,18 @@ public interface Command {
 		}
 
 		@Override
+		public String getArgumentDescription() {
+			return argDescription;
+		}
+
+		@Override
 		public String getDescription() {
 			return description;
+		}
+
+		@Override
+		public Object getDefaultValue() {
+			return defaultValue;
 		}
 	}
 
@@ -296,21 +323,46 @@ public interface Command {
 	}
 
 	/**
-	 * An integer option without a constraint. This means it can be negative, for
-	 * example.
+	 * An integer option which cannot be negative.
 	 *
 	 * @param name
+	 * @param argument
 	 * @param description
+
 	 * @return
 	 */
-	public static Option.Descriptor OPTION_INTEGER(String name, String description) {
-		return new AbstractOptionDescriptor(name,description) {
-			@Override
-			public Option Initialise(String arg) {
-				int value = Integer.parseInt(arg);
-				return new OptionValue(this, value);
-			}
-		};
+	public static Option.Descriptor OPTION_NONNEGATIVE_INTEGER(String name, String description) {
+		return OPTION_INTEGER(name, "<n>", description + " (non-negative)", (n) -> (n >= 0), null);
+	}
+
+	/**
+	 * An integer option which cannot be negative.
+	 *
+	 * @param name
+	 * @param argument
+	 * @param description
+	 * @param defaultValue
+	 *            the default value to use
+	 * @return
+	 */
+	public static Option.Descriptor OPTION_NONNEGATIVE_INTEGER(String name, String description, int defaultValue) {
+		return OPTION_INTEGER(name, "<n>", description + " (non-negative, default " + defaultValue + ")",
+				(n) -> (n >= 0), defaultValue);
+	}
+
+
+	/**
+	 * An integer option which must be positive.
+	 *
+	 * @param name
+	 * @param argument
+	 * @param description
+	 * @param defaultValue
+	 *            the default value to use
+	 * @return
+	 */
+	public static Option.Descriptor OPTION_POSITIVE_INTEGER(String name, String description, int defaultValue) {
+		return OPTION_INTEGER(name, "<n>", description + " (positive, default " + defaultValue + ")", (n) -> (n > 0), defaultValue);
 	}
 
 	/**
@@ -320,12 +372,13 @@ public interface Command {
 	 * @param description
 	 * @return
 	 */
-	public static Option.Descriptor OPTION_INTEGER(String name, String description, Predicate<Integer> constraint) {
-		return new AbstractOptionDescriptor(name,description) {
+	public static Option.Descriptor OPTION_INTEGER(String name, String argument, String description,
+			Predicate<Integer> constraint, Integer defaultValue) {
+		return new AbstractOptionDescriptor(name, argument, description, defaultValue) {
 			@Override
 			public Option Initialise(String arg) {
 				int value = Integer.parseInt(arg);
-				if(constraint.test(value)) {
+				if (constraint.test(value)) {
 					return new OptionValue(this, value);
 				} else {
 					throw new IllegalArgumentException("invalid integer value");

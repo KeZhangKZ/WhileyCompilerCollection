@@ -25,10 +25,10 @@ import wyfs.util.Trie;
 public class Help implements Command {
 
 	public static final Configuration.Schema SCHEMA = Configuration
-			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width (if specified)", 0));
+			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width", 0));
 
 	public static final List<Option.Descriptor> OPTIONS = Arrays
-			.asList(Command.OPTION_INTEGER("width", "fix display width", (n) -> (n >= 0)));
+			.asList(Command.OPTION_NONNEGATIVE_INTEGER("width", "fix display width", 80));
 
 	/**
 	 * The descriptor for this command.
@@ -125,7 +125,12 @@ public class Help implements Command {
 		List<Option.Descriptor> options = descriptor.getOptionDescriptors();
 		for (int i = 0; i != options.size(); ++i) {
 			Option.Descriptor option = options.get(i);
-			out.println("\t--" + option.getName());
+			String argument = option.getArgumentDescription();
+			out.print("\t--" + option.getName());
+			if(!argument.equals("")) {
+				out.print("=" + argument);
+			}
+			out.println();
 			out.println("\t\t" + option.getDescription());
 		}
 		out.println();
