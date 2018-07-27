@@ -241,7 +241,7 @@ public class WyMain implements Command.Environment {
 		// Access the descriptor
 		Command.Descriptor descriptor = template.getCommandDescriptor();
 		// Construct an instance of the command
-		Command command = descriptor.initialise(this, configuration, template.getOptions());
+		Command command = descriptor.initialise(this, template.getOptions(), configuration);
 		// Determine whether or not to execute this command
 		if (template.getChild() != null) {
 			// Indicates a sub-command is actually being executed.

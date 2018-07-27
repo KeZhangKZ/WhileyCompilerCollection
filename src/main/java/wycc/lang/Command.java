@@ -16,6 +16,7 @@ package wycc.lang;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import wycc.cfg.Configuration;
 import wycc.lang.Command.Option;
@@ -95,15 +96,15 @@ public interface Command {
 		 * @param environment
 		 *            Provides access to the various runtime features provided by the
 		 *            environment.
+		 * @param options
+		 *            List of option modifiers for this command.
 		 * @param configuration
 		 *            Provides access to the various important details gleaned from the
 		 *            configuration, such as the set of available build platforms and
 		 *            content types.
-		 * @param options
-		 *            List of option modifiers for this command.
 		 * @return
 		 */
-		public Command initialise(Environment environment, Configuration configuration, List<Option> options);
+		public Command initialise(Environment environment, Options options, Configuration configuration);
 	}
 
 	/**
@@ -133,6 +134,22 @@ public interface Command {
 		 * @return
 		 */
 		public List<Command.Descriptor> getCommandDescriptors();
+	}
+
+	/**
+	 * A generic interface for access command options.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Options {
+		/**
+		 * Get the value associate with a given named option.
+		 *
+		 * @param kind
+		 * @return
+		 */
+		public <T> T get(String name, Class<T> kind);
 	}
 
 	/**
@@ -203,7 +220,7 @@ public interface Command {
 		 *
 		 * @return
 		 */
-		public List<Option> getOptions();
+		public Command.Options getOptions();
 
 		/**
 		 * Get the arguments described by this template, in the order in which they
@@ -278,11 +295,41 @@ public interface Command {
 		}
 	}
 
+	/**
+	 * An integer option without a constraint. This means it can be negative, for
+	 * example.
+	 *
+	 * @param name
+	 * @param description
+	 * @return
+	 */
 	public static Option.Descriptor OPTION_INTEGER(String name, String description) {
 		return new AbstractOptionDescriptor(name,description) {
 			@Override
 			public Option Initialise(String arg) {
-				return new OptionValue(this, Integer.parseInt(arg));
+				int value = Integer.parseInt(arg);
+				return new OptionValue(this, value);
+			}
+		};
+	}
+
+	/**
+	 * An integer option with a constraint
+	 *
+	 * @param name
+	 * @param description
+	 * @return
+	 */
+	public static Option.Descriptor OPTION_INTEGER(String name, String description, Predicate<Integer> constraint) {
+		return new AbstractOptionDescriptor(name,description) {
+			@Override
+			public Option Initialise(String arg) {
+				int value = Integer.parseInt(arg);
+				if(constraint.test(value)) {
+					return new OptionValue(this, value);
+				} else {
+					throw new IllegalArgumentException("invalid integer value");
+				}
 			}
 		};
 	}

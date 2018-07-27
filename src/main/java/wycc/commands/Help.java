@@ -28,7 +28,7 @@ public class Help implements Command {
 			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width (if specified)", 0));
 
 	public static final List<Option.Descriptor> OPTIONS = Arrays
-			.asList(Command.OPTION_INTEGER("width", "fix display width"));
+			.asList(Command.OPTION_INTEGER("width", "fix display width", (n) -> (n >= 0)));
 
 	/**
 	 * The descriptor for this command.
@@ -60,22 +60,28 @@ public class Help implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Configuration configuration,
-				List<Command.Option> options) {
-			System.out.println("OPTIONS: " + options);
-			List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
+		public Command initialise(Command.Environment environment, Command.Options options,
+				Configuration configuration) {
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
-			return new Help(System.out, descriptors);
+			return new Help(System.out, environment, options, configuration);
 		}
 	};
 	//
 	private final PrintStream out;
-	private final List<Command.Descriptor> descriptors;
+	private final Command.Environment environment;
+	private final Command.Options options;
+	private final Configuration configuration;
+	//
+	private final int width;
 
-	public Help(PrintStream out, List<Command.Descriptor> descriptors) {
-		this.descriptors = descriptors;
+	public Help(PrintStream out, Command.Environment environment, Command.Options options,
+			Configuration configuration) {
+		this.environment = environment;
+		this.options = options;
+		this.configuration = configuration;
 		this.out = out;
+		this.width = options.get("width", Integer.class);
 	}
 
 	@Override
@@ -89,6 +95,7 @@ public class Help implements Command {
 			printUsage();
 		} else {
 			// Search for the command
+			List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
 			Command.Descriptor command = null;
 			for (Command.Descriptor c : descriptors) {
 				if (c.getName().equals(args.get(0))) {
@@ -135,7 +142,7 @@ public class Help implements Command {
 		List<Configuration.KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
 		for (int i = 0; i != descriptors.size(); ++i) {
 			Configuration.KeyValueDescriptor<?> option = descriptors.get(i);
-			out.println("\t--" + option.getFilter());
+			out.println("\t" + option.getFilter());
 			out.println("\t\t" + option.getDescription());
 		}
 	}
@@ -144,6 +151,8 @@ public class Help implements Command {
 	 * Print usage information to the console.
 	 */
 	protected void printUsage() {
+		List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
+		//
 		out.println("usage: wy [--verbose] command [<options>] [<args>]");
 		out.println();
 		int maxWidth = determineCommandNameWidth(descriptors);

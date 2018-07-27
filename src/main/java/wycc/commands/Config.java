@@ -13,7 +13,6 @@
 // limitations under the License.
 package wycc.commands;
 
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.Collections;
@@ -71,8 +70,8 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Configuration configuration,
-				List<Command.Option> options) {
+		public Command initialise(Command.Environment environment, Command.Options options,
+				Configuration configuration) {
 			return new Config(System.out, configuration);
 		}
 	};
@@ -131,7 +130,7 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Environment environment, Configuration configuration, List<Command.Option> options) {
+		public Command initialise(Environment environment, Command.Options options, Configuration configuration) {
 			// TODO Auto-generated method stub
 			return null;
 		}

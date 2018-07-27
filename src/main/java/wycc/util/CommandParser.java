@@ -86,7 +86,9 @@ public class CommandParser {
 			index = index + 1;
 		}
 		//
-		return new ConcreteTemplate(root, options, arguments,sub);
+		Command.Options optionMap = new OptionsMap(options.toArray(new Option[options.size()]));
+		//
+		return new ConcreteTemplate(root, optionMap, arguments, sub);
 	}
 
 	protected boolean isLongOption(String arg) {
@@ -176,11 +178,11 @@ public class CommandParser {
 
 	protected static class ConcreteTemplate implements Command.Template {
 		private final Command.Descriptor descriptor;
-		private final List<Option> options;
+		private final Command.Options options;
 		private final List<String> arguments;
 		private final Command.Template sub;
 
-		public ConcreteTemplate(Command.Descriptor descriptor,  List<Option> options, List<String> arguments,
+		public ConcreteTemplate(Command.Descriptor descriptor,  Command.Options options, List<String> arguments,
 				Command.Template sub) {
 			this.descriptor = descriptor;
 			this.options = options;
@@ -204,8 +206,41 @@ public class CommandParser {
 		}
 
 		@Override
-		public List<Option> getOptions() {
+		public Command.Options getOptions() {
 			return options;
+		}
+	}
+
+	private static class OptionsMap implements Command.Options {
+		private Option[] options;
+
+		public OptionsMap(Option... options) {
+			this.options = options;
+		}
+
+		@Override
+		public <T> T get(String name, Class<T> kind) {
+			for (int i = 0; i != options.length; ++i) {
+				Option option = options[i];
+				if (option.getDescriptor().getName().equals(name)) {
+					return option.get(kind);
+				}
+			}
+			throw new IllegalArgumentException("invalid option " + name);
+		}
+
+		@Override
+		public String toString() {
+			String r = "{";
+			for (int i = 0; i != options.length; ++i) {
+				if(i!=0) {
+					r = r + ",";
+				}
+				Option option = options[i];
+				r = r + option.getDescriptor().getName();
+				r = r + "=" + option.get(Object.class);
+			}
+			return r + "}";
 		}
 	}
 }

@@ -167,8 +167,8 @@ public class WyTool implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Configuration configuration,
-				List<Command.Option> options) {
+		public Command initialise(Command.Environment environment, Command.Options options,
+				Configuration configuration) {
 			return new WyTool(registry);
 		}
 
