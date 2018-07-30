@@ -21,6 +21,7 @@ import java.util.function.Predicate;
 import wycc.cfg.Configuration;
 import wycc.lang.Command.Option;
 import wyfs.lang.Content;
+import wyfs.lang.Path;
 
 /**
  * A command which can be executed (e.g. from the command-line)
@@ -134,6 +135,28 @@ public interface Command {
 		 * @return
 		 */
 		public List<Command.Descriptor> getCommandDescriptors();
+
+
+		/**
+		 * The system root identifies the location of all files and configuration data
+		 * that are global to all users.
+		 */
+		public Path.Root getSystemRoot();
+
+		/**
+		 * The global root identifies the location of all user-specific but project
+		 * non-specific files and other configuration data. For example, this is where
+		 * the cache of installed packages lives.
+		 */
+		public Path.Root getGlobalRoot();
+
+		/**
+		 * The root of the project itself. From this, all relative paths within the
+		 * project are determined. For example, the location of source files or the the
+		 * build configuration file, etc.
+		 */
+		public Path.Root getLocalRoot();
+
 	}
 
 	/**

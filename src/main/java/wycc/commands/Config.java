@@ -131,8 +131,7 @@ public class Config implements Command {
 
 		@Override
 		public Command initialise(Environment environment, Command.Options options, Configuration configuration) {
-			// TODO Auto-generated method stub
-			return null;
+			return new ListCmd(System.out,configuration);
 		}
 
 	};
@@ -154,7 +153,7 @@ public class Config implements Command {
 
 		@Override
 		public boolean execute(List<String> args) {
-			for(Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
+			for (Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
 				out.print(key);
 				out.print("=");
 				out.println(configuration.get(Object.class, key));

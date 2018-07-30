@@ -137,13 +137,35 @@ public class WyMain implements Command.Environment {
 	 */
 	private final Configuration configuration;
 
-	public WyMain(Configuration configuration) {
+	/**
+	 * The system root identifies the location of all files and configuration data
+	 * that are global to all users.
+	 */
+	protected Path.Root systemRoot;
+	/**
+	 * The global root identifies the location of all user-specific but project
+	 * non-specific files and other configuration data. For example, this is where
+	 * the cache of installed packages lives.
+	 */
+	protected Path.Root globalRoot;
+	/**
+	 * The root of the project itself. From this, all relative paths within the
+	 * project are determined. For example, the location of source files or the the
+	 * build configuration file, etc.
+	 */
+	protected Path.Root localRoot;
+
+	public WyMain(Configuration configuration, String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
 		// Add default commands
 		this.commandDescriptors.add(Help.DESCRIPTOR);
 		this.commandDescriptors.add(Config.DESCRIPTOR);
 		this.commandDescriptors.add(Build.DESCRIPTOR);
+		// Setup project roots
+		this.systemRoot = new DirectoryRoot(systemDir, registry);
+		this.globalRoot = new DirectoryRoot(globalDir, registry);
+		this.localRoot = new DirectoryRoot(localDir, registry);
 		//
 		this.configuration = configuration;
 		//
@@ -165,6 +187,18 @@ public class WyMain implements Command.Environment {
 	@Override
 	public List<Command.Descriptor> getCommandDescriptors() {
 		return commandDescriptors;
+	}
+
+	public Path.Root getSystemRoot() {
+		return systemRoot;
+	}
+
+	public Path.Root getGlobalRoot() {
+		return globalRoot;
+	}
+
+	public Path.Root getLocalRoot() {
+		return localRoot;
 	}
 
 	public void execute(String[] args) throws IOException {
@@ -257,21 +291,21 @@ public class WyMain implements Command.Environment {
 	// ==================================================================
 
 	public static void main(String[] args) throws IOException {
-		// Construct the overall configuration
-		Configuration configuration = constructConfiguration();
-		// Construct environment and execute arguments
-		new WyMain(configuration).execute(args);
-		// Done
-		System.exit(0);
-	}
-
-	public static Configuration constructConfiguration() throws IOException {
 		// Determine system-wide directory
 		String systemDir = determineSystemRoot();
 		// Determine user-wide directory
 		String globalDir = determineGlobalRoot();
 		// Determine project directory
 		String localDir = determineLocalRoot();
+		// Construct the overall configuration
+		Configuration configuration = constructConfiguration(systemDir,globalDir,localDir);
+		// Construct environment and execute arguments
+		new WyMain(configuration,systemDir,globalDir,localDir).execute(args);
+		// Done
+		System.exit(0);
+	}
+
+	public static Configuration constructConfiguration(String systemDir, String globalDir, String localDir) throws IOException {
 		// Read the system configuration file
 		Configuration system = readConfigFile("wy", systemDir, SYSTEM_CONFIG_SCHEMA);
 		// Read the global configuration file

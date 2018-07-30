@@ -65,35 +65,22 @@ public class WyTool implements Command {
 	// Instance Fields
 	// ==================================================================
 	/**
-	 * The master registry which provides knowledge of all file types used within
-	 * the system.
+	 * The outermost environment.
 	 */
-	protected final Content.Registry registry;
+	protected final Command.Environment environment;
 
 	/**
-	 * The system root identifies the location of all files and configuration data
-	 * that are global to all users.
+	 * The combined configuration
 	 */
-	protected Path.Root systemRoot;
-	/**
-	 * The global root identifies the location of all user-specific but project
-	 * non-specific files and other configuration data. For example, this is where
-	 * the cache of installed packages lives.
-	 */
-	protected Path.Root globalRoot;
-	/**
-	 * The root of the project itself. From this, all relative paths within the
-	 * project are determined. For example, the location of source files or the the
-	 * build configuration file, etc.
-	 */
-	protected Path.Root localRoot;
+	protected final Configuration configuration;
 
 	// ==================================================================
 	// Constructors
 	// ==================================================================
 
-	public WyTool(Content.Registry registry) {
-		this.registry = registry;
+	public WyTool(Command.Environment environment, Command.Options options, Configuration configuration) {
+		this.configuration = configuration;
+		this.environment = environment;
 	}
 
 	// ==================================================================
@@ -103,11 +90,10 @@ public class WyTool implements Command {
 	@Override
 	public Command.Descriptor getDescriptor() {
 		// FIXME: this is broken because it doesn't include sub-descriptors.
-		return getDescriptor(registry,Collections.EMPTY_LIST);
+		return getDescriptor(environment.getContentRegistry(),Collections.EMPTY_LIST);
 	}
 
 	public void initialise() throws IOException {
-		// Activate all plugins
 		// Configure project
 		// Find dependencies
 	}
@@ -134,7 +120,7 @@ public class WyTool implements Command {
 	 * @return
 	 */
 	public Content.Registry getRegistry() {
-		return registry;
+		return environment.getContentRegistry();
 	}
 
 	// ==================================================================
@@ -169,7 +155,7 @@ public class WyTool implements Command {
 		@Override
 		public Command initialise(Command.Environment environment, Command.Options options,
 				Configuration configuration) {
-			return new WyTool(registry);
+			return new WyTool(environment,options,configuration);
 		}
 
 		@Override
