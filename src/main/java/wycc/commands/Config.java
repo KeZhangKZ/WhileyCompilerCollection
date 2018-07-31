@@ -70,7 +70,7 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Command.Options options,
+		public Command initialise(Command environment, Command.Options options,
 				Configuration configuration) {
 			return new Config(System.out, configuration);
 		}
@@ -87,6 +87,14 @@ public class Config implements Command {
 	@Override
 	public Descriptor getDescriptor() {
 		return DESCRIPTOR;
+	}
+
+	@Override
+	public void initialise() {
+	}
+
+	@Override
+	public void finalise() {
 	}
 
 	@Override
@@ -130,7 +138,7 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Environment environment, Command.Options options, Configuration configuration) {
+		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
 			return new ListCmd(System.out,configuration);
 		}
 
@@ -151,6 +159,13 @@ public class Config implements Command {
 			return LIST_DESCRIPTOR;
 		}
 
+		@Override
+		public void initialise() {
+		}
+
+		@Override
+		public void finalise() {
+		}
 		@Override
 		public boolean execute(List<String> args) {
 			for (Path.ID key : configuration.matchAll(Trie.fromString("**"))) {

@@ -55,7 +55,7 @@ import wyfs.util.Trie;
  * @author David J. Pearce
  *
  */
-public class WyMain implements Command.Environment {
+public class WyMain implements Command {
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
 	 */
@@ -174,17 +174,14 @@ public class WyMain implements Command.Environment {
 		activateDefaultPlugins(configuration);
 	}
 
-	@Override
 	public Registry getContentRegistry() {
 		return registry;
 	}
 
-	@Override
 	public List<Type<?>> getContentTypes() {
 		return contentTypes;
 	}
 
-	@Override
 	public List<Command.Descriptor> getCommandDescriptors() {
 		return commandDescriptors;
 	}
@@ -201,13 +198,32 @@ public class WyMain implements Command.Environment {
 		return localRoot;
 	}
 
+	@Override
+	public Descriptor getDescriptor() {
+		return null;
+	}
+
+	@Override
+	public void initialise() {
+	}
+
+	@Override
+	public void finalise() {
+	}
+
+	@Override
+	public boolean execute(List<String> args) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	public void execute(String[] args) throws IOException {
 		// Construct the root descriptor
-		Command.Descriptor descriptor = WyTool.getDescriptor(registry, commandDescriptors);
+		Command.Descriptor descriptor = WyProject.getDescriptor(registry, commandDescriptors);
 		// Parse the given comand-line
 		Command.Template pipeline = new CommandParser(descriptor).parse(args);
 		// Execute the command (if applicable)
-		execute(pipeline);
+		execute(this, pipeline);
 	}
 
 	/**
@@ -271,18 +287,22 @@ public class WyMain implements Command.Environment {
 		}
 	}
 
-	public void execute(Command.Template template) throws IOException {
+	public void execute(Command parent, Command.Template template) throws IOException {
 		// Access the descriptor
 		Command.Descriptor descriptor = template.getCommandDescriptor();
 		// Construct an instance of the command
-		Command command = descriptor.initialise(this, template.getOptions(), configuration);
+		Command command = descriptor.initialise(parent, template.getOptions(), configuration);
 		// Determine whether or not to execute this command
 		if (template.getChild() != null) {
 			// Indicates a sub-command is actually being executed.
-			execute(template.getChild());
+			execute(command, template.getChild());
 		} else {
+			// Initialise command
+			command.initialise();
 			// Execute command with given arguments
 			command.execute(template.getArguments());
+			// Finalise command
+			command.finalise();
 		}
 	}
 

@@ -18,6 +18,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
 import wyfs.util.Trie;
@@ -60,24 +61,24 @@ public class Help implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Command.Options options,
+		public Command initialise(Command environment, Command.Options options,
 				Configuration configuration) {
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
-			return new Help(System.out, environment, options, configuration);
+			return new Help(System.out, (WyProject) environment, options, configuration);
 		}
 	};
 	//
 	private final PrintStream out;
-	private final Command.Environment environment;
+	private final WyProject project;
 	private final Command.Options options;
 	private final Configuration configuration;
 	//
 	private final int width;
 
-	public Help(PrintStream out, Command.Environment environment, Command.Options options,
+	public Help(PrintStream out, WyProject environment, Command.Options options,
 			Configuration configuration) {
-		this.environment = environment;
+		this.project = environment;
 		this.options = options;
 		this.configuration = configuration;
 		this.out = out;
@@ -90,12 +91,20 @@ public class Help implements Command {
 	}
 
 	@Override
+	public void initialise() {
+	}
+
+	@Override
+	public void finalise() {
+	}
+
+	@Override
 	public boolean execute(List<String> args) {
 		if (args.size() == 0) {
 			printUsage();
 		} else {
 			// Search for the command
-			List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
+			List<Command.Descriptor> descriptors = project.getParent().getCommandDescriptors();
 			Command.Descriptor command = null;
 			for (Command.Descriptor c : descriptors) {
 				if (c.getName().equals(args.get(0))) {
@@ -156,7 +165,7 @@ public class Help implements Command {
 	 * Print usage information to the console.
 	 */
 	protected void printUsage() {
-		List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
+		List<Command.Descriptor> descriptors = project.getParent().getCommandDescriptors();
 		//
 		out.println("usage: wy [--verbose] command [<options>] [<args>]");
 		out.println();

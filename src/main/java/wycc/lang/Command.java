@@ -39,6 +39,17 @@ public interface Command {
 	public Descriptor getDescriptor();
 
 	/**
+	 * Perform any necessary initialisation for this command (e.g. opening
+	 * resources).
+	 */
+	public void initialise();
+
+	/**
+	 * Perform any necessary finalisation for this command (e.g. closing resources).
+	 */
+	public void finalise();
+
+	/**
 	 * Execute this command with the given arguments. Every invocation of this
 	 * function occurs after a single call to <code>initialise()</code> and before
 	 * any calls are made to <code>finalise()</code>. Observer, however, that this
@@ -105,58 +116,7 @@ public interface Command {
 		 *            content types.
 		 * @return
 		 */
-		public Command initialise(Environment environment, Options options, Configuration configuration);
-	}
-
-	/**
-	 * The environment provides access to the various bits of useful information.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Environment {
-		/**
-		 * Get the content registry used in the enclosing environment.
-		 *
-		 * @return
-		 */
-		public Content.Registry getContentRegistry();
-
-		/**
-		 * Get the list of content types used in the enclosing environment.
-		 *
-		 * @return
-		 */
-		public List<Content.Type<?>> getContentTypes();
-
-		/**
-		 * Get the list of available command descriptors.
-		 *
-		 * @return
-		 */
-		public List<Command.Descriptor> getCommandDescriptors();
-
-
-		/**
-		 * The system root identifies the location of all files and configuration data
-		 * that are global to all users.
-		 */
-		public Path.Root getSystemRoot();
-
-		/**
-		 * The global root identifies the location of all user-specific but project
-		 * non-specific files and other configuration data. For example, this is where
-		 * the cache of installed packages lives.
-		 */
-		public Path.Root getGlobalRoot();
-
-		/**
-		 * The root of the project itself. From this, all relative paths within the
-		 * project are determined. For example, the location of source files or the the
-		 * build configuration file, etc.
-		 */
-		public Path.Root getLocalRoot();
-
+		public Command initialise(Command parent, Options options, Configuration configuration);
 	}
 
 	/**

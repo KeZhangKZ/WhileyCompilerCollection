@@ -56,7 +56,7 @@ public class Build implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Command.Options options,
+		public Command initialise(Command environment, Command.Options options,
 				Configuration configuration) {
 			return new Build();
 		}
@@ -69,6 +69,14 @@ public class Build implements Command {
 	@Override
 	public Descriptor getDescriptor() {
 		return DESCRIPTOR;
+	}
+
+	@Override
+	public void initialise() {
+	}
+
+	@Override
+	public void finalise() {
 	}
 
 	@Override

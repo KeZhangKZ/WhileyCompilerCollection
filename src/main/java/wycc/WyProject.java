@@ -13,9 +13,10 @@
 // limitations under the License.
 package wycc;
 
-import java.io.IOException;
 import java.util.*;
 
+import wybs.lang.Build;
+import wybs.util.StdProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.commands.Help;
@@ -24,44 +25,13 @@ import wycc.util.CommandParser;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
-public class WyTool implements Command {
+import wyfs.util.Trie;
+
+public class WyProject implements Command {
 	/**
-	 * Options specifically required by the tool.
+	 * Configuration options specifically required by the tool.
 	 */
 	public static Configuration.Schema SCHEMA = Configuration.fromArray();
-
-	/**
-	 * The major version for this module application
-	 */
-	public static final int MAJOR_VERSION;
-	/**
-	 * The minor version for this module application
-	 */
-	public static final int MINOR_VERSION;
-	/**
-	 * The minor revision for this module application
-	 */
-	public static final int MINOR_REVISION;
-
-	/**
-	 * Extract version information from the enclosing jar file.
-	 */
-	static {
-		// determine version numbering from the MANIFEST attributes
-		String versionStr = WyTool.class.getPackage().getImplementationVersion();
-		if (versionStr != null) {
-			String[] bits = versionStr.split("-");
-			String[] pts = bits[0].split("\\.");
-			MAJOR_VERSION = Integer.parseInt(pts[0]);
-			MINOR_VERSION = Integer.parseInt(pts[1]);
-			MINOR_REVISION = Integer.parseInt(pts[2]);
-		} else {
-			System.err.println("WARNING: version numbering unavailable");
-			MAJOR_VERSION = 0;
-			MINOR_VERSION = 0;
-			MINOR_REVISION = 0;
-		}
-	}
 
 	// ==================================================================
 	// Instance Fields
@@ -70,7 +40,7 @@ public class WyTool implements Command {
 	/**
 	 * The outermost environment.
 	 */
-	protected final Command.Environment environment;
+	protected final WyMain environment;
 
 	/**
 	 * Command-specific options.
@@ -82,19 +52,25 @@ public class WyTool implements Command {
 	 */
 	protected final Configuration configuration;
 
+	protected final Build.Project project;
 	// ==================================================================
 	// Constructors
 	// ==================================================================
 
-	public WyTool(Command.Environment environment, Command.Options options, Configuration configuration) {
+	public WyProject(WyMain environment, Command.Options options, Configuration configuration) {
 		this.configuration = configuration;
 		this.environment = environment;
 		this.options = options;
+		this.project = new StdProject();
 	}
 
 	// ==================================================================
 	// Command stuff
 	// ==================================================================
+
+	public WyMain getParent() {
+		return environment;
+	}
 
 	@Override
 	public Command.Descriptor getDescriptor() {
@@ -102,12 +78,16 @@ public class WyTool implements Command {
 		return getDescriptor(environment.getContentRegistry(),Collections.EMPTY_LIST);
 	}
 
-	public void initialise() throws IOException {
+	@Override
+	public void initialise() {
+		List<Path.ID> deps = configuration.matchAll(Trie.fromString("dependencies/**"));
+		System.out.println("DEPENDENCIES: " + deps);
 		// Configure project
 		// Find dependencies
 	}
 
-	public void finalise() throws IOException {
+	@Override
+	public void finalise() {
 		// Flush any roots
 		// Deactivate plugins
 		// Write back configuration files?
@@ -166,9 +146,9 @@ public class WyTool implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Command.Options options,
+		public Command initialise(Command environment, Command.Options options,
 				Configuration configuration) {
-			return new WyTool(environment,options,configuration);
+			return new WyProject((WyMain) environment,options,configuration);
 		}
 
 		@Override
@@ -185,6 +165,5 @@ public class WyTool implements Command {
 		public List<Command.Descriptor> getCommands() {
 			return descriptors;
 		}
-	};
-
+	}
 }
