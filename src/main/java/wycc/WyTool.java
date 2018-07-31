@@ -18,7 +18,9 @@ import java.util.*;
 
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
+import wycc.commands.Help;
 import wycc.lang.Command;
+import wycc.util.CommandParser;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -64,10 +66,16 @@ public class WyTool implements Command {
 	// ==================================================================
 	// Instance Fields
 	// ==================================================================
+
 	/**
 	 * The outermost environment.
 	 */
 	protected final Command.Environment environment;
+
+	/**
+	 * Command-specific options.
+	 */
+	protected final Command.Options options;
 
 	/**
 	 * The combined configuration
@@ -81,6 +89,7 @@ public class WyTool implements Command {
 	public WyTool(Command.Environment environment, Command.Options options, Configuration configuration) {
 		this.configuration = configuration;
 		this.environment = environment;
+		this.options = options;
 	}
 
 	// ==================================================================
@@ -106,8 +115,12 @@ public class WyTool implements Command {
 
 	@Override
 	public boolean execute(List<String> args) {
-		//
-		return false;
+		// Create dummy options for pass-thru
+		Command.Options dummy = new CommandParser.OptionsMap(Collections.EMPTY_LIST,Help.DESCRIPTOR.getOptionDescriptors());
+		// Initialise command
+		Command cmd = Help.DESCRIPTOR.initialise(environment, dummy, configuration);
+		// Execute command
+		return cmd.execute(args);
 	}
 
 	// ==================================================================

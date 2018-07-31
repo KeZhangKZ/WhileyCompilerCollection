@@ -212,7 +212,7 @@ public class CommandParser {
 		}
 	}
 
-	private static class OptionsMap implements Command.Options {
+	public static class OptionsMap implements Command.Options {
 		private Option.Descriptor[] descriptors;
 		private Option[] options;
 
