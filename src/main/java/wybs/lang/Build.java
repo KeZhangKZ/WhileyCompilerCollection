@@ -287,4 +287,19 @@ public interface Build {
 		 */
 		public void apply(T file) throws IOException;
 	}
+
+	/**
+	 * Provides a high-level concept of a target platform. These are registered by
+	 * various backends to support different compilation targets.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Platform extends Feature {
+		public Build.Task initialise(Build.Project project);
+
+		public Content.Type<?> getSourceType();
+
+		public Content.Type<?> getTargetType();
+	}
 }

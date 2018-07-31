@@ -59,7 +59,11 @@ public class WyProject implements Command {
 	 */
 	protected final Configuration configuration;
 
+	/**
+	 * Contains project information.
+	 */
 	protected final StdProject project;
+
 	// ==================================================================
 	// Constructors
 	// ==================================================================

@@ -18,11 +18,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import wybs.lang.Build.Project;
+import wybs.lang.Build.Task;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Content.Type;
 
 public class Build implements Command {
 

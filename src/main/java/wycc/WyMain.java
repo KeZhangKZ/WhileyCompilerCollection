@@ -104,6 +104,11 @@ public class WyMain implements Command {
 	private ArrayList<Command.Descriptor> commandDescriptors = new ArrayList<>();
 
 	/**
+	 * List of all known build platforms registered by plugins.
+	 */
+	private ArrayList<wybs.lang.Build.Platform> buildPlatforms = new ArrayList<>();
+
+	/**
 	 * The master registry which provides knowledge of all file types used within
 	 * the system.
 	 */
@@ -171,6 +176,7 @@ public class WyMain implements Command {
 		//
 		createTemplateExtensionPoint();
 		createContentTypeExtensionPoint();
+		createBuildPlatformExtensionPoint();
 		activateDefaultPlugins(configuration);
 	}
 
@@ -184,6 +190,16 @@ public class WyMain implements Command {
 
 	public List<Command.Descriptor> getCommandDescriptors() {
 		return commandDescriptors;
+	}
+
+	/**
+	 * Get the list of available build platforms. These help determine what the
+	 * valid build targets are.
+	 *
+	 * @return
+	 */
+	public List<wybs.lang.Build.Platform> getBuildPlatforms() {
+		return buildPlatforms;
 	}
 
 	public Path.Root getSystemRoot() {
@@ -259,6 +275,20 @@ public class WyMain implements Command {
 
 
 	/**
+	 * Create the Content.Type extension point.
+	 *
+	 * @param context
+	 * @param templates
+	 */
+	private void createBuildPlatformExtensionPoint() {
+		context.create(wybs.lang.Build.Platform.class, new Module.ExtensionPoint<wybs.lang.Build.Platform>() {
+			@Override
+			public void register(wybs.lang.Build.Platform platform) {
+				buildPlatforms.add(platform);
+			}
+		});
+	}
+	/**
 	 * Activate the default set of plugins which the tool uses. Currently this list
 	 * is statically determined, but eventually it will be possible to dynamically
 	 * add plugins to the system.
@@ -275,6 +305,7 @@ public class WyMain implements Command {
 			String activator = global.get(String.class, id);
 			try {
 				Class<?> c = Class.forName(activator);
+				System.out.println("ACTIVATING: " + activator + " FROM: " + id);
 				Module.Activator instance = (Module.Activator) c.newInstance();
 				instance.start(context);
 			} catch (ClassNotFoundException e) {
