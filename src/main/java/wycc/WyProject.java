@@ -13,10 +13,12 @@
 // limitations under the License.
 package wycc;
 
+import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.Build;
 import wybs.util.StdProject;
+import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.commands.Help;
@@ -32,6 +34,11 @@ public class WyProject implements Command {
 	 * Configuration options specifically required by the tool.
 	 */
 	public static Configuration.Schema SCHEMA = Configuration.fromArray();
+
+	/**
+	 * Path to the dependency repository within the global root.
+	 */
+	private static Path.ID REPOSITORY_PATH = Trie.fromString("repository");
 
 	// ==================================================================
 	// Instance Fields
@@ -52,7 +59,7 @@ public class WyProject implements Command {
 	 */
 	protected final Configuration configuration;
 
-	protected final Build.Project project;
+	protected final StdProject project;
 	// ==================================================================
 	// Constructors
 	// ==================================================================
@@ -80,10 +87,16 @@ public class WyProject implements Command {
 
 	@Override
 	public void initialise() {
-		List<Path.ID> deps = configuration.matchAll(Trie.fromString("dependencies/**"));
-		System.out.println("DEPENDENCIES: " + deps);
-		// Configure project
-		// Find dependencies
+		try {
+			// Find and resolve package dependencies
+			resolvePackageDependencies();
+			// Configure package directory structure
+			configurePackageStructure();
+			// 	Find dependencies
+		} catch(IOException e) {
+			// FIXME
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -98,7 +111,7 @@ public class WyProject implements Command {
 		// Create dummy options for pass-thru
 		Command.Options dummy = new CommandParser.OptionsMap(Collections.EMPTY_LIST,Help.DESCRIPTOR.getOptionDescriptors());
 		// Initialise command
-		Command cmd = Help.DESCRIPTOR.initialise(environment, dummy, configuration);
+		Command cmd = Help.DESCRIPTOR.initialise(this, dummy, configuration);
 		// Execute command
 		return cmd.execute(args);
 	}
@@ -120,6 +133,63 @@ public class WyProject implements Command {
 	// Helpers
 	// ==================================================================
 
+	/**
+	 * Add any declared dependencies to the set of project roots. The challenge here
+	 * is that we may need to download, install and compile these dependencies if
+	 * they are not currently installed.
+	 *
+	 * @throws IOException
+	 */
+	private void resolvePackageDependencies() throws IOException {
+		// Global root is where all dependencies will be stored
+		Path.Root repository = getRepositoryRoot();
+		// Dig out all the defined dependencies
+		List<Path.ID> deps = configuration.matchAll(Trie.fromString("dependencies/**"));
+		// Resolve each dependencies and add to project roots
+		for (int i = 0; i != deps.size(); ++i) {
+			Path.ID dep = deps.get(i);
+			// Get dependency name
+			String name = dep.get(1);
+			// Get version string
+			String version = configuration.get(String.class, dep);
+			// Construct path to the config file
+			Trie root = Trie.fromString(name + "/" + version);
+			Trie id = root.append("wy");
+			// Attempt to resolve it.
+			if (!repository.exists(id, ConfigFile.ContentType)) {
+				// TODO: employ a package resolver here
+				// FIXME: handle better error handling.
+				throw new RuntimeException("missing dependency \"" + name + "-" + version + "\"");
+			} else {
+				// Add the relative root.
+				project.roots().add(repository.createRelativeRoot(root));
+			}
+		}
+	}
+
+	/**
+	 * Get the root of the package repository. This is the global directory in which
+	 * all installed packages are found.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
+	private Path.Root getRepositoryRoot() throws IOException {
+		Path.Root root = environment.getGlobalRoot().createRelativeRoot(REPOSITORY_PATH);
+		// TODO: create repository if it doesn't exist.
+		return root;
+	}
+
+	/**
+	 * Setup the various roots based on the target platform(s). This requires going
+	 * through and adding roots for all source and intermediate files.
+	 */
+	private void configurePackageStructure() {
+		// TODO: determine the configure build platforms (how)
+		// TODO: add roots to project for each content type.
+		// TODO: how do we then get those roots for the build rules? Maybe we just
+		// create new ones in build command.
+	}
 
 	public static final Command.Descriptor getDescriptor(Content.Registry registry, List<Command.Descriptor> descriptors) {
 		return new Descriptor(registry,descriptors);
