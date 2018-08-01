@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.Build;
+import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
@@ -24,6 +25,7 @@ import wycc.cfg.Configuration.Schema;
 import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.util.CommandParser;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -133,6 +135,10 @@ public class WyProject implements Command {
 		return environment.getContentRegistry();
 	}
 
+	public void build(Collection<Path.Entry<?>> delta) throws Exception {
+		project.build(delta);
+	}
+
 	// ==================================================================
 	// Helpers
 	// ==================================================================
@@ -145,6 +151,8 @@ public class WyProject implements Command {
 	 * @throws IOException
 	 */
 	private void resolvePackageDependencies() throws IOException {
+		// FIXME: should produce a wy.lock file?
+
 		// Global root is where all dependencies will be stored
 		Path.Root repository = getRepositoryRoot();
 		// Dig out all the defined dependencies
@@ -187,12 +195,30 @@ public class WyProject implements Command {
 	/**
 	 * Setup the various roots based on the target platform(s). This requires going
 	 * through and adding roots for all source and intermediate files.
+	 * @throws IOException
 	 */
-	private void configurePackageStructure() {
-		// TODO: determine the configure build platforms (how)
-		// TODO: add roots to project for each content type.
-		// TODO: how do we then get those roots for the build rules? Maybe we just
-		// create new ones in build command.
+	private void configurePackageStructure() throws IOException {
+		Path.Root root = environment.getGlobalRoot();
+		List<Build.Platform> platforms = environment.getBuildPlatforms();
+		//
+		for (int i = 0; i != platforms.size(); ++i) {
+			Build.Platform platform = platforms.get(i);
+			// Configure Source root
+			String srcSuffix = platform.getSourceType().getSuffix();
+			Path.ID srcID = Trie.fromString("src").append(srcSuffix);
+			Path.Root srcRoot = root.createRelativeRoot(srcID);
+			project.roots().add(srcRoot);
+			// Configure Binary root
+			String binSuffix = platform.getSourceType().getSuffix();
+			Path.ID binID = Trie.fromString("bin").append(binSuffix);
+			Path.Root binRoot = root.createRelativeRoot(binID);
+			project.roots().add(binRoot);
+			// Initialise build task
+			Build.Task task = platform.initialise(project);
+			// Add the appropriate build rule(s)
+			project.add(new StdBuildRule(task, srcRoot, Content.filter("**", platform.getSourceType()),
+					Content.filter("**", platform.getTargetType()), binRoot));
+		}
 	}
 
 	public static final Command.Descriptor getDescriptor(Content.Registry registry, List<Command.Descriptor> descriptors) {

@@ -15,14 +15,16 @@ package wycc.commands;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import wybs.lang.Build.Project;
-import wybs.lang.Build.Task;
+import wybs.util.StdBuildGraph;
+import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Content.Type;
@@ -61,12 +63,15 @@ public class Build implements Command {
 		@Override
 		public Command initialise(Command environment, Command.Options options,
 				Configuration configuration) {
-			return new Build();
+			return new Build((WyProject) environment);
 		}
 
 	};
 
-	public Build() {
+	private final WyProject project;
+
+	public Build(WyProject project) {
+		this.project = project;
 	}
 
 	@Override
@@ -84,85 +89,27 @@ public class Build implements Command {
 
 	@Override
 	public boolean execute(List<String> args) {
-		return false;
+		try {
+			List<wybs.lang.Build.Platform> platforms = project.getParent().getBuildPlatforms();
+			ArrayList<Path.Entry<?>> sources = new ArrayList<>();
+			for (int i = 0; i != platforms.size(); ++i) {
+				wybs.lang.Build.Platform platform = platforms.get(i);
+				System.out.println("PLATFORM: " + platform.getName());
+				Path.Root srcRoot = null;
+				Path.Root binRoot = null;
+				// Add the list of modified source files to the list.
+				sources.addAll(getModifiedSourceFiles(srcRoot, Content.filter("**", platform.getSourceType()), binRoot,
+						platform.getTargetType()));
+			}
+			// Finally, rebuild everything!
+			project.build(sources);
+			return true;
+		} catch (Exception e) {
+			// FIXME: do something here??
+			e.printStackTrace();
+			return false;
+		}
 	}
-
-//	public void build() {
-//		try {
-//			Path.Root packageRoot = getPackageRoot(name,version);
-//			Path.Entry<ConfigFile> buildFileEntry = packageRoot.get(BUILD_FILE_NAME, ConfigFile.ContentType);
-//			ConfigFile buildFile;
-//			if (buildFileEntry == null) {
-//				// Indicates the given package does not currently exist.
-//				// Therefore, download and expand it.
-//				expandPackage(name, version, packageRoot);
-//				buildFileEntry = packageRoot.get(BUILD_FILE_NAME, ConfigFile.ContentType);
-//				buildFile = checkBuildFile(name, version, buildFileEntry);
-//				// Resolve any package dependencies
-//				resolvePackageDependencies(buildFile);
-//				// Build the package
-//				buildPackage(buildFile,packageRoot);
-//			} else {
-//				// Indicates package already existed. Therefore, assume build
-//				// file was correctly defined.
-//				buildFile = buildFileEntry.read();
-//			}
-//			return getTargetRoot(buildFile,packageRoot);
-//		} catch (IOException e) {
-//			throw new ResolveError(e.getMessage());
-//		}
-//	}
-//
-//
-//	/**
-//	 * Perform basic sanity checking on the given build file. For example, that
-//	 * the name and version match. Furthermore, that it can be parsed and
-//	 * contains enough useful information.
-//	 *
-//	 * @param entry
-//	 * @return
-//	 * @throws ResolveError
-//	 */
-//	public ConfigFile checkBuildFile(String name, SemanticVersion version, Path.Entry<ConfigFile> entry)
-//			throws ResolveError {
-//		if (entry == null) {
-//			throw new ResolveError("Package missing build file: " + name + ":" + version);
-//		} else {
-//			try {
-//				return entry.read();
-//			} catch (IOException e) {
-//				throw new ResolveError(e.getMessage());
-//			}
-//		}
-//	}
-//
-//	/**
-//	 * Resolve any packages required by this package. This needs to be done in
-//	 * such a way as to ensure that all packages are resolved in the right
-//	 * order.
-//	 *
-//	 * @param buildFile
-//	 */
-//	public void resolvePackageDependencies(ConfigFile buildFile) {
-//
-//	}
-//
-//
-//	/**
-//	 * Determine the target root for this package. That is the location where
-//	 * all compile WyIL files are stored. This is essentially the output of
-//	 * package resolution, as these are then added to the enclosing project.
-//	 *
-//	 * @param buidlFile
-//	 * @param packageRoot
-//	 * @return
-//	 */
-//	public Path.Root getTargetRoot(ConfigFile buidlFile, Path.Root packageRoot) {
-//		// FIXME: need to be more sophisticated. That is, actually look at the
-//		// buildFile and construct an appropriate root.
-//		return packageRoot.getRelativeRoot(Trie.ROOT.append("bin").append("wyil"));
-//	}
-
 
 	// =======================================================================
 	// Helpers

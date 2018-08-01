@@ -296,6 +296,13 @@ public interface Build {
 	 *
 	 */
 	public interface Platform extends Feature {
+		/**
+		 * Get the unique name identifying this platform.
+		 *
+		 * @return
+		 */
+		public String getName();
+
 		public Build.Task initialise(Build.Project project);
 
 		public Content.Type<?> getSourceType();
