@@ -163,6 +163,7 @@ public class WyMain implements Command {
 	public WyMain(Configuration configuration, String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
+		this.contentTypes.add(WyProject.JAR_CONTENT_TYPE);
 		// Add default commands
 		this.commandDescriptors.add(Help.DESCRIPTOR);
 		this.commandDescriptors.add(Config.DESCRIPTOR);
@@ -238,6 +239,7 @@ public class WyMain implements Command {
 		Command.Descriptor descriptor = WyProject.getDescriptor(registry, commandDescriptors);
 		// Parse the given comand-line
 		Command.Template pipeline = new CommandParser(descriptor).parse(args);
+		System.out.println("ROOT IS: " + pipeline.getCommandDescriptor().getName());
 		// Execute the command (if applicable)
 		execute(this, pipeline);
 	}
@@ -323,18 +325,18 @@ public class WyMain implements Command {
 		Command.Descriptor descriptor = template.getCommandDescriptor();
 		// Construct an instance of the command
 		Command command = descriptor.initialise(parent, template.getOptions(), configuration);
+		// Initialise command
+					command.initialise();
 		// Determine whether or not to execute this command
 		if (template.getChild() != null) {
 			// Indicates a sub-command is actually being executed.
 			execute(command, template.getChild());
 		} else {
-			// Initialise command
-			command.initialise();
 			// Execute command with given arguments
 			command.execute(template.getArguments());
-			// Finalise command
-			command.finalise();
 		}
+		// Finalise command
+		command.finalise();
 	}
 
 	// ==================================================================

@@ -14,7 +14,11 @@
 package wycc;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.*;
+
+import org.junit.runners.ParentRunner;
 
 import wybs.lang.Build;
 import wybs.util.StdBuildRule;
@@ -28,7 +32,8 @@ import wycc.util.CommandParser;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-
+import wyfs.lang.Path.Entry;
+import wyfs.util.JarFileRoot;
 import wyfs.util.Trie;
 
 public class WyProject implements Command {
@@ -41,6 +46,25 @@ public class WyProject implements Command {
 	 * Path to the dependency repository within the global root.
 	 */
 	private static Path.ID REPOSITORY_PATH = Trie.fromString("repository");
+
+	public static Content.Type<?> JAR_CONTENT_TYPE = new Content.Type() {
+
+		@Override
+		public String getSuffix() {
+			return "jar";
+		}
+
+		@Override
+		public Object read(Entry e, InputStream input) throws IOException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void write(OutputStream output, Object value) throws IOException {
+			throw new UnsupportedOperationException();
+		}
+
+	};
 
 	// ==================================================================
 	// Instance Fields
@@ -61,6 +85,8 @@ public class WyProject implements Command {
 	 */
 	protected final Configuration configuration;
 
+	protected final HashMap<Content.Type<?>,Path.Root> roots;
+
 	/**
 	 * Contains project information.
 	 */
@@ -74,6 +100,7 @@ public class WyProject implements Command {
 		this.configuration = configuration;
 		this.environment = environment;
 		this.options = options;
+		this.roots = new HashMap<>();
 		this.project = new StdProject();
 	}
 
@@ -91,8 +118,13 @@ public class WyProject implements Command {
 		return getDescriptor(environment.getContentRegistry(),Collections.EMPTY_LIST);
 	}
 
+	public Path.Root getRoot(Content.Type<?> type) {
+		return roots.get(type);
+	}
+
 	@Override
 	public void initialise() {
+		System.out.println("INITIALISING WYPROJECT");
 		try {
 			// Find and resolve package dependencies
 			resolvePackageDependencies();
@@ -110,6 +142,12 @@ public class WyProject implements Command {
 		// Flush any roots
 		// Deactivate plugins
 		// Write back configuration files?
+		try {
+			project.flush();
+		} catch(IOException e) {
+			// FIXME
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -165,16 +203,17 @@ public class WyProject implements Command {
 			// Get version string
 			String version = configuration.get(String.class, dep);
 			// Construct path to the config file
-			Trie root = Trie.fromString(name + "/" + version);
-			Trie id = root.append("wy");
+			Trie root = Trie.fromString(name + "-v" + version);
+			System.out.println("ROOT: " + root);
 			// Attempt to resolve it.
-			if (!repository.exists(id, ConfigFile.ContentType)) {
+			if (!repository.exists(root, JAR_CONTENT_TYPE)) {
 				// TODO: employ a package resolver here
 				// FIXME: handle better error handling.
 				throw new RuntimeException("missing dependency \"" + name + "-" + version + "\"");
 			} else {
 				// Add the relative root.
-				project.roots().add(repository.createRelativeRoot(root));
+				Path.Entry<?> jarfile = repository.get(root, JAR_CONTENT_TYPE);
+				project.roots().add(new JarFileRoot(jarfile.location(), environment.getContentRegistry()));
 			}
 		}
 	}
@@ -198,7 +237,7 @@ public class WyProject implements Command {
 	 * @throws IOException
 	 */
 	private void configurePackageStructure() throws IOException {
-		Path.Root root = environment.getGlobalRoot();
+		Path.Root root = environment.getLocalRoot();
 		List<Build.Platform> platforms = environment.getBuildPlatforms();
 		//
 		for (int i = 0; i != platforms.size(); ++i) {
@@ -208,11 +247,15 @@ public class WyProject implements Command {
 			Path.ID srcID = Trie.fromString("src").append(srcSuffix);
 			Path.Root srcRoot = root.createRelativeRoot(srcID);
 			project.roots().add(srcRoot);
+			System.out.println("ROOT: " + platform.getSourceType());
+			roots.put(platform.getSourceType(), srcRoot);
 			// Configure Binary root
-			String binSuffix = platform.getSourceType().getSuffix();
+			String binSuffix = platform.getTargetType().getSuffix();
 			Path.ID binID = Trie.fromString("bin").append(binSuffix);
 			Path.Root binRoot = root.createRelativeRoot(binID);
 			project.roots().add(binRoot);
+			roots.put(platform.getTargetType(), binRoot);
+			System.out.println("ROOT: " + platform.getTargetType());
 			// Initialise build task
 			Build.Task task = platform.initialise(project);
 			// Add the appropriate build rule(s)

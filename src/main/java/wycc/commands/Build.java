@@ -95,11 +95,16 @@ public class Build implements Command {
 			for (int i = 0; i != platforms.size(); ++i) {
 				wybs.lang.Build.Platform platform = platforms.get(i);
 				System.out.println("PLATFORM: " + platform.getName());
-				Path.Root srcRoot = null;
-				Path.Root binRoot = null;
+				Content.Type<?> srcType = platform.getSourceType();
+				Content.Type<?> binType = platform.getTargetType();
+				Path.Root srcRoot = project.getRoot(srcType);
+				Path.Root binRoot = project.getRoot(binType);
+				// Determine the list of modified source files.
+				List modified = getModifiedSourceFiles(srcRoot, Content.filter("**", srcType), binRoot,
+						platform.getTargetType());
+				System.out.println("MODIFIED: " + modified);
 				// Add the list of modified source files to the list.
-				sources.addAll(getModifiedSourceFiles(srcRoot, Content.filter("**", platform.getSourceType()), binRoot,
-						platform.getTargetType()));
+				sources.addAll(modified);
 			}
 			// Finally, rebuild everything!
 			project.build(sources);
@@ -130,7 +135,6 @@ public class Build implements Command {
 		// Now, touch all source files which have modification date after
 		// their corresponding binary.
 		ArrayList<Path.Entry<T>> sources = new ArrayList<>();
-
 		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
 			// currently, I'm assuming everything is modified!
 			Path.Entry<S> binary = binaryDir.get(source.id(), binaryContentType);
