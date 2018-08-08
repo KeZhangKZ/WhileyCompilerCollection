@@ -14,11 +14,15 @@
 package wycc.commands;
 
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import wybs.lang.SyntacticItem;
+import wybs.lang.SyntaxError;
 import wybs.util.StdBuildGraph;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
@@ -61,17 +65,45 @@ public class Build implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options,
-				Configuration configuration) {
-			return new Build((WyProject) environment);
+		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
+			return new Build((WyProject) environment, System.out, System.err);
 		}
 
 	};
 
+	/**
+	 * Provides a generic place to which normal output should be directed. This
+	 * should eventually be replaced.
+	 */
+	private final PrintStream sysout;
+
+	/**
+	 * Provides a generic place to which error output should be directed. This
+	 * should eventually be replaced.
+	 */
+	private final PrintStream syserr;
+
+	/**
+	 * Signals that verbose output should be produced.
+	 */
+	protected boolean verbose = false;
+
+	/**
+	 * Signals that brief error reporting should be used. This is primarily used
+	 * to help integration with external tools. More specifically, brief output
+	 * is structured so as to be machine readable.
+	 */
+	protected boolean brief = false;
+
+	/**
+	 * The enclosing project for this build
+	 */
 	private final WyProject project;
 
-	public Build(WyProject project) {
+	public Build(WyProject project, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
+		this.sysout = new PrintStream(sysout);
+		this.syserr = new PrintStream(syserr);
 	}
 
 	@Override
@@ -92,9 +124,9 @@ public class Build implements Command {
 		try {
 			List<wybs.lang.Build.Platform> platforms = project.getParent().getBuildPlatforms();
 			ArrayList<Path.Entry<?>> sources = new ArrayList<>();
+			// Build each platform in turn.
 			for (int i = 0; i != platforms.size(); ++i) {
 				wybs.lang.Build.Platform platform = platforms.get(i);
-				System.out.println("PLATFORM: " + platform.getName());
 				Content.Type<?> srcType = platform.getSourceType();
 				Content.Type<?> binType = platform.getTargetType();
 				Path.Root srcRoot = project.getRoot(srcType);
@@ -102,13 +134,19 @@ public class Build implements Command {
 				// Determine the list of modified source files.
 				List modified = getModifiedSourceFiles(srcRoot, Content.filter("**", srcType), binRoot,
 						platform.getTargetType());
-				System.out.println("MODIFIED: " + modified);
 				// Add the list of modified source files to the list.
 				sources.addAll(modified);
 			}
 			// Finally, rebuild everything!
 			project.build(sources);
 			return true;
+		}  catch (SyntaxError e) {
+			SyntacticItem element = e.getElement();
+			e.outputSourceError(syserr, false);
+			if (verbose) {
+				printStackTrace(syserr, e);
+			}
+			return false;
 		} catch (Exception e) {
 			// FIXME: do something here??
 			e.printStackTrace();
@@ -145,5 +183,23 @@ public class Build implements Command {
 		}
 
 		return sources;
+	}
+
+	/**
+	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
+	 * in that it always prints all of the trace.
+	 *
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for (StackTraceElement ste : err.getStackTrace()) {
+			out.println("\tat " + ste.toString());
+		}
+		if (err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out, err.getCause());
+		}
 	}
 }

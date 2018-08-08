@@ -239,7 +239,6 @@ public class WyMain implements Command {
 		Command.Descriptor descriptor = WyProject.getDescriptor(registry, commandDescriptors);
 		// Parse the given comand-line
 		Command.Template pipeline = new CommandParser(descriptor).parse(args);
-		System.out.println("ROOT IS: " + pipeline.getCommandDescriptor().getName());
 		// Execute the command (if applicable)
 		execute(this, pipeline);
 	}
@@ -307,7 +306,6 @@ public class WyMain implements Command {
 			String activator = global.get(String.class, id);
 			try {
 				Class<?> c = Class.forName(activator);
-				System.out.println("ACTIVATING: " + activator + " FROM: " + id);
 				Module.Activator instance = (Module.Activator) c.newInstance();
 				instance.start(context);
 			} catch (ClassNotFoundException e) {

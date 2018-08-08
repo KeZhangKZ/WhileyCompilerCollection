@@ -124,7 +124,6 @@ public class WyProject implements Command {
 
 	@Override
 	public void initialise() {
-		System.out.println("INITIALISING WYPROJECT");
 		try {
 			// Find and resolve package dependencies
 			resolvePackageDependencies();
@@ -204,7 +203,6 @@ public class WyProject implements Command {
 			String version = configuration.get(String.class, dep);
 			// Construct path to the config file
 			Trie root = Trie.fromString(name + "-v" + version);
-			System.out.println("ROOT: " + root);
 			// Attempt to resolve it.
 			if (!repository.exists(root, JAR_CONTENT_TYPE)) {
 				// TODO: employ a package resolver here
@@ -247,7 +245,6 @@ public class WyProject implements Command {
 			Path.ID srcID = Trie.fromString("src").append(srcSuffix);
 			Path.Root srcRoot = root.createRelativeRoot(srcID);
 			project.roots().add(srcRoot);
-			System.out.println("ROOT: " + platform.getSourceType());
 			roots.put(platform.getSourceType(), srcRoot);
 			// Configure Binary root
 			String binSuffix = platform.getTargetType().getSuffix();
@@ -255,7 +252,6 @@ public class WyProject implements Command {
 			Path.Root binRoot = root.createRelativeRoot(binID);
 			project.roots().add(binRoot);
 			roots.put(platform.getTargetType(), binRoot);
-			System.out.println("ROOT: " + platform.getTargetType());
 			// Initialise build task
 			Build.Task task = platform.initialise(project);
 			// Add the appropriate build rule(s)

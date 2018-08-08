@@ -130,7 +130,6 @@ public class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 	@Override
 	public RelativeRoot createRelativeRoot(ID id) throws IOException {
 		File subdir = new File(dir,id.toString().replace('/',File.separatorChar));
-		System.out.println("CREATED RELATIVE ROOT: " + subdir);
 		return new Relative(subdir,filter,contentTypes);
 	}
 
