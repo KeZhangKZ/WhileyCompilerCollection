@@ -85,8 +85,6 @@ public class WyProject implements Command {
 	 */
 	protected final Configuration configuration;
 
-	protected final HashMap<Content.Type<?>,Path.Root> roots;
-
 	/**
 	 * Contains project information.
 	 */
@@ -100,7 +98,6 @@ public class WyProject implements Command {
 		this.configuration = configuration;
 		this.environment = environment;
 		this.options = options;
-		this.roots = new HashMap<>();
 		this.project = new StdProject();
 	}
 
@@ -116,10 +113,6 @@ public class WyProject implements Command {
 	public Command.Descriptor getDescriptor() {
 		// FIXME: this is broken because it doesn't include sub-descriptors.
 		return getDescriptor(environment.getContentRegistry(),Collections.EMPTY_LIST);
-	}
-
-	public Path.Root getRoot(Content.Type<?> type) {
-		return roots.get(type);
 	}
 
 	@Override
@@ -241,22 +234,16 @@ public class WyProject implements Command {
 		for (int i = 0; i != platforms.size(); ++i) {
 			Build.Platform platform = platforms.get(i);
 			// Configure Source root
-			String srcSuffix = platform.getSourceType().getSuffix();
-			Path.ID srcID = Trie.fromString("src").append(srcSuffix);
-			Path.Root srcRoot = root.createRelativeRoot(srcID);
+			Path.Root srcRoot = platform.getSourceRoot(root);
 			project.roots().add(srcRoot);
-			roots.put(platform.getSourceType(), srcRoot);
 			// Configure Binary root
-			String binSuffix = platform.getTargetType().getSuffix();
-			Path.ID binID = Trie.fromString("bin").append(binSuffix);
-			Path.Root binRoot = root.createRelativeRoot(binID);
+			Path.Root binRoot = platform.getTargetRoot(root);
 			project.roots().add(binRoot);
-			roots.put(platform.getTargetType(), binRoot);
 			// Initialise build task
 			Build.Task task = platform.initialise(project);
 			// Add the appropriate build rule(s)
-			project.add(new StdBuildRule(task, srcRoot, Content.filter("**", platform.getSourceType()),
-					Content.filter("**", platform.getTargetType()), binRoot));
+			project.add(
+					new StdBuildRule(task, srcRoot, platform.getSourceFilter(), platform.getTargetFilter(), binRoot));
 		}
 	}
 

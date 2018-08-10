@@ -122,18 +122,19 @@ public class Build implements Command {
 	@Override
 	public boolean execute(List<String> args) {
 		try {
+			// Identify the project root
+			Path.Root root = project.getParent().getLocalRoot();
+			// Extract all registered platforms
 			List<wybs.lang.Build.Platform> platforms = project.getParent().getBuildPlatforms();
 			ArrayList<Path.Entry<?>> sources = new ArrayList<>();
-			// Build each platform in turn.
+			// Construct build rules for each platform in turn.
 			for (int i = 0; i != platforms.size(); ++i) {
 				wybs.lang.Build.Platform platform = platforms.get(i);
-				Content.Type<?> srcType = platform.getSourceType();
 				Content.Type<?> binType = platform.getTargetType();
-				Path.Root srcRoot = project.getRoot(srcType);
-				Path.Root binRoot = project.getRoot(binType);
+				Path.Root srcRoot = platform.getSourceRoot(root);
+				Path.Root binRoot = platform.getTargetRoot(root);
 				// Determine the list of modified source files.
-				List modified = getModifiedSourceFiles(srcRoot, Content.filter("**", srcType), binRoot,
-						platform.getTargetType());
+				List modified = getModifiedSourceFiles(srcRoot, platform.getSourceFilter(), binRoot, binType);
 				// Add the list of modified source files to the list.
 				sources.addAll(modified);
 			}
