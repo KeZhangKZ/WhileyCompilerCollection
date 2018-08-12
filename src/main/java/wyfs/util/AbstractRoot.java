@@ -21,6 +21,8 @@ import java.util.Set;
 
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.lang.Content.Filter;
+import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Folder;
 import wyfs.lang.Path.ID;
@@ -75,6 +77,16 @@ public abstract class AbstractRoot<T extends Folder> implements Root {
 	@Override
 	public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws IOException {
 		return root.create(id,ct);
+	}
+
+	@Override
+	public boolean remove(ID id, Type<?> ct) throws IOException {
+		return root.remove(id,ct);
+	}
+
+	@Override
+	public int remove(Filter<?> cf) throws IOException {
+		return root.remove(cf);
 	}
 
 	@Override

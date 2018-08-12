@@ -328,8 +328,23 @@ public class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		}
 
 		@Override
+		public boolean remove(Path.ID id, Content.Type<?> type) throws IOException {
+			Path.Entry<?> entry = get(id, type);
+			//
+			if (entry != null) {
+				DirectoryRoot.Entry<?> e = (Entry<?>) entry;
+				super.remove(id, type);
+				// Physically delete underlying file
+				return e.file().delete();
+			} else {
+				return false;
+			}
+		}
+
+		@Override
 		public String toString() {
 			return dir + ":" + id;
 		}
 	}
+
 }

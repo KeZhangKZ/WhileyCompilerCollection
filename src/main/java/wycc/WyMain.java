@@ -29,6 +29,7 @@ import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.cfg.ConfigurationCombinator;
 import wycc.cfg.HashMapConfiguration;
 import wycc.commands.Build;
+import wycc.commands.Clean;
 import wycc.commands.Config;
 import wycc.commands.Help;
 import wycc.lang.Command;
@@ -165,9 +166,10 @@ public class WyMain implements Command {
 		this.contentTypes.add(ConfigFile.ContentType);
 		this.contentTypes.add(WyProject.JAR_CONTENT_TYPE);
 		// Add default commands
-		this.commandDescriptors.add(Help.DESCRIPTOR);
-		this.commandDescriptors.add(Config.DESCRIPTOR);
 		this.commandDescriptors.add(Build.DESCRIPTOR);
+		this.commandDescriptors.add(Clean.DESCRIPTOR);
+		this.commandDescriptors.add(Config.DESCRIPTOR);
+		this.commandDescriptors.add(Help.DESCRIPTOR);
 		// Setup project roots
 		this.systemRoot = new DirectoryRoot(systemDir, registry);
 		this.globalRoot = new DirectoryRoot(globalDir, registry);

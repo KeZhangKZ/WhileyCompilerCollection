@@ -303,6 +303,28 @@ public class Path {
 		 * @param entry
 		 */
 		public <T> Path.Entry<T> create(Path.ID id, Content.Type<T> ct) throws IOException;
+
+
+		/**
+		 * Delete an entry of a given content type at a given path. If the entry doesn't
+		 * exist, then nothing happens.
+		 *
+		 * @param id
+		 * @param ct
+		 * @return Flag indicating whether entry was actually removed or not.
+		 * @throws IOException
+		 */
+		public boolean remove(ID id, Content.Type<?> ct) throws IOException;
+
+		/**
+		 * Delete all entries matching a given filter, returning the number of entries
+		 * removed.
+		 *
+		 * @param cf
+		 * @return Flag indicating whether entry was actually removed or not.
+		 * @throws IOException
+		 */
+		public int remove(Content.Filter<?> cf) throws IOException;
 	}
 
 	/**
@@ -385,6 +407,27 @@ public class Path {
 		 */
 		public <T> Path.Entry<T> create(ID id, Content.Type<T> ct)
 				throws IOException;
+
+		/**
+		 * Delete an entry of a given content type at a given path. If the entry doesn't
+		 * exist, then nothing happens.
+		 *
+		 * @param id
+		 * @param ct
+		 * @return Flag indicating whether entry was actually removed or not.
+		 * @throws IOException
+		 */
+		public boolean remove(ID id, Content.Type<?> ct) throws IOException;
+
+		/**
+		 * Delete all entries matching a given filter, returning the number of entries
+		 * removed.
+		 *
+		 * @param cf
+		 * @return Flag indicating whether entry was actually removed or not.
+		 * @throws IOException
+		 */
+		public int remove(Content.Filter<?> cf) throws IOException;
 
 		/**
 		 * Create a relative root. That is, a root which is relative to this
