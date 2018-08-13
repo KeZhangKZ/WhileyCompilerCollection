@@ -220,7 +220,8 @@ public abstract class AbstractFolder implements Path.Folder {
 
 	@Override
 	public boolean remove(ID id, Type<?> ct) throws IOException {
-		// FIXME: isn't this broken because we need the content type as well?
+		updateContents();
+		// Find start of matches
 		int index = binarySearch(contents, nentries, id);
 		// Attempt to find item with matching content type
 		index = match(index, contents, nentries, id, ct);
@@ -240,22 +241,20 @@ public abstract class AbstractFolder implements Path.Folder {
 
 	@Override
 	public int remove(Filter<?> filter) throws IOException {
-		System.out.println("REMOVING: " + filter);
-		System.out.println("ENTRIES: " + nentries);
+		updateContents();
 		int count = 0;
 		//
 		for (int i = 0; i != nentries; ++i) {
 			Path.Item item = contents[i];
 			if (item instanceof Entry) {
 				Entry entry = (Entry) item;
-				System.out.println("MATCHED: " + entry.id());
 				if (filter.matches(entry.id(), entry.contentType())) {
 					remove(entry.id(), entry.contentType());
 					count = count + 1;
+					i = i - 1;
 				}
 			} else if (item instanceof Path.Folder && filter.matchesSubpath(item.id())) {
 				Path.Folder folder = (Path.Folder) item;
-				System.out.println("MATCHED: " + folder.id());
 				count += folder.remove(filter);
 			}
 		}
