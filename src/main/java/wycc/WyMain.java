@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import wybs.lang.SyntaxError;
 import wycc.cfg.ConfigFile;
@@ -87,7 +88,8 @@ public class WyMain implements Command {
 			Configuration.UNBOUND_STRING(Trie.fromString("package/author"), "Author of this package"),
 			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package"),
 			// Optional items
-			Configuration.UNBOUND_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on")
+			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), Pattern.compile("\\d+.\\d+.\\d+"),
+					"Packages this package depends on")
 	);
 
 	// ========================================================================

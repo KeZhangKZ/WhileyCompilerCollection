@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import wyfs.lang.Path;
 import wyfs.lang.Path.Filter;
@@ -95,6 +97,14 @@ public interface Configuration {
 		 * @return
 		 */
 		public List<KeyValueDescriptor<?>> getDescriptors();
+
+		/**
+		 * Check whether a given configuration is a valid instance of this schema.
+		 *
+		 * @param config
+		 * @return
+		 */
+		public void validate(Configuration config);
 	}
 
 	/**
@@ -144,6 +154,11 @@ public interface Configuration {
 		public List<KeyValueDescriptor<?>> getDescriptors() {
 			return Collections.EMPTY_LIST;
 		}
+
+		@Override
+		public void validate(Configuration configuration) {
+			throw new IllegalArgumentException("invalid configuration");
+		}
 	};
 
 	/**
@@ -184,6 +199,24 @@ public interface Configuration {
 			@Override
 			public List<KeyValueDescriptor<?>> getDescriptors() {
 				return Arrays.asList(descriptors);
+			}
+
+			@Override
+			public void validate(Configuration configuration) {
+				for (int i = 0; i != descriptors.length; ++i) {
+					KeyValueDescriptor kvd = descriptors[i];
+					// Identify all matching keys
+					List<Path.ID> results = configuration.matchAll(kvd.getFilter());
+					// Check all matching keys
+					for (Path.ID id : results) {
+						System.out.println("GOT HERE : " + id);
+						Object str = configuration.get(Object.class, id);
+						if (!kvd.isValid(str)) {
+							throw new IllegalArgumentException("invalid configuration attribute: " + id + " = " + str);
+						}
+					}
+				}
+				// Done
 			}
 		};
 	}
@@ -270,7 +303,7 @@ public interface Configuration {
 	}
 
 	/**
-	 * Represents an unbound string key-valid pair. That is, any string is
+	 * Represents an unbound string key-value pair. That is, any string is
 	 * permitted.
 	 *
 	 * @param key
@@ -282,6 +315,28 @@ public interface Configuration {
 
 		};
 	}
+
+	/**
+	 * Represents a key-value pair where the value is a string conforming to a given
+	 * regex.
+	 *
+	 * @param key
+	 * @param regex       The regular expression to which instances of this kvp must
+	 *                    conform.
+	 * @param description
+	 * @return
+	 */
+	public static KeyValueDescriptor<String> REGEX_STRING(Path.Filter key, Pattern regex, String description) {
+		return new AbstractDescriptor<String>(key,description,String.class) {
+			@Override
+			public boolean isValid(String str) {
+				return regex.matcher(str).matches();
+			}
+		};
+	}
+
+
+
 
 	/**
 	 * Represents an unbound integer key-valid pair. That is, any integer is

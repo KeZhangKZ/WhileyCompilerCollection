@@ -219,7 +219,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 
 		public Wrapper(Configuration.Schema schema) {
 			this.schema = schema;
-			// FIXME: should validate schema right here?
+			schema.validate(this);
 		}
 
 		@Override
