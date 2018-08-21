@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.io;
+package wycc.cfg;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -33,11 +33,10 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 
 import static wybs.lang.SyntaxError.*;
-import static wycc.io.ConfigFileLexer.Token.Kind.*;
+import static wycc.cfg.ConfigFileLexer.Token.Kind.*;
 
-import wycc.io.ConfigFileLexer.Token;
-import wycc.lang.ConfigFile;
-import wycc.lang.ConfigFile.*;
+import wycc.cfg.ConfigFile.*;
+import wycc.cfg.ConfigFileLexer.Token;
 import wycc.util.Pair;
 import wycc.util.Triple;
 import wyfs.lang.Path;

@@ -11,7 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.io;
+package wycc.cfg;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -21,7 +21,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import wycc.lang.ConfigFile;
 import wybs.lang.Attribute;
 import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticItem;

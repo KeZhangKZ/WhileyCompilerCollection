@@ -287,4 +287,77 @@ public interface Build {
 		 */
 		public void apply(T file) throws IOException;
 	}
+
+	/**
+	 * Provides a high-level concept of a target platform. These are registered by
+	 * various backends to support different compilation targets.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Platform extends Feature {
+		/**
+		 * Get the unique name identifying this platform.
+		 *
+		 * @return
+		 */
+		public String getName();
+
+		/**
+		 * Initialise this platform to produce a build task which can be used for
+		 * compiling.
+		 *
+		 * @param project
+		 * @return
+		 */
+		public Build.Task initialise(Build.Project project);
+
+		/**
+		 * Get the source type for this build platform.
+		 *
+		 * @return
+		 */
+		public Content.Type<?> getSourceType();
+
+		/**
+		 * Get the target type for this build platform.
+		 *
+		 * @return
+		 */
+		public Content.Type<?> getTargetType();
+
+		/**
+		 * Get the source filter for this build platform. This identifies all files
+		 * reachable from the source root which constitute source files.
+		 *
+		 * @return
+		 */
+		public Content.Filter<?> getSourceFilter();
+
+		/**
+		 * Get the target filter for this build platform. This identifies all files
+		 * reachable from the source root which constitute target (e.g. binary) files.
+		 *
+		 * @return
+		 */
+		public Content.Filter<?> getTargetFilter();
+
+		/**
+		 * Get the root for all source files used by the build platform.
+		 *
+		 * @param root
+		 *            The project root.
+		 * @return
+		 */
+		public Path.Root getSourceRoot(Path.Root root) throws IOException;
+
+		/**
+		 * Get the root for all target files produced by the build platform.
+		 *
+		 * @param root
+		 *            The project root.
+		 * @return
+		 */
+		public Path.Root getTargetRoot(Path.Root root) throws IOException;
+	}
 }
