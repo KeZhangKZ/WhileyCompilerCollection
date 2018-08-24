@@ -13,34 +13,20 @@
 // limitations under the License.
 package wycc.cfg;
 
-import java.io.File;
-import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import wybs.lang.Attribute;
-import wybs.lang.NameID;
-import wybs.lang.SyntacticElement;
+import wybs.util.AbstractCompilationUnit.Identifier;
+import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
-
-import static wybs.lang.SyntaxError.*;
+import wybs.util.AbstractCompilationUnit.*;
 import static wycc.cfg.ConfigFileLexer.Token.Kind.*;
 
 import wycc.cfg.ConfigFile.*;
 import wycc.cfg.ConfigFileLexer.Token;
-import wycc.util.Pair;
-import wycc.util.Triple;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
 
 /**
  * Convert a list of tokens into an Abstract Syntax Tree (AST) representing the
@@ -50,13 +36,13 @@ import wyfs.util.Trie;
  *
  */
 public class ConfigFileParser {
-	private final Path.Entry<ConfigFile> entry;
+	private final ConfigFile file;
 	private ArrayList<Token> tokens;
 	private int index;
 
 	public ConfigFileParser(Path.Entry<ConfigFile> entry, List<Token> tokens) {
-		this.entry = entry;
 		this.tokens = new ArrayList<>(tokens);
+		this.file = new ConfigFile(entry);
 	}
 
 	/**
@@ -67,25 +53,27 @@ public class ConfigFileParser {
 	 * @return
 	 */
 	public ConfigFile read() {
-		ConfigFile cf = new ConfigFile(entry);
-		List<Declaration> declarations = cf.getDeclarations();
+		List<Declaration> declarations = new ArrayList<>();
 		skipWhiteSpace();
 		while (index < tokens.size()) {
 			Token lookahead = tokens.get(index);
 			if (lookahead.kind == LeftSquare) {
-				parseSection(declarations);
+				declarations.add(parseSection());
 			} else {
-				parseKeyValuePair(declarations);
+				declarations.add(parseKeyValuePair());
 			}
 			skipWhiteSpace();
 		}
-		return cf;
+		// FIXME: why do we need this?
+		file.setDeclarations(new Tuple<>(declarations));
+		return file;
 	}
 
-	private void parseSection(List<Declaration> declarations) {
+	private Section parseSection() {
+		int start = index;
+		List<Declaration> declarations = new ArrayList<>();
 		match(LeftSquare);
-		String name = match(Identifier).text;
-		ConfigFile.Section section = new ConfigFile.Section(name);
+		Identifier name = parseIdentifier();
 		match(RightSquare);
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -93,40 +81,71 @@ public class ConfigFileParser {
 			if (lookahead.kind == LeftSquare) {
 				break;
 			} else {
-				parseKeyValuePair(section.getContents());
+				declarations.add(parseKeyValuePair());
 			}
 			skipWhiteSpace();
 		}
-		//
-		declarations.add(section);
+		// Construct the new section
+		return annotateSourceLocation(new Section(name, new Tuple<>(declarations)), start);
 	}
 
-	private void parseKeyValuePair(List<Declaration> declarations) {
-		String key = match(Token.Kind.Identifier).text;
-		Object value;
+	private KeyValuePair parseKeyValuePair() {
+		int start = index;
+		Identifier key = parseIdentifier();
 		match(Token.Kind.Equals);
+		Value value = parseValue();
+		KeyValuePair r = annotateSourceLocation(new KeyValuePair(key, value), start);
 		skipWhiteSpace();
+		return r;
+	}
+
+	private Value parseValue() {
 		checkNotEof();
+		int start = index;
+		Value value;
 		Token token = tokens.get(index);
+		match(token.kind);
 		switch (token.kind) {
 		case False:
-			value = false;
+			value = new Value.Bool(false);
 			break;
 		case True:
-			value = true;
+			value = new Value.Bool(true);
 			break;
 		case IntValue:
-			value = new BigInteger(token.text);
+			value = new Value.Int(new BigInteger(token.text));
 			break;
 		case StringValue:
-			value = parseString(token.text);
+			// FIXME: this is probably broken at the extremes
+			value = new Value.UTF8(parseString(token.text).getBytes());
 			break;
 		default:
 			syntaxError("unknown token", token);
-			return; // deadcode
+			return null; // deadcode
 		}
-		declarations.add(new ConfigFile.KeyValuePair(key, value));
-		match(token.kind);
+		return annotateSourceLocation(value, start);
+	}
+
+	private Identifier parseIdentifier() {
+		int start = skipWhiteSpace(index);
+		Token token = match(Identifier);
+		Identifier id = new Identifier(token.text);
+		return annotateSourceLocation(id, start);
+	}
+
+	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start) {
+		return annotateSourceLocation(item, start, index - 1);
+	}
+
+	private <T extends SyntacticItem> T annotateSourceLocation(T item, int start, int end) {
+		// Allocate item to enclosing WhileyFile. This is necessary so that the
+		// annotations can then be correctly allocated as well.
+		item = file.allocate(item);
+		// Determine the first and last token representing this span.
+		Token first = tokens.get(start);
+		Token last = tokens.get(end);
+		file.allocate(new Attribute.Span(item, first.start, last.end()));
+		return item;
 	}
 
 	/**
@@ -317,7 +336,7 @@ public class ConfigFileParser {
 			} else {
 				// I believe this is actually dead-code, since checkNotEof()
 				// won't be called before at least one token is matched.
-				throw new SyntaxError("unexpected end-of-file", entry, null);
+				throw new SyntaxError("unexpected end-of-file", file.getEntry(), null);
 			}
 		}
 	}
@@ -532,16 +551,8 @@ public class ConfigFileParser {
 		return (byte) val;
 	}
 
-	private Attribute.Source sourceAttr(int start, int end) {
-		Token t1 = tokens.get(start);
-		Token t2 = tokens.get(end);
-		// FIXME: problem here with the line numbering ?
-		return new Attribute.Source(t1.start, t2.end(), 0);
-	}
-
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, entry, null);
-
+		throw new SyntaxError(msg, file.getEntry(), null);
 	}
 
 	/**

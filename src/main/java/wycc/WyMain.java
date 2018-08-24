@@ -21,8 +21,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.KeyValueDescriptor;
@@ -87,7 +90,8 @@ public class WyMain implements Command {
 			Configuration.UNBOUND_STRING(Trie.fromString("package/author"), "Author of this package"),
 			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package"),
 			// Optional items
-			Configuration.UNBOUND_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on")
+			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), Pattern.compile("\\d+.\\d+.\\d+"),
+					"Packages this package depends on")
 	);
 
 	// ========================================================================
@@ -305,9 +309,9 @@ public class WyMain implements Command {
 		List<Path.ID> plugins = global.matchAll(Trie.fromString("plugins/*"));
 		// start modules
 		for (Path.ID id : plugins) {
-			String activator = global.get(String.class, id);
+			UTF8 activator = global.get(UTF8.class, id);
 			try {
-				Class<?> c = Class.forName(activator);
+				Class<?> c = Class.forName(activator.toString());
 				Module.Activator instance = (Module.Activator) c.newInstance();
 				instance.start(context);
 			} catch (ClassNotFoundException e) {
@@ -472,7 +476,7 @@ public class WyMain implements Command {
 			// Construct configuration according to given schema
 			return cf.toConfiguration(schema);
 		} catch (SyntaxError e) {
-			e.outputSourceError(System.err, false);
+			e.outputSourceError(System.out, false);
 			System.exit(-1);
 			return null;
 		}

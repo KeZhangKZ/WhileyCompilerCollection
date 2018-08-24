@@ -17,18 +17,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import wybs.lang.SyntacticElement;
+import wybs.lang.SyntacticItem;
+import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit;
-import wycc.cfg.Configuration.KeyValueDescriptor;
+import wybs.util.AbstractSyntacticItem;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 
@@ -70,37 +66,46 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 	};
 
 	// =========================================================================
+	// Node kinds
+	// =========================================================================
+
+	public static final int DECL_mask = 0b00010000;
+	public static final int DECL_section = DECL_mask + 0;
+	public static final int DECL_keyvalue = DECL_mask + 1;
+
+	// =========================================================================
 	// Constructors
 	// =========================================================================
 
 	/**
 	 * The list of declarations which make up this configuration.
 	 */
-	private ArrayList<Declaration> declarations;
+	private Tuple<Declaration> declarations;
 
 	public ConfigFile(Path.Entry<ConfigFile> entry) {
 		super(entry);
 		//
-		this.declarations = new ArrayList<>();
+		this.declarations = new Tuple<>();
 	}
 
-	public static interface Declaration {
+	public ConfigFile(Path.Entry<ConfigFile> entry, Tuple<Declaration> declarations) {
+		super(entry);
+		//
+		this.declarations = declarations;
+		//
+		allocate(declarations);
+	}
+
+	public static interface Declaration extends SyntacticItem {
 
 	}
 
-	public List<Declaration> getDeclarations() {
+	public Tuple<Declaration> getDeclarations() {
 		return declarations;
 	}
 
-	/**
-	 * Turn the configuration file into a series of nested maps.
-	 *
-	 * @return
-	 */
-	public Map<String, Object> toMap() {
-		HashMap<String, Object> map = new HashMap<>();
-		toMap(declarations, map);
-		return map;
+	public void setDeclarations(Tuple<Declaration> declarations) {
+		this.declarations = declarations;
 	}
 
 	/**
@@ -114,35 +119,23 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		return new Wrapper(schema);
 	}
 
-	private static void toMap(List<Declaration> declarations, Map<String, Object> map) {
-		for (Declaration d : declarations) {
-			if (d instanceof KeyValuePair) {
-				KeyValuePair kvp = (KeyValuePair) d;
-				map.put(kvp.getKey(), kvp.getValue());
-			} else {
-				Section s = (Section) d;
-				HashMap<String, Object> submap = new HashMap<>();
-				toMap(s.contents, submap);
-				map.put(s.getName(), submap);
-			}
-		}
-	}
+	public static class Section extends AbstractSyntacticItem implements Declaration {
 
-	public static class Section extends SyntacticElement.Impl implements Declaration {
-		private final String name;
-		private final ArrayList<Declaration> contents;
-
-		public Section(String name) {
-			this.name = name;
-			this.contents = new ArrayList<>();
+		public Section(Identifier name, Tuple<Declaration> contents) {
+			super(DECL_section, name, contents);
 		}
 
-		public String getName() {
-			return name;
+		public Identifier getName() {
+			return (Identifier) get(0);
 		}
 
-		public List<Declaration> getContents() {
-			return contents;
+		public Tuple<Declaration> getContents() {
+			return (Tuple) get(1);
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new Section((Identifier) operands[0], (Tuple<Declaration>) operands[1]);
 		}
 	}
 
@@ -152,35 +145,37 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 	 * @author David J. Pearce
 	 *
 	 */
-	public static class KeyValuePair extends SyntacticElement.Impl implements Declaration {
-		private final String key;
-		private Object value;
+	public static class KeyValuePair extends AbstractSyntacticItem implements Declaration {
 
-		public KeyValuePair(String key, Object value) {
-			this.key = key;
-			this.value = value;
+		public KeyValuePair(Identifier key, Value value) {
+			super(DECL_keyvalue, key, value);
 		}
 
-		public String getKey() {
-			return key;
+		public Identifier getKey() {
+			return (Identifier) get(0);
 		}
 
-		public Object getValue() {
-			return value;
+		public Value getValue() {
+			return (Value) get(1);
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new KeyValuePair((Identifier) operands[0], (Value) operands[1]);
 		}
 	}
 
-	private KeyValuePair getKeyValuePair(ID key, List<Declaration> decls) {
+	private KeyValuePair getKeyValuePair(ID key, Tuple<Declaration> decls) {
 		for(int i=0;i!=decls.size();++i) {
 			Declaration decl = decls.get(i);
 			if(key.size() > 1 && decl instanceof Section) {
 				Section s = (Section) decl;
-				if(s.getName().equals(key.get(0))) {
-					return getKeyValuePair(key.subpath(1, key.size()),s.getContents());
+				if (s.getName().toString().equals(key.get(0))) {
+					return getKeyValuePair(key.subpath(1, key.size()), s.getContents());
 				}
 			} else if(decl instanceof KeyValuePair && key.size() == 1){
 				KeyValuePair p = (KeyValuePair) decl;
-				if(p.getKey().equals(key.get(0))) {
+				if (p.getKey().toString().equals(key.get(0))) {
 					return p;
 				}
 			}
@@ -188,27 +183,29 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		throw new IllegalArgumentException("invalid key access \"" + key + "\"");
 	}
 
-	private void insert(ID key, Object value, List<Declaration> decls) {
-		for(int i=0;i!=decls.size();++i) {
-			Declaration decl = decls.get(i);
-			if(key.size() > 1 && decl instanceof Section) {
-				Section s = (Section) decl;
-				if(s.getName().equals(key.get(0))) {
-					insert(key.subpath(1, key.size()), value, s.getContents());
-				}
-			} else if(decl instanceof KeyValuePair && key.size() == 1){
-				KeyValuePair p = (KeyValuePair) decl;
-				if(p.getKey().equals(key.get(0))) {
-					p.value = value;
-					return;
-				}
-			}
-		}
-		if(key.size() == 1) {
-			declarations.add(new KeyValuePair(key.get(0),value));
-		} else {
-			throw new IllegalArgumentException("invalid key access \"" + key + "\"");
-		}
+	private void insert(ID key, Object value, Tuple<Declaration> decls) {
+		throw new UnsupportedOperationException();
+		// FIXME: needs to be updated
+//		for(int i=0;i!=decls.size();++i) {
+//			Declaration decl = decls.get(i);
+//			if(key.size() > 1 && decl instanceof Section) {
+//				Section s = (Section) decl;
+//				if(s.getName().equals(key.get(0))) {
+//					insert(key.subpath(1, key.size()), value, s.getContents());
+//				}
+//			} else if(decl instanceof KeyValuePair && key.size() == 1){
+//				KeyValuePair p = (KeyValuePair) decl;
+//				if(p.getKey().equals(key.get(0))) {
+//					p.value = value;
+//					return;
+//				}
+//			}
+//		}
+//		if(key.size() == 1) {
+//			declarations.add(new KeyValuePair(key.get(0),value));
+//		} else {
+//			throw new IllegalArgumentException("invalid key access \"" + key + "\"");
+//		}
 	}
 
 	private class Wrapper implements Configuration {
@@ -219,7 +216,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 
 		public Wrapper(Configuration.Schema schema) {
 			this.schema = schema;
-			// FIXME: should validate schema right here?
+			validate();
 		}
 
 		@Override
@@ -258,7 +255,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				throw new IllegalArgumentException("incompatible key access: value does not match expected invariant");
 			}
 			// Update the relevant key-value pair
-			insert(key,value,declarations);
+			insert(key, value, declarations);
 		}
 
 		@Override
@@ -268,20 +265,46 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 			return matches;
 		}
 
-		private void match(Trie id, Path.Filter filter, List<Declaration> declarations, ArrayList<ID> matches) {
+		private void match(Trie id, Path.Filter filter, Tuple<Declaration> declarations, ArrayList<ID> matches) {
 			for (int i = 0; i != declarations.size(); ++i) {
 				Declaration decl = declarations.get(i);
 				if (decl instanceof Section) {
 					Section section = (Section) decl;
-					match(id.append(section.getName()), filter, section.getContents(), matches);
+					match(id.append(section.getName().toString()), filter, section.getContents(), matches);
 				} else if (decl instanceof KeyValuePair) {
 					KeyValuePair kvp = (KeyValuePair) decl;
-					Trie match = id.append(kvp.getKey());
+					Trie match = id.append(kvp.getKey().toString());
 					if (filter.matches(match)) {
 						matches.add(match);
 					}
 				}
 			}
+		}
+
+		private void validate() {
+			List<KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
+			for (int i = 0; i != descriptors.size(); ++i) {
+				KeyValueDescriptor descriptor = descriptors.get(i);
+				// Sanity check the expected kind
+				Class<?> kind = descriptor.getType();
+				// Identify all matching keys
+				List<Path.ID> results = matchAll(descriptor.getFilter());
+				// Check all matching keys
+				for (Path.ID id : results) {
+					// Find corresponding key value pair.
+					KeyValuePair kvp = getKeyValuePair(id, declarations);
+					Value value = kvp.getValue();
+					if (!kind.isInstance(value)) {
+						throw new SyntaxError(
+								"invalid key value (expected " + kind.getSimpleName() + "): " + id + " = " + value,
+								getEntry(), kvp);
+					} else if (!descriptor.isValid(value)) {
+						// Identified invalid key-value pair
+						throw new SyntaxError("invalid key value: " + id + " = " + value, getEntry(), kvp);
+					}
+				}
+			}
+			// Done
 		}
 	}
 }
