@@ -13,6 +13,7 @@
 // limitations under the License.
 package wycc.cfg;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -22,6 +23,8 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import wybs.util.AbstractCompilationUnit.Value;
+import wycc.cfg.ConfigFile.KeyValuePair;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
@@ -98,13 +101,16 @@ public interface Configuration {
 		 */
 		public List<KeyValueDescriptor<?>> getDescriptors();
 
-		/**
-		 * Check whether a given configuration is a valid instance of this schema.
-		 *
-		 * @param config
-		 * @return
-		 */
-		public void validate(Configuration config);
+	}
+
+	/**
+	 * Root of all errors arising from configuration problems.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Error {
+
 	}
 
 	/**
@@ -154,11 +160,6 @@ public interface Configuration {
 		public List<KeyValueDescriptor<?>> getDescriptors() {
 			return Collections.EMPTY_LIST;
 		}
-
-		@Override
-		public void validate(Configuration configuration) {
-			throw new IllegalArgumentException("invalid configuration");
-		}
 	};
 
 	/**
@@ -201,23 +202,6 @@ public interface Configuration {
 				return Arrays.asList(descriptors);
 			}
 
-			@Override
-			public void validate(Configuration configuration) {
-				for (int i = 0; i != descriptors.length; ++i) {
-					KeyValueDescriptor kvd = descriptors[i];
-					// Identify all matching keys
-					List<Path.ID> results = configuration.matchAll(kvd.getFilter());
-					// Check all matching keys
-					for (Path.ID id : results) {
-						System.out.println("GOT HERE : " + id);
-						Object str = configuration.get(Object.class, id);
-						if (!kvd.isValid(str)) {
-							throw new IllegalArgumentException("invalid configuration attribute: " + id + " = " + str);
-						}
-					}
-				}
-				// Done
-			}
 		};
 	}
 
@@ -310,8 +294,8 @@ public interface Configuration {
 	 * @param description
 	 * @return
 	 */
-	public static KeyValueDescriptor<String> UNBOUND_STRING(Path.Filter key, String description) {
-		return new AbstractDescriptor<String>(key,description,String.class) {
+	public static KeyValueDescriptor<Value.UTF8> UNBOUND_STRING(Path.Filter key, String description) {
+		return new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class) {
 
 		};
 	}
@@ -326,17 +310,14 @@ public interface Configuration {
 	 * @param description
 	 * @return
 	 */
-	public static KeyValueDescriptor<String> REGEX_STRING(Path.Filter key, Pattern regex, String description) {
-		return new AbstractDescriptor<String>(key,description,String.class) {
+	public static KeyValueDescriptor<Value.UTF8> REGEX_STRING(Path.Filter key, Pattern regex, String description) {
+		return new AbstractDescriptor<Value.UTF8>(key,description,Value.UTF8.class) {
 			@Override
-			public boolean isValid(String str) {
-				return regex.matcher(str).matches();
+			public boolean isValid(Value.UTF8 str) {
+				return regex.matcher(str.toString()).matches();
 			}
 		};
 	}
-
-
-
 
 	/**
 	 * Represents an unbound integer key-valid pair. That is, any integer is
@@ -346,8 +327,8 @@ public interface Configuration {
 	 * @param description
 	 * @return
 	 */
-	public static KeyValueDescriptor<Integer> UNBOUND_INTEGER(Path.Filter key, String description) {
-		return new AbstractDescriptor<Integer>(key,description,Integer.class) {
+	public static KeyValueDescriptor<Value.Int> UNBOUND_INTEGER(Path.Filter key, String description) {
+		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class) {
 
 		};
 	}
@@ -360,8 +341,8 @@ public interface Configuration {
 	 * @param description
 	 * @return
 	 */
-	public static KeyValueDescriptor<Boolean> UNBOUND_BOOLEAN(Path.Filter key, String description) {
-		return new AbstractDescriptor<Boolean>(key,description,Boolean.class) {
+	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description) {
+		return new AbstractDescriptor<Value.Bool>(key,description,Value.Bool.class) {
 
 		};
 	}
@@ -376,11 +357,12 @@ public interface Configuration {
 	 *            No valid value is below this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Integer> BOUND_INTEGER(Path.Filter key, String description, final int low) {
-		 return new AbstractDescriptor<Integer>(key, description, Integer.class) {
+	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, final int low) {
+		 return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class) {
 				@Override
-				public boolean isValid(Integer value) {
-					return value >= low;
+				public boolean isValid(Value.Int value) {
+					int v = value.get().intValue();
+					return v >= low;
 				}
 		 };
 	}
@@ -398,12 +380,13 @@ public interface Configuration {
 	 *            No valid value is above this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Integer> BOUND_INTEGER(Path.Filter key, String description, final int low,
+	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, final int low,
 			final int high) {
-		return new AbstractDescriptor<Integer>(key, description, Integer.class) {
+		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class) {
 			@Override
-			public boolean isValid(Integer value) {
-				return value >= low && value <= high;
+			public boolean isValid(Value.Int value) {
+				int v = value.get().intValue();
+				return v >= low && v <= high;
 			}
 		};
 	}

@@ -21,6 +21,7 @@ import java.util.*;
 import org.junit.runners.ParentRunner;
 
 import wybs.lang.Build;
+import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
 import wycc.cfg.ConfigFile;
@@ -193,7 +194,7 @@ public class WyProject implements Command {
 			// Get dependency name
 			String name = dep.get(1);
 			// Get version string
-			String version = configuration.get(String.class, dep);
+			UTF8 version = configuration.get(UTF8.class, dep);
 			// Construct path to the config file
 			Trie root = Trie.fromString(name + "-v" + version);
 			// Attempt to resolve it.

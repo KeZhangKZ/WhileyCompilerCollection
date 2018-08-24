@@ -117,13 +117,6 @@ public class ConfigurationCombinator implements Configuration {
 				}
 				return descriptors;
 			}
-
-			@Override
-			public void validate(Configuration config) {
-				for (int i = 0; i != schemas.length; ++i) {
-					schemas[i].validate(config);
-				}
-			}
 		};
 	}
 }
