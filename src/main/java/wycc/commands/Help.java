@@ -136,7 +136,7 @@ public class Help implements Command {
 			Option.Descriptor option = options.get(i);
 			String argument = option.getArgumentDescription();
 			out.print("\t--" + option.getName());
-			if(!argument.equals("")) {
+			if(argument != null && !argument.equals("")) {
 				out.print("=" + argument);
 			}
 			out.println();

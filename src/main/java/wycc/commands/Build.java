@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -51,7 +52,8 @@ public class Build implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Collections.EMPTY_LIST;
+			return Arrays.asList(Command.OPTION_FLAG("verbose", "enable verbose output", false),
+					Command.OPTION_FLAG("brief", "enable brief reporting of error messages", false));
 		}
 
 		@Override
@@ -66,7 +68,7 @@ public class Build implements Command {
 
 		@Override
 		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
-			return new Build((WyProject) environment, System.out, System.err);
+			return new Build((WyProject) environment, options, System.out, System.err);
 		}
 
 	};
@@ -100,8 +102,9 @@ public class Build implements Command {
 	 */
 	private final WyProject project;
 
-	public Build(WyProject project, OutputStream sysout, OutputStream syserr) {
+	public Build(WyProject project, Command.Options options, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
+		this.verbose = options.get("verbose", Boolean.class);
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}

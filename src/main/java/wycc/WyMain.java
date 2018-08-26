@@ -241,12 +241,16 @@ public class WyMain implements Command {
 	}
 
 	public void execute(String[] args) throws IOException {
-		// Construct the root descriptor
-		Command.Descriptor descriptor = WyProject.getDescriptor(registry, commandDescriptors);
-		// Parse the given comand-line
-		Command.Template pipeline = new CommandParser(descriptor).parse(args);
-		// Execute the command (if applicable)
-		execute(this, pipeline);
+		try {
+			// Construct the root descriptor
+			Command.Descriptor descriptor = WyProject.getDescriptor(registry, commandDescriptors);
+			// Parse the given comand-line
+			Command.Template pipeline = new CommandParser(descriptor).parse(args);
+			// Execute the command (if applicable)
+			execute(this, pipeline);
+		} catch(IllegalArgumentException e) {
+			System.out.println(e.getMessage());
+		}
 	}
 
 	/**

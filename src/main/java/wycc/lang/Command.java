@@ -369,4 +369,19 @@ public interface Command {
 			}
 		};
 	}
+
+	public static Option.Descriptor OPTION_FLAG(String name, String description,
+			boolean defaultValue) {
+		return new AbstractOptionDescriptor(name, null, description, defaultValue) {
+			@Override
+			public Option Initialise(String arg) {
+				if(arg.equals("false") || arg.equals("true")) {
+					// If specified then should be true
+					return new OptionValue(this, Boolean.parseBoolean(arg));
+				} else {
+					throw new IllegalArgumentException("invalid argument for " + name + " (expected nothing, \"true\" or \"false\")");
+				}
+			}
+		};
+	}
 }
