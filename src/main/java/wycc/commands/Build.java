@@ -32,6 +32,7 @@ import wycc.lang.Command;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyfs.lang.Content.Type;
 
 public class Build implements Command {
@@ -52,13 +53,13 @@ public class Build implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Arrays.asList(Command.OPTION_FLAG("verbose", "enable verbose output", false),
-					Command.OPTION_FLAG("brief", "enable brief reporting of error messages", false));
+			return Collections.EMPTY_LIST;
 		}
 
 		@Override
 		public Schema getConfigurationSchema() {
-			return Configuration.EMPTY_SCHEMA;
+			return Configuration.fromArray(Configuration.UNBOUND_STRING(Trie.fromString("binroot"),
+					"location to place all generated resources (relative to wy.tom)"));
 		}
 
 		@Override

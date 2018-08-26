@@ -17,7 +17,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
@@ -283,6 +285,10 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 
 		private void validate() {
 			List<KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
+			// Matched holds all concrete key-value pairs which are matched. This allows us
+			// to identify any which were not matched and, hence, are invalid
+			Set<Path.ID> matched = new HashSet<>();
+			// Validate all descriptors against given values.
 			for (int i = 0; i != descriptors.size(); ++i) {
 				KeyValueDescriptor descriptor = descriptors.get(i);
 				// Sanity check the expected kind
@@ -302,6 +308,18 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 						// Identified invalid key-value pair
 						throw new SyntaxError("invalid key value: " + id + " = " + value, getEntry(), kvp);
 					}
+				}
+				// Remember every matched attribute
+				matched.addAll(results);
+			}
+			// Check whether any unmatched key-valid pairs exist or not
+			List<Path.ID> all = matchAll(Trie.fromString("**/*"));
+			for(int i=0;i!=all.size();++i) {
+				Path.ID id = all.get(i);
+				if(!matched.contains(id)) {
+					// Found unmatched attribute
+					KeyValuePair kvp = getKeyValuePair(id, declarations);
+					throw new SyntaxError("invalid key: " + id, getEntry(), kvp.getKey());
 				}
 			}
 			// Done
