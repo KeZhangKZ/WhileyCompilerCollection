@@ -421,12 +421,12 @@ public class WyMain implements Command {
 	 */
 	private static String determineLocalRoot() throws IOException {
 		// Determine current working directory
-		File dir = new File(System.getProperty("user.dir"));
+		File dir = new File(".");
 		// Traverse up the directory hierarchy
 		while (dir != null && dir.exists() && dir.isDirectory()) {
 			File wyf = new File(dir + File.separator + "wy.toml");
 			if (wyf.exists()) {
-				return dir.getCanonicalPath();
+				return dir.getPath();
 			}
 			// Traverse back up the directory hierarchy looking for a suitable directory.
 			dir = dir.getParentFile();
