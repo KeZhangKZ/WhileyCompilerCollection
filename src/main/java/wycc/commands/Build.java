@@ -32,6 +32,7 @@ import wycc.lang.Command;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.util.Trie;
 import wyfs.lang.Content.Type;
 
 public class Build implements Command {
@@ -52,8 +53,10 @@ public class Build implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Arrays.asList(Command.OPTION_FLAG("verbose", "enable verbose output", false),
-					Command.OPTION_FLAG("brief", "enable brief reporting of error messages", false));
+			return Arrays.asList(
+					Command.OPTION_FLAG("verbose","generate verbose information about the build",false),
+					Command.OPTION_FLAG("brief","generate brief output for syntax errors",false)
+					);
 		}
 
 		@Override
