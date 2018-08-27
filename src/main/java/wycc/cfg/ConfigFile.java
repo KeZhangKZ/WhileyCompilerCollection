@@ -295,6 +295,10 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				Class<?> kind = descriptor.getType();
 				// Identify all matching keys
 				List<Path.ID> results = matchAll(descriptor.getFilter());
+				// Sanity check whether required
+				if(results.size() == 0 && descriptor.isRequired()) {
+					throw new SyntaxError("missing key value: " + descriptor.getFilter(), getEntry(), null);
+				}
 				// Check all matching keys
 				for (Path.ID id : results) {
 					// Find corresponding key value pair.

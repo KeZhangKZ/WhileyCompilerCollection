@@ -26,7 +26,7 @@ import wyfs.util.Trie;
 public class Help implements Command {
 
 	public static final Configuration.Schema SCHEMA = Configuration
-			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width", 0));
+			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width", false, 0));
 
 	public static final List<Option.Descriptor> OPTIONS = Arrays
 			.asList(Command.OPTION_NONNEGATIVE_INTEGER("width", "fix display width", 80));

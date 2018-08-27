@@ -53,13 +53,15 @@ public class Build implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Collections.EMPTY_LIST;
+			return Arrays.asList(
+					Command.OPTION_FLAG("verbose","generate verbose information about the build",false),
+					Command.OPTION_FLAG("brief","generate brief output for syntax errors",false)
+					);
 		}
 
 		@Override
 		public Schema getConfigurationSchema() {
-			return Configuration.fromArray(Configuration.UNBOUND_STRING(Trie.fromString("binroot"),
-					"location to place all generated resources (relative to wy.tom)"));
+			return Configuration.EMPTY_SCHEMA;
 		}
 
 		@Override

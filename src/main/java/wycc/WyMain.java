@@ -64,36 +64,38 @@ public class WyMain implements Command {
 	 * Schema for system configuration (i.e. which applies to all users).
 	 */
 	public static Configuration.Schema SYSTEM_RUNTIME_SCHEMA = Configuration.fromArray(
-			Configuration.UNBOUND_STRING(Trie.fromString("system/commands"), "list of available commands"),
-			Configuration.UNBOUND_STRING(Trie.fromString("system/platforms"), "list of available platforms"),
-			Configuration.UNBOUND_STRING(Trie.fromString("system/content_types"), "list of available content types"));
+			Configuration.UNBOUND_STRING(Trie.fromString("system/commands"), "list of available commands", false),
+			Configuration.UNBOUND_STRING(Trie.fromString("system/platforms"), "list of available platforms", false),
+			Configuration.UNBOUND_STRING(Trie.fromString("system/content_types"), "list of available content types",
+					false));
 
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
 	 */
 	public static Configuration.Schema SYSTEM_CONFIG_SCHEMA = Configuration.fromArray(
-			Configuration.UNBOUND_STRING(Trie.fromString("plugins/*"), "list of globally installed plugins"));
+			Configuration.UNBOUND_STRING(Trie.fromString("plugins/*"), "list of globally installed plugins", true));
 
 	/**
 	 * Schema for global configuration (i.e. which applies to all projects for a given user).
 	 */
 	public static Configuration.Schema GLOBAL_CONFIG_SCHEMA = Configuration.fromArray(
-			Configuration.UNBOUND_STRING(Trie.fromString("user/name"), "username"),
-			Configuration.UNBOUND_STRING(Trie.fromString("user/email"), "email"));
+			Configuration.UNBOUND_STRING(Trie.fromString("user/name"), "username", false),
+			Configuration.UNBOUND_STRING(Trie.fromString("user/email"), "email", false));
 
 	/**
 	 * Schema for local configuration (i.e. which applies to a single project for a given user).
 	 */
 	public static Configuration.Schema LOCAL_CONFIG_SCHEMA = Configuration.fromArray(
 			// Required items
-			Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package"),
-			Configuration.UNBOUND_STRING(Trie.fromString("package/author"), "Author of this package"),
-			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package"),
+			Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package", true),
+			Configuration.UNBOUND_STRING(Trie.fromString("package/author"), "Author of this package", true),
+			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package", true),
 			// Build items
-			Configuration.UNBOUND_STRING(Trie.fromString("build/bindir"), "location to place all generated resources (relative to wy.toml)"),
+			Configuration.UNBOUND_STRING(Trie.fromString("build/bindir"),
+					"location to place all generated resources (relative to wy.toml)", false),
 			// Optional items
-			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), Pattern.compile("\\d+.\\d+.\\d+"),
-					"Packages this package depends on")
+			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on", false,
+					Pattern.compile("\\d+.\\d+.\\d+"))
 	);
 
 	// ========================================================================
