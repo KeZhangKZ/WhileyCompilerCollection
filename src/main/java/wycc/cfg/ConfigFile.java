@@ -121,23 +121,35 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		return new Wrapper(schema);
 	}
 
-	public static class Section extends AbstractSyntacticItem implements Declaration {
+	public static class Table extends AbstractSyntacticItem implements Declaration {
 
-		public Section(Identifier name, Tuple<Declaration> contents) {
+		public Table(Tuple<Identifier> name, Tuple<KeyValuePair> contents) {
 			super(DECL_section, name, contents);
 		}
 
-		public Identifier getName() {
-			return (Identifier) get(0);
+		public Tuple<Identifier> getName() {
+			return (Tuple<Identifier>) get(0);
 		}
 
-		public Tuple<Declaration> getContents() {
+		public String getNameString() {
+			Tuple<Identifier> ids = getName();
+			String r = "";
+			for (int i = 0; i != ids.size(); ++i) {
+				if (i != 0) {
+					r = r + "/";
+				}
+				r = r + ids.get(i);
+			}
+			return r;
+		}
+
+		public Tuple<KeyValuePair> getContents() {
 			return (Tuple) get(1);
 		}
 
 		@Override
 		public SyntacticItem clone(SyntacticItem[] operands) {
-			return new Section((Identifier) operands[0], (Tuple<Declaration>) operands[1]);
+			return new Table((Tuple<Identifier>) operands[0], (Tuple<KeyValuePair>) operands[1]);
 		}
 	}
 
@@ -167,13 +179,15 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		}
 	}
 
-	private KeyValuePair getKeyValuePair(ID key, Tuple<Declaration> decls) {
+	private KeyValuePair getKeyValuePair(ID key, Tuple<? extends Declaration> decls) {
+		String table = key.parent().toString();
+		//
 		for(int i=0;i!=decls.size();++i) {
 			Declaration decl = decls.get(i);
-			if(key.size() > 1 && decl instanceof Section) {
-				Section s = (Section) decl;
-				if (s.getName().toString().equals(key.get(0))) {
-					return getKeyValuePair(key.subpath(1, key.size()), s.getContents());
+			if(key.size() > 1 && decl instanceof Table) {
+				Table s = (Table) decl;
+				if (s.getNameString().equals(table)) {
+					return getKeyValuePair(key.subpath(key.size() - 1, key.size()), s.getContents());
 				}
 			} else if(decl instanceof KeyValuePair && key.size() == 1){
 				KeyValuePair p = (KeyValuePair) decl;
@@ -267,12 +281,17 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 			return matches;
 		}
 
-		private void match(Trie id, Path.Filter filter, Tuple<Declaration> declarations, ArrayList<ID> matches) {
+		private void match(Trie id, Path.Filter filter, Tuple<? extends Declaration> declarations, ArrayList<ID> matches) {
 			for (int i = 0; i != declarations.size(); ++i) {
 				Declaration decl = declarations.get(i);
-				if (decl instanceof Section) {
-					Section section = (Section) decl;
-					match(id.append(section.getName().toString()), filter, section.getContents(), matches);
+				if (decl instanceof Table) {
+					Table table = (Table) decl;
+					// FIXME: could be more efficient!
+					Trie tid = id;
+					for (Identifier c : table.getName()) {
+						tid = tid.append(c.toString());
+					}
+					match(tid, filter, table.getContents(), matches);
 				} else if (decl instanceof KeyValuePair) {
 					KeyValuePair kvp = (KeyValuePair) decl;
 					Trie match = id.append(kvp.getKey().toString());
@@ -306,11 +325,11 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 					Value value = kvp.getValue();
 					if (!kind.isInstance(value)) {
 						throw new SyntaxError(
-								"invalid key value (expected " + kind.getSimpleName() + "): " + id + " = " + value,
+								"invalid key value (expected " + kind.getSimpleName() + ")",
 								getEntry(), kvp);
 					} else if (!descriptor.isValid(value)) {
 						// Identified invalid key-value pair
-						throw new SyntaxError("invalid key value: " + id + " = " + value, getEntry(), kvp);
+						throw new SyntaxError("invalid key value", getEntry(), kvp);
 					}
 				}
 				// Remember every matched attribute

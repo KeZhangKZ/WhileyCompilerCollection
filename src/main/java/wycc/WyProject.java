@@ -122,7 +122,7 @@ public class WyProject implements Command {
 			// Find and resolve package dependencies
 			resolvePackageDependencies();
 			// Configure package directory structure
-			configurePackageStructure();
+			configurePlatforms();
 			// 	Find dependencies
 		} catch(IOException e) {
 			// FIXME
@@ -228,12 +228,14 @@ public class WyProject implements Command {
 	 * through and adding roots for all source and intermediate files.
 	 * @throws IOException
 	 */
-	private void configurePackageStructure() throws IOException {
+	private void configurePlatforms() throws IOException {
 		Path.Root root = environment.getLocalRoot();
 		List<Build.Platform> platforms = environment.getBuildPlatforms();
 		//
 		for (int i = 0; i != platforms.size(); ++i) {
 			Build.Platform platform = platforms.get(i);
+			// Apply current configuration
+			platform.apply(configuration);
 			// Configure Source root
 			Path.Root srcRoot = platform.getSourceRoot(root);
 			project.roots().add(srcRoot);

@@ -179,7 +179,13 @@ public class ConfigFileLexer {
 			pos++;
 		}
 		String text = input.substring(start, pos);
-		return new Token(Token.Kind.Identifier, text, start);
+		Token.Kind kind = Token.Kind.Identifier;
+		if (text.equals("false")) {
+			kind = Token.Kind.False;
+		} else if (text.equals("true")) {
+			kind = Token.Kind.True;
+		}
+		return new Token(kind, text, start);
 	}
 
 	public void scanWhiteSpace(List<Token> tokens) {
@@ -252,7 +258,7 @@ public class ConfigFileLexer {
 
 	}
 
-	static final char[] opStarts = { '[', ']', '=' };
+	static final char[] opStarts = { '[', ']', '=', '.' };
 
 	public boolean isOperatorStart(char c) {
 		for (char o : opStarts) {
@@ -270,9 +276,11 @@ public class ConfigFileLexer {
 		case '[':
 			return new Token(Token.Kind.LeftSquare, "[", pos++);
 		case ']':
-			return new Token(Token.Kind.RightSquare, "[", pos++);
+			return new Token(Token.Kind.RightSquare, "]", pos++);
 		case '=':
 			return new Token(Token.Kind.Equals, "=", pos++);
+		case '.':
+			return new Token(Token.Kind.Dot, ".", pos++);
 		// =================================================================
 		//
 		// =================================================================
@@ -291,6 +299,7 @@ public class ConfigFileLexer {
 
 		public enum Kind {
 			Identifier,
+			Dot,
 			// Constants
 			True("true"),
 			False("false"),

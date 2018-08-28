@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import wycc.cfg.Configuration;
 import wycc.lang.Feature;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -304,10 +305,25 @@ public interface Build {
 		public String getName();
 
 		/**
+		 * Get the configuration schema for this build platform. This specifies the
+		 * permitted set of options for the platform, including their types, etc.
+		 *
+		 * @return
+		 */
+		public Configuration.Schema getConfigurationSchema();
+
+		/**
+		 * Update the build platform with a new configuration.
+		 *
+		 * @param configuration Configuration options matching the platform's schema
+		 */
+		public void apply(Configuration configuration);
+
+		/**
 		 * Initialise this platform to produce a build task which can be used for
 		 * compiling.
 		 *
-		 * @param project
+		 * @param project       Enclosing project for this build task
 		 * @return
 		 */
 		public Build.Task initialise(Build.Project project);

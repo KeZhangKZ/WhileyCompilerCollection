@@ -341,6 +341,8 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 		//public abstract Type getType();
 
+		public abstract Object unwrap();
+
 		@Override
 		public String toString() {
 			return getData().toString();
@@ -357,6 +359,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			}
 
 			@Override
+			public Object unwrap() {
+				return null;
+			}
+
+			@Override
 			public String toString() {
 				return "null";
 			}
@@ -369,6 +376,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 			public boolean get() {
 				return (data[0] == 1);
+			}
+
+			@Override
+			public Boolean unwrap() {
+				return get();
 			}
 
 			@Override
@@ -389,6 +401,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 			public byte get() {
 				return data[0];
+			}
+
+			@Override
+			public java.lang.Byte unwrap() {
+				return get();
 			}
 
 			@Override
@@ -417,6 +434,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			}
 
 			@Override
+			public BigInteger unwrap() {
+				return get();
+			}
+
+			@Override
 			public Int clone(SyntacticItem[] operands) {
 				return new Int(get());
 			}
@@ -434,6 +456,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 			public byte[] get() {
 				return data;
+			}
+
+			@Override
+			public String unwrap() {
+				return toString();
 			}
 
 			@Override
