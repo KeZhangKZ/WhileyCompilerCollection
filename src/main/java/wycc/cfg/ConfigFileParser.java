@@ -69,11 +69,11 @@ public class ConfigFileParser {
 		return file;
 	}
 
-	private Section parseSection() {
+	private Table parseSection() {
 		int start = index;
-		List<Declaration> declarations = new ArrayList<>();
+		List<KeyValuePair> declarations = new ArrayList<>();
 		match(LeftSquare);
-		Identifier name = parseIdentifier();
+		List<Identifier> name = parseSectionName();
 		match(RightSquare);
 		skipWhiteSpace();
 		while (index < tokens.size()) {
@@ -86,7 +86,19 @@ public class ConfigFileParser {
 			skipWhiteSpace();
 		}
 		// Construct the new section
-		return annotateSourceLocation(new Section(name, new Tuple<>(declarations)), start);
+		Table section = new Table(new Tuple<>(name), new Tuple<>(declarations));
+		//
+		return annotateSourceLocation(section, start);
+	}
+
+	private List<Identifier> parseSectionName() {
+		ArrayList<Identifier> identifiers = new ArrayList<>();
+		identifiers.add(parseIdentifier());
+		while (index < tokens.size() && tokens.get(index).kind == Dot) {
+			match(Token.Kind.Dot);
+			identifiers.add(parseIdentifier());
+		}
+		return identifiers;
 	}
 
 	private KeyValuePair parseKeyValuePair() {

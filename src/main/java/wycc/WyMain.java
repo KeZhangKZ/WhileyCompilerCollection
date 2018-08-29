@@ -169,7 +169,7 @@ public class WyMain implements Command {
 	 */
 	protected Path.Root localRoot;
 
-	public WyMain(Configuration configuration, String systemDir, String globalDir, String localDir) throws IOException {
+	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
 		this.contentTypes.add(WyProject.JAR_CONTENT_TYPE);
@@ -182,13 +182,22 @@ public class WyMain implements Command {
 		this.systemRoot = new DirectoryRoot(systemDir, registry);
 		this.globalRoot = new DirectoryRoot(globalDir, registry);
 		this.localRoot = new DirectoryRoot(localDir, registry);
-		//
-		this.configuration = configuration;
-		//
+		// Read the system configuration file
+		Configuration system = readConfigFile("wy", systemDir, SYSTEM_CONFIG_SCHEMA);
+		// Activate plugins
 		createTemplateExtensionPoint();
 		createContentTypeExtensionPoint();
 		createBuildPlatformExtensionPoint();
-		activateDefaultPlugins(configuration);
+		activateDefaultPlugins(system);
+		// Read the global configuration file
+		Configuration global = readConfigFile("wy", globalDir, GLOBAL_CONFIG_SCHEMA);
+		// Read the local configuration file
+		Configuration local = readConfigFile("wy", localDir, constructLocalSchema());
+		// Create the dynamic configuration
+		Configuration runtime = new HashMapConfiguration(SYSTEM_RUNTIME_SCHEMA);
+		// Construct the merged configuration
+		this.configuration = new ConfigurationCombinator(runtime, local, global, system);
+
 	}
 
 	public Registry getContentRegistry() {
@@ -332,6 +341,16 @@ public class WyMain implements Command {
 		}
 	}
 
+	private Configuration.Schema[] constructLocalSchema() {
+		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size() + 1];
+		schemas[0] = LOCAL_CONFIG_SCHEMA;
+		for(int i=0;i!=buildPlatforms.size();++i) {
+			wybs.lang.Build.Platform platform = buildPlatforms.get(i);
+			schemas[i+1] = platform.getConfigurationSchema();
+		}
+		return schemas;
+	}
+
 	public void execute(Command parent, Command.Template template) throws IOException {
 		// Access the descriptor
 		Command.Descriptor descriptor = template.getCommandDescriptor();
@@ -362,25 +381,10 @@ public class WyMain implements Command {
 		String globalDir = determineGlobalRoot();
 		// Determine project directory
 		String localDir = determineLocalRoot();
-		// Construct the overall configuration
-		Configuration configuration = constructConfiguration(systemDir,globalDir,localDir);
 		// Construct environment and execute arguments
-		new WyMain(configuration,systemDir,globalDir,localDir).execute(args);
+		new WyMain(systemDir,globalDir,localDir).execute(args);
 		// Done
 		System.exit(0);
-	}
-
-	public static Configuration constructConfiguration(String systemDir, String globalDir, String localDir) throws IOException {
-		// Read the system configuration file
-		Configuration system = readConfigFile("wy", systemDir, SYSTEM_CONFIG_SCHEMA);
-		// Read the global configuration file
-		Configuration global = readConfigFile("wy", globalDir, GLOBAL_CONFIG_SCHEMA);
-		// Read the local configuration file
-		Configuration local = readConfigFile("wy", localDir, LOCAL_CONFIG_SCHEMA);
-		// Create the dynamic configuration
-		Configuration runtime = new HashMapConfiguration(SYSTEM_RUNTIME_SCHEMA);
-		// Construct the merged configuration
-		return new ConfigurationCombinator(runtime, local, global, system);
 	}
 
 	// ==================================================================
@@ -471,7 +475,7 @@ public class WyMain implements Command {
 	 * @return
 	 * @throws IOException
 	 */
-	private static Configuration readConfigFile(String name, String dir, Configuration.Schema schema) throws IOException {
+	private static Configuration readConfigFile(String name, String dir, Configuration.Schema... schemas) throws IOException {
 		DirectoryRoot root = new DirectoryRoot(dir, BOOT_REGISTRY);
 		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
 		if (config == null) {
@@ -482,7 +486,7 @@ public class WyMain implements Command {
 			// Read the configuration file
 			ConfigFile cf = config.read();
 			// Construct configuration according to given schema
-			return cf.toConfiguration(schema);
+			return cf.toConfiguration(Configuration.toCombinedSchema(schemas));
 		} catch (SyntaxError e) {
 			e.outputSourceError(System.out, false);
 			System.exit(-1);

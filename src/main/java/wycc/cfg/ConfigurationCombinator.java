@@ -82,41 +82,7 @@ public class ConfigurationCombinator implements Configuration {
 		for (int i = 0; i != schemas.length; ++i) {
 			schemas[i] = configurations[i].getConfigurationSchema();
 		}
-		// FIXME: Sanity check schemas?
 		//
-		return new Schema() {
-
-			@Override
-			public boolean isKey(ID key) {
-				for(int i=0;i!=schemas.length;++i) {
-					if(schemas[i].isKey(key)) {
-						return true;
-					}
-				}
-				return false;
-			}
-
-			@Override
-			public KeyValueDescriptor<?> getDescriptor(ID key) {
-				for (int i = 0; i != schemas.length; ++i) {
-					Schema schema = schemas[i];
-					//
-					if (schema.isKey(key)) {
-						return schema.getDescriptor(key);
-					}
-				}
-				//
-				throw new IllegalArgumentException("invalid key accesss: " + key);
-			}
-
-			@Override
-			public List<KeyValueDescriptor<?>> getDescriptors() {
-				ArrayList<KeyValueDescriptor<?>> descriptors = new ArrayList<>();
-				for (int i = 0; i != schemas.length; ++i) {
-					descriptors.addAll(schemas[i].getDescriptors());
-				}
-				return descriptors;
-			}
-		};
+		return Configuration.toCombinedSchema(schemas);
 	}
 }

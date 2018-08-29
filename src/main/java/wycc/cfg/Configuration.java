@@ -25,6 +25,8 @@ import java.util.regex.Pattern;
 
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.ConfigFile.KeyValuePair;
+import wycc.cfg.Configuration.KeyValueDescriptor;
+import wycc.cfg.Configuration.Schema;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
@@ -161,6 +163,51 @@ public interface Configuration {
 			return Collections.EMPTY_LIST;
 		}
 	};
+
+	/**
+	 * Construct a single schema from one or more schemas.
+	 *
+	 * @param schemas
+	 * @return
+	 */
+	public static Schema toCombinedSchema(Configuration.Schema... schemas) {
+		// FIXME: Sanity check schemas?
+		//
+		return new Schema() {
+
+			@Override
+			public boolean isKey(ID key) {
+				for(int i=0;i!=schemas.length;++i) {
+					if(schemas[i].isKey(key)) {
+						return true;
+					}
+				}
+				return false;
+			}
+
+			@Override
+			public KeyValueDescriptor<?> getDescriptor(ID key) {
+				for (int i = 0; i != schemas.length; ++i) {
+					Schema schema = schemas[i];
+					//
+					if (schema.isKey(key)) {
+						return schema.getDescriptor(key);
+					}
+				}
+				//
+				throw new IllegalArgumentException("invalid key accesss: " + key);
+			}
+
+			@Override
+			public List<KeyValueDescriptor<?>> getDescriptors() {
+				ArrayList<KeyValueDescriptor<?>> descriptors = new ArrayList<>();
+				for (int i = 0; i != schemas.length; ++i) {
+					descriptors.addAll(schemas[i].getDescriptors());
+				}
+				return descriptors;
+			}
+		};
+	}
 
 	/**
 	 * Construct a schema from a given array of KeyValueDescriptors.
