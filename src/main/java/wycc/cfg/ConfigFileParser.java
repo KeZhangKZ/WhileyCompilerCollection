@@ -131,11 +131,36 @@ public class ConfigFileParser {
 			// FIXME: this is probably broken at the extremes
 			value = new Value.UTF8(parseString(token.text).getBytes());
 			break;
+		case LeftSquare:
+			index = start;
+			value = parseArrayValue();
+			break;
 		default:
 			syntaxError("unknown token", token);
 			return null; // deadcode
 		}
 		return annotateSourceLocation(value, start);
+	}
+
+	private Value.Array parseArrayValue() {
+		checkNotEof();
+		int start = index;
+		match(LeftSquare);
+		ArrayList<Value> values = new ArrayList<>();
+		Value last = null;
+		while (eventuallyMatch(RightSquare) == null) {
+			if(last != null) {
+				match(Comma);
+			}
+			Value v = parseValue();
+			if(last == null) {
+				last = v;
+			} else if(last.getClass() != v.getClass()){
+				throw new SyntaxError("array elements require same type",file.getEntry(),v);
+			}
+			values.add(v);
+		}
+		return new Value.Array(values);
 	}
 
 	private Identifier parseIdentifier() {
@@ -564,7 +589,7 @@ public class ConfigFileParser {
 	}
 
 	private void syntaxError(String msg, Token t) {
-		throw new SyntaxError(msg, file.getEntry(), null);
+		throw new SyntaxError(msg, file.getEntry(), new ConfigFile.Attribute.Span(null,t.start,t.end()));
 	}
 
 	/**
