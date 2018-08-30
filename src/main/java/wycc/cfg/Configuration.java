@@ -462,4 +462,18 @@ public interface Configuration {
 			}
 		};
 	}
+
+	public static KeyValueDescriptor<Value.Array> UNBOUND_STRING_ARRAY(Path.Filter key, String description, boolean required) {
+		return new AbstractDescriptor<Value.Array>(key, description, Value.Array.class, required) {
+			@Override
+			public boolean isValid(Value.Array value) {
+				for(int i=0;i!=value.size();++i) {
+					if(!(value.get(i) instanceof Value.UTF8)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		};
+	}
 }

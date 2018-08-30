@@ -18,12 +18,8 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import wybs.lang.Attribute;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wyfs.lang.Path;
 
@@ -254,11 +250,11 @@ public class ConfigFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		throw new SyntaxError(msg, entry, null);
+		throw new SyntaxError(msg, entry, new ConfigFile.Attribute.Span(null,index,index));
 
 	}
 
-	static final char[] opStarts = { '[', ']', '=', '.' };
+	static final char[] opStarts = { '[', ']', '=', '.', ',' };
 
 	public boolean isOperatorStart(char c) {
 		for (char o : opStarts) {
@@ -281,6 +277,8 @@ public class ConfigFileLexer {
 			return new Token(Token.Kind.Equals, "=", pos++);
 		case '.':
 			return new Token(Token.Kind.Dot, ".", pos++);
+		case ',':
+			return new Token(Token.Kind.Comma, ",", pos++);
 		// =================================================================
 		//
 		// =================================================================
@@ -299,7 +297,6 @@ public class ConfigFileLexer {
 
 		public enum Kind {
 			Identifier,
-			Dot,
 			// Constants
 			True("true"),
 			False("false"),
@@ -307,6 +304,8 @@ public class ConfigFileLexer {
 			CharValue,
 			StringValue,
 			// Operators
+			Dot("."),
+			Comma(","),
 			LeftSquare("["),
 			RightSquare("]"),
 			Equals,

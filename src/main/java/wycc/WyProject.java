@@ -123,7 +123,7 @@ public class WyProject implements Command {
 			resolvePackageDependencies();
 			// Configure package directory structure
 			configurePlatforms();
-			// 	Find dependencies
+			// Find dependencies
 		} catch(IOException e) {
 			// FIXME
 			throw new RuntimeException(e);

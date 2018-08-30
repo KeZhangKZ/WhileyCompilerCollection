@@ -88,7 +88,7 @@ public class WyMain implements Command {
 	public static Configuration.Schema LOCAL_CONFIG_SCHEMA = Configuration.fromArray(
 			// Required items
 			Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package", true),
-			Configuration.UNBOUND_STRING(Trie.fromString("package/author"), "Author of this package", true),
+			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("package/authors"), "Author(s) of this package", true),
 			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package", true),
 			// Build items
 			Configuration.UNBOUND_STRING(Trie.fromString("build/bindir"),
