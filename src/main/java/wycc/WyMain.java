@@ -91,8 +91,9 @@ public class WyMain implements Command {
 			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("package/authors"), "Author(s) of this package", true),
 			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package", true),
 			// Build items
-			Configuration.UNBOUND_STRING(Trie.fromString("build/bindir"),
-					"location to place all generated resources (relative to wy.toml)", false),
+			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("build/platforms"),
+					"Target platforms for this package (default just \"whiley\")",
+					new Value.Array(new Value.UTF8("whiley".getBytes()))),
 			// Optional items
 			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on", false,
 					Pattern.compile("\\d+.\\d+.\\d+"))

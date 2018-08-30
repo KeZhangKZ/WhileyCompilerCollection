@@ -195,7 +195,7 @@ public interface Configuration {
 					}
 				}
 				//
-				throw new IllegalArgumentException("invalid key accesss: " + key);
+				throw new IllegalArgumentException("invalid key access: " + key);
 			}
 
 			@Override
@@ -292,6 +292,20 @@ public interface Configuration {
 		public boolean isRequired();
 
 		/**
+		 * Determine whether or not this descriptor describes a default value for the
+		 * key.
+		 *
+		 * @return
+		 */
+		public boolean hasDefault();
+
+		/**
+		 * Get the default value for this field (if applicable).
+		 * @return
+		 */
+		public T getDefault();
+
+		/**
 		 * Check whether a given value is actual valid. For example, integer values may
 		 * be prevented from being negative, etc. Likewise, string values representing
 		 * version numbers may need to conform to a given regular expression, etc.
@@ -313,6 +327,7 @@ public interface Configuration {
 		private final Path.Filter key;
 		private final String description;
 		private final boolean required;
+		private final T defaulT;
 		private final Class<T> type;
 
 		public AbstractDescriptor(Path.Filter key, String description, Class<T> type, boolean required) {
@@ -320,6 +335,15 @@ public interface Configuration {
 			this.description = description;
 			this.type = type;
 			this.required = required;
+			this.defaulT = null;
+		}
+
+		public AbstractDescriptor(Path.Filter key, String description, Class<T> type, T defaulT) {
+			this.key = key;
+			this.description = description;
+			this.type = type;
+			this.defaulT = defaulT;
+			this.required = false;
 		}
 
 		@Override
@@ -343,6 +367,16 @@ public interface Configuration {
 		}
 
 		@Override
+		public boolean hasDefault() {
+			return defaulT != null;
+		}
+
+		@Override
+		public T getDefault() {
+			return defaulT;
+		}
+
+		@Override
 		public boolean isValid(T value) {
 			return true;
 		}
@@ -361,6 +395,22 @@ public interface Configuration {
 	 */
 	public static KeyValueDescriptor<Value.UTF8> UNBOUND_STRING(Path.Filter key, String description, boolean required) {
 		return new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class, required) {
+
+		};
+	}
+
+
+	/**
+	 * Represents an unbound string key-value pair with a default value. That is,
+	 * any string is permitted.
+	 *
+	 * @param key         Identifies keys associated with this descriptor.
+	 * @param description Description to use for this descriptor.
+	 * @param defaulT     Default to return in case this attribute is not specified.
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.UTF8> UNBOUND_STRING(Path.Filter key, String description, Value.UTF8 defaulT) {
+		return new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class, defaulT) {
 
 		};
 	}
@@ -387,6 +437,30 @@ public interface Configuration {
 	}
 
 	/**
+	 * Represents a key-value pair where the value is a string conforming to a given
+	 * regex, and a default value is providfed.
+	 *
+	 * @param key         Identifies keys associated with this descriptor.
+	 * @param description Description to use for this descriptor.
+	 * @param defaulT     Default to return in case this attribute is not specified.
+	 * @param regex       The regular expression to which instances of this kvp must
+	 *                    conform.
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.UTF8> REGEX_STRING(Path.Filter key, String description, Value.UTF8 defaulT, Pattern regex) {
+		KeyValueDescriptor<Value.UTF8> desc = new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class, defaulT) {
+			@Override
+			public boolean isValid(Value.UTF8 str) {
+				return regex.matcher(str.toString()).matches();
+			}
+		};
+		// Sanity check default value
+		checkDefaultValue(desc, defaulT);
+		// Done
+		return desc;
+	}
+
+	/**
 	 * Represents an unbound integer key-valid pair. That is, any integer is
 	 * permitted.
 	 *
@@ -403,17 +477,16 @@ public interface Configuration {
 	}
 
 	/**
-	 * Represents an unbound boolean key-valid pair. That is, any boolean is
-	 * permitted.
+	 * Represents an unbound integer key-valid pair with a default value. That is,
+	 * any integer is permitted.
 	 *
 	 * @param key         Identifies keys associated with this descriptor.
 	 * @param description Description to use for this descriptor.
-	 * @param required    Indicates whether at least one match is required for this
-	 *                    descriptor for a given schema
+	 * @param defaulT     Default to return in case this attribute is not specified.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description, boolean required) {
-		return new AbstractDescriptor<Value.Bool>(key,description,Value.Bool.class, required) {
+	public static KeyValueDescriptor<Value.Int> UNBOUND_INTEGER(Path.Filter key, String description, Value.Int defaulT) {
+		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, defaulT) {
 
 		};
 	}
@@ -439,6 +512,34 @@ public interface Configuration {
 		 };
 	}
 
+
+	/**
+	 * Returns an integer key-value descriptor which ensures the given value is
+	 * greater or equal to a given lower bound.
+	 *
+	 * @param key         Identifies keys associated with this descriptor.
+	 * @param description Description to use for this descriptor.
+	 * @param defaulT     Default to return in case this attribute is not specified.
+	 * @param low         No valid value is below this bound.
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, Value.Int defaulT,
+			final int low) {
+		KeyValueDescriptor<Value.Int> desc = new AbstractDescriptor<Value.Int>(key, description, Value.Int.class,
+				defaulT) {
+			@Override
+			public boolean isValid(Value.Int value) {
+				int v = value.get().intValue();
+				return v >= low;
+			}
+		};
+		// Sanity check default value
+		checkDefaultValue(desc, defaulT);
+		// Done
+		return desc;
+	}
+
+
 	/**
 	 * Returns an integer key-value descriptor which ensures the given value is
 	 * greater-or-equal to a given lower bound and less-or-equal to a given upper
@@ -463,6 +564,46 @@ public interface Configuration {
 		};
 	}
 
+	/**
+	 * Represents an unbound boolean key-valid pair. That is, any boolean is
+	 * permitted.
+	 *
+	 * @param key         Identifies keys associated with this descriptor.
+	 * @param description Description to use for this descriptor.
+	 * @param required    Indicates whether at least one match is required for this
+	 *                    descriptor for a given schema
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description, boolean required) {
+		return new AbstractDescriptor<Value.Bool>(key,description,Value.Bool.class, required) {
+
+		};
+	}
+
+	/**
+	 * Represents an unbound boolean key-valid pair. That is, any boolean is
+	 * permitted.
+	 *
+	 * @param key         Identifies keys associated with this descriptor.
+	 * @param description Description to use for this descriptor.
+	 * @param defaulT     Default to return in case this attribute is not specified.
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description, Value.Bool defaulT) {
+		return new AbstractDescriptor<Value.Bool>(key,description,Value.Bool.class, defaulT) {
+
+		};
+	}
+
+	/**
+	 * Represents an unbound string array. That is any number of elements are
+	 * permitted.
+	 *
+	 * @param key
+	 * @param description
+	 * @param required
+	 * @return
+	 */
 	public static KeyValueDescriptor<Value.Array> UNBOUND_STRING_ARRAY(Path.Filter key, String description, boolean required) {
 		return new AbstractDescriptor<Value.Array>(key, description, Value.Array.class, required) {
 			@Override
@@ -475,5 +616,38 @@ public interface Configuration {
 				return true;
 			}
 		};
+	}
+
+	/**
+	 * Represents an unbound string array with a default value. That is any number
+	 * of elements are permitted.
+	 *
+	 * @param key
+	 * @param description
+	 * @param required
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.Array> UNBOUND_STRING_ARRAY(Path.Filter key, String description, Value.Array defaulT) {
+		AbstractDescriptor<Value.Array> desc = new AbstractDescriptor<Value.Array>(key, description, Value.Array.class, defaulT) {
+			@Override
+			public boolean isValid(Value.Array value) {
+				for(int i=0;i!=value.size();++i) {
+					if(!(value.get(i) instanceof Value.UTF8)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		};
+		// Sanity check default value
+		checkDefaultValue(desc,defaulT);
+		// Done
+		return desc;
+	}
+
+	public static <T extends Value> void checkDefaultValue(KeyValueDescriptor<T> desc, T defaulT) {
+		if(!desc.isValid(defaulT)) {
+			throw new IllegalArgumentException("Invalid default value");
+		}
 	}
 }

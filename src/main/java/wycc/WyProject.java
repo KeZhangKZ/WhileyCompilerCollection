@@ -21,6 +21,7 @@ import java.util.*;
 import org.junit.runners.ParentRunner;
 
 import wybs.lang.Build;
+import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
@@ -29,6 +30,7 @@ import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.commands.Help;
 import wycc.lang.Command;
+import wycc.util.ArrayUtils;
 import wycc.util.CommandParser;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -38,6 +40,8 @@ import wyfs.util.JarFileRoot;
 import wyfs.util.Trie;
 
 public class WyProject implements Command {
+	private static final Trie BUILD_PLATFORMS = Trie.fromString("build/platforms");
+
 	/**
 	 * Configuration options specifically required by the tool.
 	 */
@@ -91,6 +95,11 @@ public class WyProject implements Command {
 	 */
 	protected final StdProject project;
 
+	/**
+	 * List of target build platforms.
+	 */
+	private final Value.UTF8[] platforms;
+
 	// ==================================================================
 	// Constructors
 	// ==================================================================
@@ -100,6 +109,7 @@ public class WyProject implements Command {
 		this.environment = environment;
 		this.options = options;
 		this.project = new StdProject();
+		this.platforms = configuration.get(Value.Array.class, BUILD_PLATFORMS).toArray(Value.UTF8.class);
 	}
 
 	// ==================================================================
@@ -113,7 +123,32 @@ public class WyProject implements Command {
 	@Override
 	public Command.Descriptor getDescriptor() {
 		// FIXME: this is broken because it doesn't include sub-descriptors.
-		return getDescriptor(environment.getContentRegistry(),Collections.EMPTY_LIST);
+		return getDescriptor(environment.getContentRegistry(), Collections.EMPTY_LIST);
+	}
+
+	/**
+	 * Get the list of declared target platforms for this project. This is
+	 * determined by the attribute "build.platforms" in the project (wy.toml) build
+	 * file.
+	 *
+	 * @return
+	 */
+	public List<wybs.lang.Build.Platform> getTargetPlatforms() {
+		// Get list of all build platforms.
+		List<wybs.lang.Build.Platform> platforms = environment.getBuildPlatforms();
+		ArrayList<Build.Platform> targetPlatforms = new ArrayList<>();
+		// Check each platform for inclusion
+		for (int i = 0; i != platforms.size(); ++i) {
+			Build.Platform platform = platforms.get(i);
+			// Convert name to UTF8 value (ugh)
+			Value.UTF8 name = new Value.UTF8(platform.getName().getBytes());
+			// Determine whether is a target platform or not
+			if (ArrayUtils.firstIndexOf(this.platforms, name) >= 0) {
+				targetPlatforms.add(platform);
+			}
+		}
+		// Done
+		return targetPlatforms;
 	}
 
 	@Override
@@ -124,7 +159,7 @@ public class WyProject implements Command {
 			// Configure package directory structure
 			configurePlatforms();
 			// Find dependencies
-		} catch(IOException e) {
+		} catch (IOException e) {
 			// FIXME
 			throw new RuntimeException(e);
 		}
@@ -137,7 +172,7 @@ public class WyProject implements Command {
 		// Write back configuration files?
 		try {
 			project.flush();
-		} catch(IOException e) {
+		} catch (IOException e) {
 			// FIXME
 			throw new RuntimeException(e);
 		}
@@ -146,7 +181,8 @@ public class WyProject implements Command {
 	@Override
 	public boolean execute(List<String> args) {
 		// Create dummy options for pass-thru
-		Command.Options dummy = new CommandParser.OptionsMap(Collections.EMPTY_LIST,Help.DESCRIPTOR.getOptionDescriptors());
+		Command.Options dummy = new CommandParser.OptionsMap(Collections.EMPTY_LIST,
+				Help.DESCRIPTOR.getOptionDescriptors());
 		// Initialise command
 		Command cmd = Help.DESCRIPTOR.initialise(this, dummy, configuration);
 		// Execute command
@@ -226,11 +262,12 @@ public class WyProject implements Command {
 	/**
 	 * Setup the various roots based on the target platform(s). This requires going
 	 * through and adding roots for all source and intermediate files.
+	 *
 	 * @throws IOException
 	 */
 	private void configurePlatforms() throws IOException {
 		Path.Root root = environment.getLocalRoot();
-		List<Build.Platform> platforms = environment.getBuildPlatforms();
+		List<Build.Platform> platforms = getTargetPlatforms();
 		//
 		for (int i = 0; i != platforms.size(); ++i) {
 			Build.Platform platform = platforms.get(i);
@@ -250,8 +287,9 @@ public class WyProject implements Command {
 		}
 	}
 
-	public static final Command.Descriptor getDescriptor(Content.Registry registry, List<Command.Descriptor> descriptors) {
-		return new Descriptor(registry,descriptors);
+	public static final Command.Descriptor getDescriptor(Content.Registry registry,
+			List<Command.Descriptor> descriptors) {
+		return new Descriptor(registry, descriptors);
 	}
 
 	private static class Descriptor implements Command.Descriptor {
@@ -275,9 +313,8 @@ public class WyProject implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options,
-				Configuration configuration) {
-			return new WyProject((WyMain) environment,options,configuration);
+		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
+			return new WyProject((WyMain) environment, options, configuration);
 		}
 
 		@Override
