@@ -196,7 +196,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				}
 			}
 		}
-		throw new IllegalArgumentException("invalid key access \"" + key + "\"");
+		return null;
 	}
 
 	private void insert(ID key, Object value, Tuple<Declaration> decls) {
@@ -246,15 +246,21 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 			Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);
 			// Find the key-value pair
 			KeyValuePair kvp = getKeyValuePair(key, declarations);
-			// Extract the value
-			Object value = kvp.getValue();
-			// Sanity check the expected kind
-			if (!kind.isInstance(value)) {
-				throw new IllegalArgumentException("incompatible key access: expected " + kind.getSimpleName() + " got "
-						+ descriptor.getType().getSimpleName());
+			if(kvp == null && descriptor.hasDefault()) {
+				return (T) descriptor.getDefault();
+			} else if(kvp != null) {
+				// Extract the value
+				Object value = kvp.getValue();
+				// Sanity check the expected kind
+				if (!kind.isInstance(value)) {
+					throw new IllegalArgumentException("incompatible key access: expected " + kind.getSimpleName() + " got "
+							+ descriptor.getType().getSimpleName());
+				}
+				// Convert into value
+				return (T) value;
+			} else {
+				throw new SyntaxError("invalid key access: " + key, getEntry(), null);
 			}
-			// Convert into value
-			return (T) value;
 		}
 
 		@Override
@@ -322,12 +328,12 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				for (Path.ID id : results) {
 					// Find corresponding key value pair.
 					KeyValuePair kvp = getKeyValuePair(id, declarations);
-					Value value = kvp.getValue();
-					if (!kind.isInstance(value)) {
+					// NOTE: kvp != null
+					if (!kind.isInstance(kvp.getValue())) {
 						throw new SyntaxError(
 								"invalid key value (expected " + kind.getSimpleName() + ")",
 								getEntry(), kvp);
-					} else if (!descriptor.isValid(value)) {
+					} else if (!descriptor.isValid(kvp.getValue())) {
 						// Identified invalid key-value pair
 						throw new SyntaxError("invalid key value", getEntry(), kvp);
 					}

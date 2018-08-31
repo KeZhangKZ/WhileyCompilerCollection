@@ -25,10 +25,12 @@ import java.util.List;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.StdBuildGraph;
+import wybs.util.AbstractCompilationUnit.Value;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wycc.util.ArrayUtils;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -36,7 +38,6 @@ import wyfs.util.Trie;
 import wyfs.lang.Content.Type;
 
 public class Build implements Command {
-
 	/**
 	 * The descriptor for this command.
 	 */
@@ -71,7 +72,7 @@ public class Build implements Command {
 
 		@Override
 		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
-			return new Build((WyProject) environment, options, System.out, System.err);
+			return new Build((WyProject) environment, options, configuration, System.out, System.err);
 		}
 
 	};
@@ -105,7 +106,8 @@ public class Build implements Command {
 	 */
 	private final WyProject project;
 
-	public Build(WyProject project, Command.Options options, OutputStream sysout, OutputStream syserr) {
+	public Build(WyProject project, Command.Options options, Configuration configuration, OutputStream sysout,
+			OutputStream syserr) {
 		this.project = project;
 		this.verbose = options.get("verbose", Boolean.class);
 		this.sysout = new PrintStream(sysout);
@@ -131,7 +133,7 @@ public class Build implements Command {
 			// Identify the project root
 			Path.Root root = project.getParent().getLocalRoot();
 			// Extract all registered platforms
-			List<wybs.lang.Build.Platform> platforms = project.getParent().getBuildPlatforms();
+			List<wybs.lang.Build.Platform> platforms = project.getTargetPlatforms();
 			ArrayList<Path.Entry<?>> sources = new ArrayList<>();
 			// Construct build rules for each platform in turn.
 			for (int i = 0; i != platforms.size(); ++i) {

@@ -44,8 +44,13 @@ public class HashMapConfiguration implements Configuration {
 
 	@Override
 	public <T> T get(Class<T> kind, ID key) {
+		// Get descriptor (i.e. check it exists)
+		KeyValueDescriptor<?> d = schema.getDescriptor(key);
+		//
 		Object o = entries.get(key);
-		if(kind.isInstance(o)) {
+		if(o == null && d.hasDefault()) {
+			return (T) d.getDefault();
+		} else if(kind.isInstance(o)) {
 			return (T) o;
 		} else {
 			throw new IllegalArgumentException("invalid key accesss: " + key);
