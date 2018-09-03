@@ -455,6 +455,10 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		}
 
 		public static class UTF8 extends Value {
+			public UTF8(String str) {
+				super(ITEM_utf8, str.getBytes());
+			}
+
 			public UTF8(byte[] bytes) {
 				super(ITEM_utf8, bytes);
 			}

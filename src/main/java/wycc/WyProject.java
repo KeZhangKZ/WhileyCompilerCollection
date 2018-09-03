@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
+import java.util.jar.JarFile;
 
 import org.junit.runners.ParentRunner;
 
@@ -52,7 +53,7 @@ public class WyProject implements Command {
 	 */
 	private static Path.ID REPOSITORY_PATH = Trie.fromString("repository");
 
-	public static Content.Type<?> JAR_CONTENT_TYPE = new Content.Type() {
+	public static Content.Type<JarFile> JAR_CONTENT_TYPE = new Content.Type<JarFile>() {
 
 		@Override
 		public String getSuffix() {
@@ -60,12 +61,12 @@ public class WyProject implements Command {
 		}
 
 		@Override
-		public Object read(Entry e, InputStream input) throws IOException {
+		public JarFile read(Entry e, InputStream input) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public void write(OutputStream output, Object value) throws IOException {
+		public void write(OutputStream output, JarFile value) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
@@ -149,6 +150,19 @@ public class WyProject implements Command {
 		}
 		// Done
 		return targetPlatforms;
+	}
+
+	/**
+	 * Get the root of the package repository. This is the global directory in which
+	 * all installed packages are found.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
+	public Path.Root getRepositoryRoot() throws IOException {
+		Path.Root root = environment.getGlobalRoot().createRelativeRoot(REPOSITORY_PATH);
+		// TODO: create repository if it doesn't exist.
+		return root;
 	}
 
 	@Override
@@ -244,19 +258,6 @@ public class WyProject implements Command {
 				project.roots().add(new JarFileRoot(jarfile.location(), environment.getContentRegistry()));
 			}
 		}
-	}
-
-	/**
-	 * Get the root of the package repository. This is the global directory in which
-	 * all installed packages are found.
-	 *
-	 * @return
-	 * @throws IOException
-	 */
-	private Path.Root getRepositoryRoot() throws IOException {
-		Path.Root root = environment.getGlobalRoot().createRelativeRoot(REPOSITORY_PATH);
-		// TODO: create repository if it doesn't exist.
-		return root;
 	}
 
 	/**
