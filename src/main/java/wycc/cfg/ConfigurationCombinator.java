@@ -45,6 +45,16 @@ public class ConfigurationCombinator implements Configuration {
 	}
 
 	@Override
+	public boolean hasKey(ID key) {
+		for(int i=0;i!=configurations.length;++i) {
+			if(configurations[i].hasKey(key)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	@Override
 	public List<ID> matchAll(Filter filter) {
 		ArrayList<ID> results = new ArrayList<>();
 		for(int i=0;i!=configurations.length;++i) {

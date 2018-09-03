@@ -241,6 +241,13 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		}
 
 		@Override
+		public boolean hasKey(ID key) {
+			KeyValuePair kvp = getKeyValuePair(key, declarations);
+			//
+			return kvp != null;
+		}
+
+		@Override
 		public <T> T get(Class<T> kind, ID key) {
 			// Get the descriptor for this key
 			Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);

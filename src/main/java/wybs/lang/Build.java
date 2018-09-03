@@ -18,6 +18,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.Configuration;
 import wycc.lang.Feature;
 import wycc.util.Pair;
@@ -375,5 +376,15 @@ public interface Build {
 		 * @return
 		 */
 		public Path.Root getTargetRoot(Path.Root root) throws IOException;
+
+		/**
+		 * Execute a given function in the generated code for this platform.
+		 *
+		 * @param project
+		 * @param path
+		 * @param name
+		 * @param args
+		 */
+		public void execute(Build.Project project, Path.ID path, String name, Value... args);
 	}
 }

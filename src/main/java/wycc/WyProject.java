@@ -152,6 +152,10 @@ public class WyProject implements Command {
 		return targetPlatforms;
 	}
 
+	public Build.Project getBuildProject() {
+		return project;
+	}
+
 	/**
 	 * Get the root of the package repository. This is the global directory in which
 	 * all installed packages are found.
