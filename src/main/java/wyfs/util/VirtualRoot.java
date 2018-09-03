@@ -22,8 +22,11 @@ import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import wyfs.lang.Content;
+import wyfs.lang.Content.Registry;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
+import wyfs.lang.Path.RelativeRoot;
+import wyfs.lang.Path.Root;
 import wyfs.util.DirectoryRoot.Folder;
 
 /**
@@ -61,6 +64,25 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 	@Override
 	protected Folder root() {
 		return new Folder(Trie.ROOT);
+	}
+
+
+	@Override
+	public RelativeRoot createRelativeRoot(ID id) throws IOException {
+		return new Relative(contentTypes);
+	}
+
+	public final class Relative extends VirtualRoot implements Path.RelativeRoot {
+
+		public Relative(Registry contentTypes) {
+			super(contentTypes);
+		}
+
+		@Override
+		public Root getParent() {
+			return VirtualRoot.this;
+		}
+
 	}
 
 	/**

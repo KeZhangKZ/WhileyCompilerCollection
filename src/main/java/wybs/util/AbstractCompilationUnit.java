@@ -49,6 +49,7 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 	public static final int ATTR_span = 8;
 	public static final int ITEM_ref = 9;
+	public static final int ITEM_array = 10; // REORDER
 	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
@@ -339,7 +340,13 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			super(opcode, data, new SyntacticItem[0]);
 		}
 
+		public Value(int opcode, SyntacticItem[] items) {
+			super(opcode, items);
+		}
+
 		//public abstract Type getType();
+
+		public abstract Object unwrap();
 
 		@Override
 		public String toString() {
@@ -357,6 +364,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			}
 
 			@Override
+			public Object unwrap() {
+				return null;
+			}
+
+			@Override
 			public String toString() {
 				return "null";
 			}
@@ -369,6 +381,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 			public boolean get() {
 				return (data[0] == 1);
+			}
+
+			@Override
+			public Boolean unwrap() {
+				return get();
 			}
 
 			@Override
@@ -389,6 +406,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 
 			public byte get() {
 				return data[0];
+			}
+
+			@Override
+			public java.lang.Byte unwrap() {
+				return get();
 			}
 
 			@Override
@@ -417,6 +439,11 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			}
 
 			@Override
+			public BigInteger unwrap() {
+				return get();
+			}
+
+			@Override
 			public Int clone(SyntacticItem[] operands) {
 				return new Int(get());
 			}
@@ -428,12 +455,21 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 		}
 
 		public static class UTF8 extends Value {
+			public UTF8(String str) {
+				super(ITEM_utf8, str.getBytes());
+			}
+
 			public UTF8(byte[] bytes) {
 				super(ITEM_utf8, bytes);
 			}
 
 			public byte[] get() {
 				return data;
+			}
+
+			@Override
+			public String unwrap() {
+				return toString();
 			}
 
 			@Override
@@ -444,6 +480,54 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			@Override
 			public String toString() {
 				return new String(get());
+			}
+		}
+
+
+		public static class Array extends Value {
+
+			public Array(Value... stmts) {
+				super(ITEM_array, stmts);
+			}
+
+			public Array(Collection<? extends Value> stmts) {
+				super(ITEM_array, ArrayUtils.toArray(SyntacticItem.class,stmts));
+			}
+
+			@Override
+			public Object unwrap() {
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
+			public Value get(int i) {
+				return (Value) super.get(i);
+			}
+
+			@Override
+			public Array clone(SyntacticItem[] operands) {
+				return new Array(ArrayUtils.toArray(Value.class, operands));
+			}
+
+			@Override
+			public String toString() {
+				return "[" + toBareString() + "]";
+			}
+
+			public String toBareString() {
+				String r = "";
+				for (int i = 0; i != size(); ++i) {
+					if (i != 0) {
+						r += ",";
+					}
+					SyntacticItem child = get(i);
+					if (child == null) {
+						r += "?";
+					} else {
+						r += child.toString();
+					}
+				}
+				return r;
 			}
 		}
 	}

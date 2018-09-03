@@ -11,20 +11,15 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.io;
+package wycc.cfg;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
-import wycc.lang.ConfigFile;
-import wybs.lang.Attribute;
-import wybs.lang.SyntacticElement;
-import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wyfs.lang.Path;
 
@@ -180,7 +175,13 @@ public class ConfigFileLexer {
 			pos++;
 		}
 		String text = input.substring(start, pos);
-		return new Token(Token.Kind.Identifier, text, start);
+		Token.Kind kind = Token.Kind.Identifier;
+		if (text.equals("false")) {
+			kind = Token.Kind.False;
+		} else if (text.equals("true")) {
+			kind = Token.Kind.True;
+		}
+		return new Token(kind, text, start);
 	}
 
 	public void scanWhiteSpace(List<Token> tokens) {
@@ -249,11 +250,11 @@ public class ConfigFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		throw new SyntaxError(msg, entry, null);
+		throw new SyntaxError(msg, entry, new ConfigFile.Attribute.Span(null,index,index));
 
 	}
 
-	static final char[] opStarts = { '[', ']', '=' };
+	static final char[] opStarts = { '[', ']', '=', '.', ',' };
 
 	public boolean isOperatorStart(char c) {
 		for (char o : opStarts) {
@@ -271,9 +272,13 @@ public class ConfigFileLexer {
 		case '[':
 			return new Token(Token.Kind.LeftSquare, "[", pos++);
 		case ']':
-			return new Token(Token.Kind.RightSquare, "[", pos++);
+			return new Token(Token.Kind.RightSquare, "]", pos++);
 		case '=':
 			return new Token(Token.Kind.Equals, "=", pos++);
+		case '.':
+			return new Token(Token.Kind.Dot, ".", pos++);
+		case ',':
+			return new Token(Token.Kind.Comma, ",", pos++);
 		// =================================================================
 		//
 		// =================================================================
@@ -299,6 +304,8 @@ public class ConfigFileLexer {
 			CharValue,
 			StringValue,
 			// Operators
+			Dot("."),
+			Comma(","),
 			LeftSquare("["),
 			RightSquare("]"),
 			Equals,

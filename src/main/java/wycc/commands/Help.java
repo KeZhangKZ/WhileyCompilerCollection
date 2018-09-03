@@ -14,87 +14,150 @@
 package wycc.commands;
 
 import java.io.PrintStream;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
-import wycc.WyTool;
+import wycc.WyProject;
+import wycc.cfg.Configuration;
 import wycc.lang.Command;
+import wyfs.util.Trie;
 
-public class Help implements Command<String> {
+public class Help implements Command {
+
+	public static final Configuration.Schema SCHEMA = Configuration
+			.fromArray(Configuration.BOUND_INTEGER(Trie.fromString("width"), "fix display width", false, 0));
+
+	public static final List<Option.Descriptor> OPTIONS = Arrays
+			.asList(Command.OPTION_NONNEGATIVE_INTEGER("width", "fix display width", 80));
+
+	/**
+	 * The descriptor for this command.
+	 */
+	public static final Command.Descriptor DESCRIPTOR = new Command.Descriptor() {
+		@Override
+		public String getName() {
+			return "help";
+		}
+
+		@Override
+		public String getDescription() {
+			return "Display help information";
+		}
+
+		@Override
+		public List<Option.Descriptor> getOptionDescriptors() {
+			return OPTIONS;
+		}
+
+		@Override
+		public Configuration.Schema getConfigurationSchema() {
+			return SCHEMA;
+		}
+
+		@Override
+		public List<Descriptor> getCommands() {
+			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public Command initialise(Command environment, Command.Options options,
+				Configuration configuration) {
+			// FIXME: should have some framework for output, rather than hard-coding
+			// System.out.
+			return new Help(System.out, (WyProject) environment, options, configuration);
+		}
+	};
+	//
 	private final PrintStream out;
-	private final List<Command> commands;
+	private final WyProject project;
+	private final Command.Options options;
+	private final Configuration configuration;
+	//
+	private final int width;
 
-	public Help(PrintStream out, List<Command> commands) {
-		this.commands = commands;
+	public Help(PrintStream out, WyProject environment, Command.Options options,
+			Configuration configuration) {
+		this.project = environment;
+		this.options = options;
+		this.configuration = configuration;
 		this.out = out;
+		this.width = options.get("width", Integer.class);
 	}
 
 	@Override
-	public String[] getOptions() {
-		return new String[]{};
+	public Descriptor getDescriptor() {
+		return DESCRIPTOR;
 	}
 
 	@Override
-	public String describe(String name) {
-		throw new UnsupportedOperationException("");
+	public void initialise() {
 	}
 
 	@Override
-	public void set(String name, Object value) throws ConfigurationError {
-		throw new UnsupportedOperationException("");
+	public void finalise() {
 	}
 
 	@Override
-	public Object get(String name) {
-		throw new UnsupportedOperationException("");
-	}
-
-	@Override
-	public String getName() {
-		return "help";
-	}
-
-	@Override
-	public String getDescription() {
-		return "Display help information";
-	}
-
-	@Override
-	public String execute(String... args) {
-		if(args.length == 0) {
+	public boolean execute(List<String> args) {
+		if (args.size() == 0) {
 			printUsage();
 		} else {
 			// Search for the command
-			Command command = null;
-			for(Command c : commands) {
-				if(c.getName().equals(args[0])) {
+			List<Command.Descriptor> descriptors = project.getParent().getCommandDescriptors();
+			Command.Descriptor command = null;
+			for (Command.Descriptor c : descriptors) {
+				if (c.getName().equals(args.get(0))) {
 					command = c;
 					break;
 				}
 			}
 			//
-			if(command == null) {
-				System.out.println("No entry for " + args[0]);
+			if (command == null) {
+				out.println("No entry for " + args.get(0));
 			} else {
-				printCommandDetails(command);
+				print(out,command);
 			}
 		}
 		//
-		return null;
+		return true;
 	}
 
-	protected void printCommandDetails(Command command) {
-		System.out.println("NAME");
-		System.out.println("\t" + command.getName());
-		System.out.println();
-		System.out.println("DESCRIPTION");
-		System.out.println("\t" + command.getDescription());
-		System.out.println();
-		System.out.println("OPTIONS");
-		String[] options = command.getOptions();
-		for(int i=0;i!=options.length;++i) {
-			String option = options[i];
-			System.out.println("\t--" + option);
-			System.out.println("\t\t" + command.describe(option));
+	public static void print(PrintStream out, Command.Descriptor descriptor) {
+		out.println("NAME");
+		out.println("\t" + descriptor.getName());
+		out.println();
+		out.println("DESCRIPTION");
+		out.println("\t" + descriptor.getDescription());
+		out.println();
+		out.println("OPTIONS");
+		List<Option.Descriptor> options = descriptor.getOptionDescriptors();
+		for (int i = 0; i != options.size(); ++i) {
+			Option.Descriptor option = options.get(i);
+			String argument = option.getArgumentDescription();
+			out.print("\t--" + option.getName());
+			if(argument != null && !argument.equals("")) {
+				out.print("=" + argument);
+			}
+			out.println();
+			out.println("\t\t" + option.getDescription());
+		}
+		out.println();
+		out.println("SUBCOMMANDS");
+		List<Command.Descriptor> commands = descriptor.getCommands();
+		for (int i = 0; i != commands.size(); ++i) {
+			Command.Descriptor d = commands.get(i);
+			out.println("\t" + d.getName());
+			out.println("\t\t" + d.getDescription());
+		}
+		out.println();
+		out.println("CONFIGURATION");
+		Configuration.Schema schema = descriptor.getConfigurationSchema();
+		List<Configuration.KeyValueDescriptor<?>> descriptors = schema.getDescriptors();
+		for (int i = 0; i != descriptors.size(); ++i) {
+			Configuration.KeyValueDescriptor<?> option = descriptors.get(i);
+			out.println("\t" + option.getFilter());
+			out.println("\t\t" + option.getDescription());
 		}
 	}
 
@@ -102,17 +165,19 @@ public class Help implements Command<String> {
 	 * Print usage information to the console.
 	 */
 	protected void printUsage() {
-		System.out.println("usage: wy [--verbose] command [<options>] [<args>]");
-		System.out.println();
-		int maxWidth = determineCommandNameWidth(commands);
-		System.out.println("Commands:");
-		for(Command c : commands) {
-			System.out.print("  ");
-			System.out.print(rightPad(c.getName(),maxWidth));
-			System.out.println("   " + c.getDescription());
+		List<Command.Descriptor> descriptors = project.getParent().getCommandDescriptors();
+		//
+		out.println("usage: wy [--verbose] command [<options>] [<args>]");
+		out.println();
+		int maxWidth = determineCommandNameWidth(descriptors);
+		out.println("Commands:");
+		for (Command.Descriptor d : descriptors) {
+			out.print("  ");
+			out.print(rightPad(d.getName(), maxWidth));
+			out.println("   " + d.getDescription());
 		}
-		System.out.println();
-		System.out.println("Run `wy help COMMAND` for more information on a command");
+		out.println();
+		out.println("Run `wy help COMMAND` for more information on a command");
 	}
 
 	/**
@@ -133,7 +198,7 @@ public class Help implements Command<String> {
 	/**
 	 * Left pad a given string with spaces to ensure the resulting string is
 	 * exactly n characters wide. This assumes the given string has at most n
-	 * characters already.
+	 * characters already.  No, this is not its own library.
 	 *
 	 * @param str
 	 *            String to left-pad
@@ -148,13 +213,13 @@ public class Help implements Command<String> {
 	/**
 	 * Determine the maximum width of any configured command name
 	 *
-	 * @param commands
+	 * @param descriptors
 	 * @return
 	 */
-	private static int determineCommandNameWidth(List<Command> commands) {
+	private static int determineCommandNameWidth(List<Command.Descriptor> descriptors) {
 		int max = 0;
-		for(Command c : commands) {
-			max = Math.max(max, c.getName().length());
+		for (Command.Descriptor d : descriptors) {
+			max = Math.max(max, d.getName().length());
 		}
 		return max;
 	}
