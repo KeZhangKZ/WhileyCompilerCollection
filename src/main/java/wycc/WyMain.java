@@ -36,6 +36,7 @@ import wycc.commands.Clean;
 import wycc.commands.Config;
 import wycc.commands.Help;
 import wycc.commands.Install;
+import wycc.commands.Run;
 import wycc.lang.Command;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
@@ -103,6 +104,7 @@ public class WyMain implements Command {
 					new Value.Array(new Value.UTF8("whiley"))),
 			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("build/includes"), "Files to include in package",
 					DEFAULT_BUILD_INCLUDES),
+			Configuration.UNBOUND_STRING(Trie.fromString("build/main"), "Identify main method", false),
 			// Optional items
 			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on", false,
 					Pattern.compile("\\d+.\\d+.\\d+"))
@@ -189,6 +191,7 @@ public class WyMain implements Command {
 		this.commandDescriptors.add(Config.DESCRIPTOR);
 		this.commandDescriptors.add(Help.DESCRIPTOR);
 		this.commandDescriptors.add(Install.DESCRIPTOR);
+		this.commandDescriptors.add(Run.DESCRIPTOR);
 		// Setup project roots
 		this.systemRoot = new DirectoryRoot(systemDir, registry);
 		this.globalRoot = new DirectoryRoot(globalDir, registry);

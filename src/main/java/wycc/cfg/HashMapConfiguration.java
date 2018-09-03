@@ -43,6 +43,11 @@ public class HashMapConfiguration implements Configuration {
 	}
 
 	@Override
+	public boolean hasKey(ID key) {
+		return entries.get(key) != null;
+	}
+
+	@Override
 	public <T> T get(Class<T> kind, ID key) {
 		// Get descriptor (i.e. check it exists)
 		KeyValueDescriptor<?> d = schema.getDescriptor(key);

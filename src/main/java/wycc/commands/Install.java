@@ -54,9 +54,7 @@ public class Install implements Command {
 
 		@Override
 		public Schema getConfigurationSchema() {
-			return Configuration.fromArray(
-					// Determines which files will be included
-					);
+			return Configuration.EMPTY_SCHEMA;
 		}
 
 		@Override

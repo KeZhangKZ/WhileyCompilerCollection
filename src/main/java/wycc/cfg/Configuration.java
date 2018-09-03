@@ -49,6 +49,14 @@ public interface Configuration {
 	public Schema getConfigurationSchema();
 
 	/**
+	 * Check whether a value exists for a given key.
+	 *
+	 * @param key
+	 * @return
+	 */
+	public <T> boolean hasKey(Path.ID key);
+
+	/**
 	 * Get the value associated with a given key. If no such key exists, an
 	 * exception is raised. Every value returned is valid with respect to the
 	 * schema.
@@ -139,6 +147,11 @@ public interface Configuration {
 		@Override
 		public List<ID> matchAll(Filter filter) {
 			return Collections.EMPTY_LIST;
+		}
+
+		@Override
+		public <T> boolean hasKey(ID key) {
+			return false;
 		}
 
 	};
