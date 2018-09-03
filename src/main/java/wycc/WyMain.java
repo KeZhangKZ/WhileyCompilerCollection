@@ -35,6 +35,7 @@ import wycc.commands.Build;
 import wycc.commands.Clean;
 import wycc.commands.Config;
 import wycc.commands.Help;
+import wycc.commands.Install;
 import wycc.lang.Command;
 import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
@@ -60,6 +61,12 @@ import wyfs.util.Trie;
  *
  */
 public class WyMain implements Command {
+	public static final Value.Array DEFAULT_BUILD_INCLUDES = new Value.Array(
+			// Include package description by default
+			new Value.UTF8("wy.toml"),
+			// Include all wyil files by default
+			new Value.UTF8("**/*.wyil"));
+
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
 	 */
@@ -93,7 +100,9 @@ public class WyMain implements Command {
 			// Build items
 			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("build/platforms"),
 					"Target platforms for this package (default just \"whiley\")",
-					new Value.Array(new Value.UTF8("whiley".getBytes()))),
+					new Value.Array(new Value.UTF8("whiley"))),
+			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("build/includes"), "Files to include in package",
+					DEFAULT_BUILD_INCLUDES),
 			// Optional items
 			Configuration.REGEX_STRING(Trie.fromString("dependencies/*"), "Packages this package depends on", false,
 					Pattern.compile("\\d+.\\d+.\\d+"))
@@ -179,6 +188,7 @@ public class WyMain implements Command {
 		this.commandDescriptors.add(Clean.DESCRIPTOR);
 		this.commandDescriptors.add(Config.DESCRIPTOR);
 		this.commandDescriptors.add(Help.DESCRIPTOR);
+		this.commandDescriptors.add(Install.DESCRIPTOR);
 		// Setup project roots
 		this.systemRoot = new DirectoryRoot(systemDir, registry);
 		this.globalRoot = new DirectoryRoot(globalDir, registry);
