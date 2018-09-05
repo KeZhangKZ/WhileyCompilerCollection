@@ -30,6 +30,7 @@ import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wycc.util.ZipFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -131,13 +132,14 @@ public class Install implements Command {
 			// Determine list of files to go in package
 			List<Path.Entry<?>> files = determinePackageContents();
 			// Construct zip file context representing package
-			byte[] bytes = createPackageBytes(files);
+			ZipFile zf = createPackageBytes(files);
 			// Determine the target location for the package file
-			Path.Entry<?> target = getPackageFile();
-			// FIXME: this is completely horrendously broken
-			FileOutputStream fout = new FileOutputStream(target.location());
-			fout.write(bytes);
-			fout.close();
+			Path.Entry<ZipFile> target = getPackageFile();
+			// Physically write out the zip file
+			target.write(zf);
+			// Flush it to disk
+			target.flush();
+			// Done
 			System.out.println("WROTE: " + files);
 			return true;
 		} catch (IOException e) {
@@ -168,22 +170,19 @@ public class Install implements Command {
 		return files;
 	}
 
-	private byte[] createPackageBytes(List<Path.Entry<?>> files) throws IOException {
-		ByteArrayOutputStream bout = new ByteArrayOutputStream();
-		ZipOutputStream zout = new ZipOutputStream(bout);
+	private ZipFile createPackageBytes(List<Path.Entry<?>> files) throws IOException {
+		ZipFile zf = new ZipFile();
+		// Add each file to zip file
 		for (int i = 0; i != files.size(); ++i) {
 			Path.Entry<?> file = files.get(i);
 			// Construct filename for given entry
 			String filename = file.id().toString() + "." + file.contentType().getSuffix();
 			// Extract bytes representing entry
 			byte[] contents = readFileContents(file);
-			zout.putNextEntry(new ZipEntry(filename));
-			zout.write(contents);
-			zout.closeEntry();
+			zf.add(new ZipEntry(filename), contents);
 		}
-		zout.finish();
-		bout.flush();
-		return bout.toByteArray();
+		//
+		return zf;
 	}
 
 	private byte[] readFileContents(Path.Entry<?> file) throws IOException {
@@ -201,15 +200,15 @@ public class Install implements Command {
 		return buffer.toByteArray();
 	}
 
-	private Path.Entry<?> getPackageFile() throws IOException {
+	private Path.Entry<ZipFile> getPackageFile() throws IOException {
 		// Extract package name from configuration
 		Value.UTF8 name = configuration.get(Value.UTF8.class, Trie.fromString("package/name"));
 		// Extract package version from
 		Value.UTF8 version = configuration.get(Value.UTF8.class, Trie.fromString("package/version"));
 		// Determine fully qualified package name
 		Trie pkg = Trie.fromString(name + "-v" + version);
-		// FIXME: this doesn't make sense.
-		return project.getRepositoryRoot().create(pkg, WyProject.ZIP_CONTENT_TYPE);
+		// Dig out the file!
+		return project.getRepositoryRoot().create(pkg, ZipFile.ContentType);
 	}
 
 	private Content.Filter<?> createIncludesFilter() {

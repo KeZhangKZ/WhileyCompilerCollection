@@ -17,8 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
-import java.util.jar.JarFile;
-import java.util.zip.ZipFile;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Value;
@@ -31,6 +29,7 @@ import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.util.ArrayUtils;
 import wycc.util.CommandParser;
+import wycc.util.ZipFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
@@ -49,25 +48,6 @@ public class WyProject implements Command {
 	 * Path to the dependency repository within the global root.
 	 */
 	private static Path.ID REPOSITORY_PATH = Trie.fromString("repository");
-
-	public static Content.Type<ZipFile> ZIP_CONTENT_TYPE = new Content.Type<ZipFile>() {
-
-		@Override
-		public String getSuffix() {
-			return "zip";
-		}
-
-		@Override
-		public ZipFile read(Entry e, InputStream input) throws IOException {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public void write(OutputStream output, ZipFile value) throws IOException {
-			throw new UnsupportedOperationException();
-		}
-
-	};
 
 	// ==================================================================
 	// Instance Fields
@@ -249,14 +229,15 @@ public class WyProject implements Command {
 			// Construct path to the config file
 			Trie root = Trie.fromString(name + "-v" + version);
 			// Attempt to resolve it.
-			if (!repository.exists(root, ZIP_CONTENT_TYPE)) {
+			if (!repository.exists(root, ZipFile.ContentType)) {
 				// TODO: employ a package resolver here
 				// FIXME: handle better error handling.
 				throw new RuntimeException("missing dependency \"" + name + "-" + version + "\"");
 			} else {
 				// Add the relative root.
-				Path.Entry<?> jarfile = repository.get(root, ZIP_CONTENT_TYPE);
-				project.roots().add(new ZipFileRoot(jarfile.location(), environment.getContentRegistry()));
+				Path.Entry<?> zipfile = repository.get(root, ZipFile.ContentType);
+				// FIXME: should be able to avoid using location() here.
+				project.roots().add(new ZipFileRoot(zipfile.location(), environment.getContentRegistry()));
 			}
 		}
 	}

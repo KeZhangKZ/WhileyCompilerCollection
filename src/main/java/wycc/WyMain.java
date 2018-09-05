@@ -44,6 +44,7 @@ import wycc.util.CommandParser;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wycc.util.StdModuleContext;
+import wycc.util.ZipFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Content.Registry;
@@ -184,7 +185,7 @@ public class WyMain implements Command {
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
-		this.contentTypes.add(WyProject.ZIP_CONTENT_TYPE);
+		this.contentTypes.add(ZipFile.ContentType);
 		// Add default commands
 		this.commandDescriptors.add(Build.DESCRIPTOR);
 		this.commandDescriptors.add(Clean.DESCRIPTOR);
