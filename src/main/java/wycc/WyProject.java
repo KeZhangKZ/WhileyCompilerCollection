@@ -29,12 +29,12 @@ import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.util.ArrayUtils;
 import wycc.util.CommandParser;
-import wycc.util.ZipFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyfs.util.ZipFileRoot;
 import wyfs.util.Trie;
+import wyfs.util.ZipFile;
 
 public class WyProject implements Command {
 	private static final Trie BUILD_PLATFORMS = Trie.fromString("build/platforms");
@@ -234,10 +234,10 @@ public class WyProject implements Command {
 				// FIXME: handle better error handling.
 				throw new RuntimeException("missing dependency \"" + name + "-" + version + "\"");
 			} else {
-				// Add the relative root.
-				Path.Entry<?> zipfile = repository.get(root, ZipFile.ContentType);
-				// FIXME: should be able to avoid using location() here.
-				project.roots().add(new ZipFileRoot(zipfile.location(), environment.getContentRegistry()));
+				// Extract entry for ZipFile
+				Path.Entry<ZipFile> zipfile = repository.get(root, ZipFile.ContentType);
+				// Add a relative ZipFile root
+				project.roots().add(new ZipFileRoot(zipfile, environment.getContentRegistry()));
 			}
 		}
 	}

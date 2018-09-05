@@ -30,10 +30,10 @@ import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
-import wycc.util.ZipFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
+import wyfs.util.ZipFile;
 import wybs.lang.Build;
 
 public class Install implements Command {

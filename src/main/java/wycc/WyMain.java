@@ -44,7 +44,6 @@ import wycc.util.CommandParser;
 import wycc.util.Logger;
 import wycc.util.Pair;
 import wycc.util.StdModuleContext;
-import wycc.util.ZipFile;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Content.Registry;
@@ -52,6 +51,7 @@ import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
+import wyfs.util.ZipFile;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is

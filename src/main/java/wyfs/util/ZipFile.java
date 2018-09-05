@@ -11,8 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.util;
+package wyfs.util;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -48,11 +49,12 @@ public class ZipFile {
 		}
 
 		@Override
-		public void write(OutputStream output, ZipFile value) throws IOException {
+		public void write(OutputStream output, ZipFile zf) throws IOException {
 			ZipOutputStream zout = new ZipOutputStream(output);
-			for (int i = 0; i != value.size(); ++i) {
-				zout.putNextEntry(value.getEntry(i));
-				zout.write(value.getContents(i));
+			for (int i = 0; i != zf.size(); ++i) {
+				Entry e = zf.get(i);
+				zout.putNextEntry(e.entry);
+				zout.write(e.bytes);
 				zout.closeEntry();
 			}
 			zout.finish();
@@ -82,9 +84,9 @@ public class ZipFile {
 		// Read all entries from the input stream
 		ZipInputStream zin = new ZipInputStream(input);
 		ZipEntry e;
-		while((e = zin.getNextEntry()) != null) {
+		while ((e = zin.getNextEntry()) != null) {
 			byte[] contents = readEntryContents(zin);
-			entries.add(new Entry(e,contents));
+			entries.add(new Entry(e, contents));
 			zin.closeEntry();
 		}
 		zin.close();
@@ -98,12 +100,8 @@ public class ZipFile {
 		this.entries.add(new Entry(entry,bytes));
 	}
 
-	public ZipEntry getEntry(int i) {
-		return entries.get(i).entry;
-	}
-
-	public byte[] getContents(int i) {
-		return entries.get(i).bytes;
+	public Entry get(int i) {
+		return entries.get(i);
 	}
 
 	private byte[] readEntryContents(InputStream in) throws IOException {
@@ -120,13 +118,29 @@ public class ZipFile {
 		return buffer.toByteArray();
 	}
 
-	private static final class Entry {
+	public static final class Entry {
 		public final ZipEntry entry;
 		public final byte[] bytes;
 
 		public Entry(ZipEntry entry, byte[] bytes) {
 			this.entry = entry;
 			this.bytes = bytes;
+		}
+
+		public String getName() {
+			return entry.getName();
+		}
+
+		public boolean isDirectory() {
+			return entry.isDirectory();
+		}
+
+		public long getTime() {
+			return entry.getTime();
+		}
+
+		public InputStream getInputStream() {
+			return new ByteArrayInputStream(bytes);
 		}
 	}
 }
