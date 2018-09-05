@@ -184,7 +184,7 @@ public class WyMain implements Command {
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
-		this.contentTypes.add(WyProject.JAR_CONTENT_TYPE);
+		this.contentTypes.add(WyProject.ZIP_CONTENT_TYPE);
 		// Add default commands
 		this.commandDescriptors.add(Build.DESCRIPTOR);
 		this.commandDescriptors.add(Clean.DESCRIPTOR);

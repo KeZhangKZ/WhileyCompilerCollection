@@ -18,6 +18,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.*;
 import java.util.jar.JarFile;
+import java.util.zip.ZipFile;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Value;
@@ -33,7 +34,7 @@ import wycc.util.CommandParser;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
-import wyfs.util.JarFileRoot;
+import wyfs.util.ZipFileRoot;
 import wyfs.util.Trie;
 
 public class WyProject implements Command {
@@ -49,20 +50,20 @@ public class WyProject implements Command {
 	 */
 	private static Path.ID REPOSITORY_PATH = Trie.fromString("repository");
 
-	public static Content.Type<JarFile> JAR_CONTENT_TYPE = new Content.Type<JarFile>() {
+	public static Content.Type<ZipFile> ZIP_CONTENT_TYPE = new Content.Type<ZipFile>() {
 
 		@Override
 		public String getSuffix() {
-			return "jar";
+			return "zip";
 		}
 
 		@Override
-		public JarFile read(Entry e, InputStream input) throws IOException {
+		public ZipFile read(Entry e, InputStream input) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public void write(OutputStream output, JarFile value) throws IOException {
+		public void write(OutputStream output, ZipFile value) throws IOException {
 			throw new UnsupportedOperationException();
 		}
 
@@ -248,14 +249,14 @@ public class WyProject implements Command {
 			// Construct path to the config file
 			Trie root = Trie.fromString(name + "-v" + version);
 			// Attempt to resolve it.
-			if (!repository.exists(root, JAR_CONTENT_TYPE)) {
+			if (!repository.exists(root, ZIP_CONTENT_TYPE)) {
 				// TODO: employ a package resolver here
 				// FIXME: handle better error handling.
 				throw new RuntimeException("missing dependency \"" + name + "-" + version + "\"");
 			} else {
 				// Add the relative root.
-				Path.Entry<?> jarfile = repository.get(root, JAR_CONTENT_TYPE);
-				project.roots().add(new JarFileRoot(jarfile.location(), environment.getContentRegistry()));
+				Path.Entry<?> jarfile = repository.get(root, ZIP_CONTENT_TYPE);
+				project.roots().add(new ZipFileRoot(jarfile.location(), environment.getContentRegistry()));
 			}
 		}
 	}

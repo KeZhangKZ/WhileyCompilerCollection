@@ -15,32 +15,31 @@ package wyfs.util;
 
 import java.io.*;
 import java.util.*;
-import java.util.jar.*;
+import java.util.zip.*;
 
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 import wyfs.lang.Path.RelativeRoot;
-import wyfs.lang.Content.Type;
 
 /**
  * Provides an implementation of <code>Path.Root</code> for representing the
- * contents of a jar file.
+ * contents of a zip file.
  *
  * @author David J. Pearce
  *
  */
-public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implements Path.Root {
+public final class ZipFileRoot extends AbstractRoot<ZipFileRoot.Folder> implements Path.Root {
 	private final File dir;
 	private Path.Item[] jfContents;
 
-	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
+	public ZipFileRoot(String dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.dir = new File(dir);
 		refresh();
 	}
 
-	public JarFileRoot(File dir, Content.Registry contentTypes) throws IOException {
+	public ZipFileRoot(File dir, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
 		this.dir = dir;
 		refresh();
@@ -53,17 +52,17 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 
 	@Override
 	public void flush() {
-		// no-op, since jar files are read-only.
+		// no-op, since zip files are read-only.
 	}
 
 	@Override
 	public void refresh() throws IOException {
-		JarFile jf = new JarFile(dir);
-		Enumeration<JarEntry> entries = jf.entries();
+		ZipFile jf = new ZipFile(dir);
+		Enumeration<? extends ZipEntry> entries = jf.entries();
 		this.jfContents = new Path.Item[jf.size()];
 		int i = 0;
 		while (entries.hasMoreElements()) {
-			JarEntry e = entries.nextElement();
+			ZipEntry e = entries.nextElement();
 			String filename = e.getName();
 			int lastSlash = filename.lastIndexOf('/');
 			Trie pkg = lastSlash == -1 ? Trie.ROOT : Trie.fromString(filename.substring(0, lastSlash));
@@ -135,10 +134,10 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 	}
 
 	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {
-		private final JarFile parent;
-		private final JarEntry entry;
+		private final ZipFile parent;
+		private final ZipEntry entry;
 
-		public Entry(Trie mid, JarFile parent, JarEntry entry) {
+		public Entry(Trie mid, ZipFile parent, ZipEntry entry) {
 			super(mid);
 			this.parent = parent;
 			this.entry = entry;

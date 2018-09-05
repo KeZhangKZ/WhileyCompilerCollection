@@ -13,12 +13,17 @@
 // limitations under the License.
 package wycc.commands;
 
+import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.WyProject;
@@ -123,26 +128,17 @@ public class Install implements Command {
 	@Override
 	public boolean execute(List<String> args) {
 		try {
-			// Determine includes filter
-			Content.Filter includes = createIncludesFilter();
-			//
-			ArrayList<Path.Entry<?>> files = new ArrayList<>();
-			// Determine local root of project
-			Path.Root root = project.getParent().getLocalRoot();
-			// Determine active build platforms
-			List<Build.Platform> platforms = project.getTargetPlatforms();
-			// Determine roots for all platforms
-			for (int i = 0; i != platforms.size(); ++i) {
-				Build.Platform platform = platforms.get(i);
-				// Determine binary root for platform
-				Path.Root bindir = platform.getTargetRoot(root);
-				// Target filter matches compiled files
-				Content.Filter<?> filter = Content.and(includes,platform.getTargetFilter());
-				// Find all files
-				System.out.println("FILTER: " + filter);
-				files.addAll(bindir.get(filter));
-			}
-			System.out.println("MATCHED: " + files);
+			// Determine list of files to go in package
+			List<Path.Entry<?>> files = determinePackageContents();
+			// Construct zip file context representing package
+			byte[] bytes = createPackageBytes(files);
+			// Determine the target location for the package file
+			Path.Entry<?> target = getPackageFile();
+			// FIXME: this is completely horrendously broken
+			FileOutputStream fout = new FileOutputStream(target.location());
+			fout.write(bytes);
+			fout.close();
+			System.out.println("WROTE: " + files);
 			return true;
 		} catch (IOException e) {
 			e.printStackTrace(syserr);
@@ -150,7 +146,62 @@ public class Install implements Command {
 		}
 	}
 
-	private Path.Entry<?> getTargetFile() throws IOException {
+	private List<Path.Entry<?>> determinePackageContents() throws IOException {
+		// Determine includes filter
+		Content.Filter includes = createIncludesFilter();
+		//
+		ArrayList<Path.Entry<?>> files = new ArrayList<>();
+		// Determine local root of project
+		Path.Root root = project.getParent().getLocalRoot();
+		// Determine active build platforms
+		List<Build.Platform> platforms = project.getTargetPlatforms();
+		// Determine roots for all platforms
+		for (int i = 0; i != platforms.size(); ++i) {
+			Build.Platform platform = platforms.get(i);
+			// Determine binary root for platform
+			Path.Root bindir = platform.getTargetRoot(root);
+			// Target filter matches compiled files
+			Content.Filter<?> filter = Content.and(includes,platform.getTargetFilter());
+			// Find all files
+			files.addAll(bindir.get(filter));
+		}
+		return files;
+	}
+
+	private byte[] createPackageBytes(List<Path.Entry<?>> files) throws IOException {
+		ByteArrayOutputStream bout = new ByteArrayOutputStream();
+		ZipOutputStream zout = new ZipOutputStream(bout);
+		for (int i = 0; i != files.size(); ++i) {
+			Path.Entry<?> file = files.get(i);
+			// Construct filename for given entry
+			String filename = file.id().toString() + "." + file.contentType().getSuffix();
+			// Extract bytes representing entry
+			byte[] contents = readFileContents(file);
+			zout.putNextEntry(new ZipEntry(filename));
+			zout.write(contents);
+			zout.closeEntry();
+		}
+		zout.finish();
+		bout.flush();
+		return bout.toByteArray();
+	}
+
+	private byte[] readFileContents(Path.Entry<?> file) throws IOException {
+		InputStream in = file.inputStream();
+		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+		int nRead;
+		// Read bytes in max 1024 chunks
+		byte[] data = new byte[1024];
+		// Read all bytes from the input stream
+		while ((nRead = in.read(data, 0, data.length)) != -1) {
+			buffer.write(data, 0, nRead);
+		}
+		// Done
+		buffer.flush();
+		return buffer.toByteArray();
+	}
+
+	private Path.Entry<?> getPackageFile() throws IOException {
 		// Extract package name from configuration
 		Value.UTF8 name = configuration.get(Value.UTF8.class, Trie.fromString("package/name"));
 		// Extract package version from
@@ -158,7 +209,7 @@ public class Install implements Command {
 		// Determine fully qualified package name
 		Trie pkg = Trie.fromString(name + "-v" + version);
 		// FIXME: this doesn't make sense.
-		return project.getRepositoryRoot().create(pkg, WyProject.JAR_CONTENT_TYPE);
+		return project.getRepositoryRoot().create(pkg, WyProject.ZIP_CONTENT_TYPE);
 	}
 
 	private Content.Filter<?> createIncludesFilter() {
