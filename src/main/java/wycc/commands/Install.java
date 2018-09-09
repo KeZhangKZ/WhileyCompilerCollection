@@ -132,7 +132,7 @@ public class Install implements Command {
 			// Determine list of files to go in package
 			List<Path.Entry<?>> files = determinePackageContents();
 			// Construct zip file context representing package
-			ZipFile zf = createPackageBytes(files);
+			ZipFile zf = createZipFile(files);
 			// Determine the target location for the package file
 			Path.Entry<ZipFile> target = getPackageFile();
 			// Physically write out the zip file
@@ -148,29 +148,37 @@ public class Install implements Command {
 		}
 	}
 
+	/**
+	 * Identify which files are to be included in the package. This is determined by
+	 * the build/includes attribute in the package manifest.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
 	private List<Path.Entry<?>> determinePackageContents() throws IOException {
 		// Determine includes filter
-		Content.Filter includes = createIncludesFilter();
-		//
 		ArrayList<Path.Entry<?>> files = new ArrayList<>();
 		// Determine local root of project
 		Path.Root root = project.getParent().getLocalRoot();
-		// Determine active build platforms
-		List<Build.Platform> platforms = project.getTargetPlatforms();
-		// Determine roots for all platforms
-		for (int i = 0; i != platforms.size(); ++i) {
-			Build.Platform platform = platforms.get(i);
-			// Determine binary root for platform
-			Path.Root bindir = platform.getTargetRoot(root);
-			// Target filter matches compiled files
-			Content.Filter<?> filter = Content.and(includes,platform.getTargetFilter());
-			// Find all files
-			files.addAll(bindir.get(filter));
+		// Add all files from the includes filter
+		for(int i=0;i!=includes.length;++i) {
+			// Construct a filter from the attribute itself
+			Content.Filter filter = createFilter(includes[i].toString());
+			// Add all files matching the attribute
+			files.addAll(root.get(filter));
 		}
+		// Done
 		return files;
 	}
 
-	private ZipFile createPackageBytes(List<Path.Entry<?>> files) throws IOException {
+	/**
+	 * Given a list of files construct a corresponding ZipFile containing them.
+	 *
+	 * @param files
+	 * @return
+	 * @throws IOException
+	 */
+	private ZipFile createZipFile(List<Path.Entry<?>> files) throws IOException {
 		ZipFile zf = new ZipFile();
 		// Add each file to zip file
 		for (int i = 0; i != files.size(); ++i) {
@@ -185,6 +193,13 @@ public class Install implements Command {
 		return zf;
 	}
 
+	/**
+	 * Read the contents of a given file into a byte array.
+	 *
+	 * @param file
+	 * @return
+	 * @throws IOException
+	 */
 	private byte[] readFileContents(Path.Entry<?> file) throws IOException {
 		InputStream in = file.inputStream();
 		ByteArrayOutputStream buffer = new ByteArrayOutputStream();
@@ -200,6 +215,12 @@ public class Install implements Command {
 		return buffer.toByteArray();
 	}
 
+	/**
+	 * Construct an entry for the target package (zip) file.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
 	private Path.Entry<ZipFile> getPackageFile() throws IOException {
 		// Extract package name from configuration
 		Value.UTF8 name = configuration.get(Value.UTF8.class, Trie.fromString("package/name"));
@@ -211,19 +232,12 @@ public class Install implements Command {
 		return project.getRepositoryRoot().create(pkg, ZipFile.ContentType);
 	}
 
-	private Content.Filter<?> createIncludesFilter() {
-		Content.Filter filter = null;
-		for(int i=0;i!=includes.length;++i) {
-			Content.Filter f = createFilter(includes[i].toString());
-			if(filter == null) {
-				filter = f;
-			} else {
-				filter = Content.or(filter, f);
-			}
-		}
-		return filter;
-	}
-
+	/**
+	 * Create a content filter from the string representation.
+	 *
+	 * @param filter
+	 * @return
+	 */
 	private Content.Filter createFilter(String filter) {
 		String[] split = filter.split("\\.");
 		//
@@ -232,6 +246,13 @@ public class Install implements Command {
 		return Content.filter(split[0], contentType);
 	}
 
+	/**
+	 * Determine the content type from the suffix of a given build/includes
+	 * attribute entry.
+	 *
+	 * @param suffix
+	 * @return
+	 */
 	private Content.Type getContentType(String suffix) {
 		List<Content.Type<?>> cts = project.getParent().getContentTypes();
 		//
