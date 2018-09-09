@@ -51,6 +51,7 @@ import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
+import wyfs.util.ZipFile;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is
@@ -62,11 +63,18 @@ import wyfs.util.Trie;
  *
  */
 public class WyMain implements Command {
+	/**
+	 * This determines what files are included in a package be default (i.e. when
+	 * the build/includes attribute is not specified).
+	 */
 	public static final Value.Array DEFAULT_BUILD_INCLUDES = new Value.Array(
 			// Include package description by default
 			new Value.UTF8("wy.toml"),
 			// Include all wyil files by default
-			new Value.UTF8("**/*.wyil"));
+			new Value.UTF8("**/*.wyil"),
+			// Include all whiley files by default
+			new Value.UTF8("**/*.whiley")
+		);
 
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
@@ -184,7 +192,7 @@ public class WyMain implements Command {
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
-		this.contentTypes.add(WyProject.JAR_CONTENT_TYPE);
+		this.contentTypes.add(ZipFile.ContentType);
 		// Add default commands
 		this.commandDescriptors.add(Build.DESCRIPTOR);
 		this.commandDescriptors.add(Clean.DESCRIPTOR);
