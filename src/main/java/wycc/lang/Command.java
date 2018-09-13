@@ -55,7 +55,7 @@ public interface Command {
 	 * any calls are made to <code>finalise()</code>. Observer, however, that this
 	 * command may be executed multiple times.
 	 */
-	public boolean execute(List<String> args);
+	public boolean execute(Template template) throws Exception;
 
 	/**
 	 * Provides a descriptive information about this command. This includes
@@ -116,7 +116,7 @@ public interface Command {
 		 *            content types.
 		 * @return
 		 */
-		public Command initialise(Command parent, Options options, Configuration configuration);
+		public Command initialise(Command parent, Configuration configuration);
 	}
 
 	/**

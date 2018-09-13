@@ -16,9 +16,12 @@ package wycc;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.*;
 
 import wybs.lang.Build;
+import wybs.lang.SyntacticItem;
+import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wybs.util.StdBuildRule;
@@ -40,6 +43,50 @@ public class WyProject implements Command {
 	private static final Trie BUILD_PLATFORMS = Trie.fromString("build/platforms");
 
 	/**
+	 * The descriptor for this command.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static Command.Descriptor DESCRIPTOR(List<Command.Descriptor> descriptors) {
+		return new Command.Descriptor() {
+
+			@Override
+			public Schema getConfigurationSchema() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public List<Option.Descriptor> getOptionDescriptors() {
+				return Arrays.asList(
+						Command.OPTION_FLAG("verbose", "generate verbose information about the build", false),
+						Command.OPTION_FLAG("brief", "generate brief output for syntax errors", false));
+			}
+
+			@Override
+			public Command initialise(Command environment, Configuration configuration) {
+				return new WyProject((WyMain) environment, configuration, System.out, System.err);
+			}
+
+			@Override
+			public String getName() {
+				return "wy";
+			}
+
+			@Override
+			public String getDescription() {
+				return "Command-line interface for the Whiley Compiler Collection";
+			}
+
+			@Override
+			public List<Command.Descriptor> getCommands() {
+				return descriptors;
+			}
+		};
+	}
+
+	/**
 	 * Configuration options specifically required by the tool.
 	 */
 	public static Configuration.Schema SCHEMA = Configuration.fromArray();
@@ -59,11 +106,6 @@ public class WyProject implements Command {
 	protected final WyMain environment;
 
 	/**
-	 * Command-specific options.
-	 */
-	protected final Command.Options options;
-
-	/**
 	 * The combined configuration
 	 */
 	protected final Configuration configuration;
@@ -78,16 +120,29 @@ public class WyProject implements Command {
 	 */
 	private final Value.UTF8[] platforms;
 
+	/**
+	 * Provides a generic place to which normal output should be directed. This
+	 * should eventually be replaced.
+	 */
+	private final PrintStream sysout;
+
+	/**
+	 * Provides a generic place to which error output should be directed. This
+	 * should eventually be replaced.
+	 */
+	private final PrintStream syserr;
+
 	// ==================================================================
 	// Constructors
 	// ==================================================================
 
-	public WyProject(WyMain environment, Command.Options options, Configuration configuration) {
+	public WyProject(WyMain environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.configuration = configuration;
 		this.environment = environment;
-		this.options = options;
 		this.project = new StdProject();
 		this.platforms = configuration.get(Value.Array.class, BUILD_PLATFORMS).toArray(Value.UTF8.class);
+		this.sysout = new PrintStream(sysout);
+		this.syserr = new PrintStream(syserr);
 	}
 
 	// ==================================================================
@@ -100,8 +155,7 @@ public class WyProject implements Command {
 
 	@Override
 	public Command.Descriptor getDescriptor() {
-		// FIXME: this is broken because it doesn't include sub-descriptors.
-		return getDescriptor(environment.getContentRegistry(), Collections.EMPTY_LIST);
+		return DESCRIPTOR(Collections.EMPTY_LIST);
 	}
 
 	/**
@@ -174,14 +228,37 @@ public class WyProject implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
-		// Create dummy options for pass-thru
-		Command.Options dummy = new CommandParser.OptionsMap(Collections.EMPTY_LIST,
-				Help.DESCRIPTOR.getOptionDescriptors());
-		// Initialise command
-		Command cmd = Help.DESCRIPTOR.initialise(this, dummy, configuration);
-		// Execute command
-		return cmd.execute(args);
+	public boolean execute(Template template) {
+		// Extract options
+		boolean verbose = template.getOptions().get("verbose", Boolean.class);
+		try {
+			if(template.getChild() != null) {
+				// Execute a subcommand
+				template = template.getChild();
+				// Access the descriptor
+				Command.Descriptor descriptor = template.getCommandDescriptor();
+				// Construct an instance of the command
+				Command command = descriptor.initialise(this, configuration);
+				//
+				return command.execute(template);
+			} else {
+				// Initialise command
+				Command cmd = Help.DESCRIPTOR.initialise(this, configuration);
+				// Execute command
+				return cmd.execute(template);
+			}
+		} catch (SyntaxError e) {
+			SyntacticItem element = e.getElement();
+			e.outputSourceError(syserr, false);
+			if (verbose) {
+				printStackTrace(syserr, e);
+			}
+			return false;
+		} catch (Exception e) {
+			// FIXME: do something here??
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	// ==================================================================
@@ -270,49 +347,22 @@ public class WyProject implements Command {
 		}
 	}
 
-	public static final Command.Descriptor getDescriptor(Content.Registry registry,
-			List<Command.Descriptor> descriptors) {
-		return new Descriptor(registry, descriptors);
-	}
 
-	private static class Descriptor implements Command.Descriptor {
-		private final Content.Registry registry;
-		private final List<Command.Descriptor> descriptors;
-
-		public Descriptor(Content.Registry registry, List<Command.Descriptor> descriptors) {
-			this.registry = registry;
-			this.descriptors = descriptors;
+	/**
+	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
+	 * in that it always prints all of the trace.
+	 *
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for (StackTraceElement ste : err.getStackTrace()) {
+			out.println("\tat " + ste.toString());
 		}
-
-		@Override
-		public Schema getConfigurationSchema() {
-			// TODO Auto-generated method stub
-			return null;
-		}
-
-		@Override
-		public List<Option.Descriptor> getOptionDescriptors() {
-			return Collections.EMPTY_LIST;
-		}
-
-		@Override
-		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
-			return new WyProject((WyMain) environment, options, configuration);
-		}
-
-		@Override
-		public String getName() {
-			return "wy";
-		}
-
-		@Override
-		public String getDescription() {
-			return "Command-line interface for the Whiley Compiler Collection";
-		}
-
-		@Override
-		public List<Command.Descriptor> getCommands() {
-			return descriptors;
+		if (err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out, err.getCause());
 		}
 	}
 }

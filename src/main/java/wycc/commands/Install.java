@@ -69,8 +69,8 @@ public class Install implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
-			return new Install((WyProject) environment, options, configuration, System.out, System.err);
+		public Command initialise(Command environment, Configuration configuration) {
+			return new Install((WyProject) environment, configuration, System.out, System.err);
 		}
 
 	};
@@ -102,7 +102,7 @@ public class Install implements Command {
 	 */
 	private final Value.UTF8[] includes;
 
-	public Install(WyProject project, Command.Options options, Configuration configuration, OutputStream sysout,
+	public Install(WyProject project, Configuration configuration, OutputStream sysout,
 			OutputStream syserr) {
 		this.project = project;
 		this.sysout = new PrintStream(sysout);
@@ -127,7 +127,7 @@ public class Install implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
+	public boolean execute(Template template) {
 		try {
 			// Determine list of files to go in package
 			List<Path.Entry<?>> files = determinePackageContents();

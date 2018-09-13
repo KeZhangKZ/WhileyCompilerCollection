@@ -270,19 +270,25 @@ public class WyMain implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
+	public boolean execute(Command.Template template) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public void execute(String[] args) throws IOException {
+	public void execute(String[] args) throws Exception {
 		try {
 			// Construct the root descriptor
-			Command.Descriptor descriptor = WyProject.getDescriptor(registry, commandDescriptors);
+			Command.Descriptor descriptor = WyProject.DESCRIPTOR(commandDescriptors);
 			// Parse the given comand-line
 			Command.Template pipeline = new CommandParser(descriptor).parse(args);
+			// Create command instance
+			Command instance = descriptor.initialise(this, configuration);
+			// Initialise command
+			instance.initialise();
 			// Execute the command (if applicable)
-			execute(this, pipeline);
+			instance.execute(pipeline);
+			// Finalise command
+			instance.finalise();
 		} catch(IllegalArgumentException e) {
 			System.out.println(e.getMessage());
 		}
@@ -373,30 +379,11 @@ public class WyMain implements Command {
 		return schemas;
 	}
 
-	public void execute(Command parent, Command.Template template) throws IOException {
-		// Access the descriptor
-		Command.Descriptor descriptor = template.getCommandDescriptor();
-		// Construct an instance of the command
-		Command command = descriptor.initialise(parent, template.getOptions(), configuration);
-		// Initialise command
-					command.initialise();
-		// Determine whether or not to execute this command
-		if (template.getChild() != null) {
-			// Indicates a sub-command is actually being executed.
-			execute(command, template.getChild());
-		} else {
-			// Execute command with given arguments
-			command.execute(template.getArguments());
-		}
-		// Finalise command
-		command.finalise();
-	}
-
 	// ==================================================================
 	// Main Method
 	// ==================================================================
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		// Determine system-wide directory
 		String systemDir = determineSystemRoot();
 		// Determine user-wide directory

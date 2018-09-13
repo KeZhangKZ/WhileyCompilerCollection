@@ -61,28 +61,21 @@ public class Help implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options,
-				Configuration configuration) {
+		public Command initialise(Command environment, Configuration configuration) {
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
-			return new Help(System.out, (WyProject) environment, options, configuration);
+			return new Help(System.out, (WyProject) environment, configuration);
 		}
 	};
 	//
 	private final PrintStream out;
 	private final WyProject project;
-	private final Command.Options options;
 	private final Configuration configuration;
-	//
-	private final int width;
 
-	public Help(PrintStream out, WyProject environment, Command.Options options,
-			Configuration configuration) {
+	public Help(PrintStream out, WyProject environment, Configuration configuration) {
 		this.project = environment;
-		this.options = options;
 		this.configuration = configuration;
 		this.out = out;
-		this.width = options.get("width", Integer.class);
 	}
 
 	@Override
@@ -99,7 +92,12 @@ public class Help implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
+	public boolean execute(Template template) {
+		// Extract options
+		int width = template.getOptions().get("width", Integer.class);
+		// Extract arguments
+		List<String> args = template.getArguments();
+		//
 		if (args.size() == 0) {
 			printUsage();
 		} else {
