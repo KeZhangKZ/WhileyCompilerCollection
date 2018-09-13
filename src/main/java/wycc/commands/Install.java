@@ -21,6 +21,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -179,10 +180,15 @@ public class Install implements Command {
 	 * @throws IOException
 	 */
 	private ZipFile createZipFile(List<Path.Entry<?>> files) throws IOException {
+		// The set of known paths
+		HashSet<Path.ID> paths = new HashSet<>();
+		// The zip file we're creating
 		ZipFile zf = new ZipFile();
 		// Add each file to zip file
 		for (int i = 0; i != files.size(); ++i) {
 			Path.Entry<?> file = files.get(i);
+			// Extract path
+			addPaths(file.id().parent(),paths,zf);
 			// Construct filename for given entry
 			String filename = file.id().toString() + "." + file.contentType().getSuffix();
 			// Extract bytes representing entry
@@ -191,6 +197,27 @@ public class Install implements Command {
 		}
 		//
 		return zf;
+	}
+
+	/**
+	 * This is a slightly strange method. Basically, it recursively adds directory
+	 * entries into the ZipFile. Technically such entries should not be needed.
+	 * However, due to a quirk in the way that ZipFileRoot works (in fact,
+	 * AbstractFolder to be more precise) these entries are required for now.
+	 *
+	 * @param path
+	 * @param paths
+	 * @param zf
+	 */
+	private void addPaths(Path.ID path, HashSet<Path.ID> paths, ZipFile zf) {
+		if(path.size() > 0 && !paths.contains(path)) {
+			addPaths(path.parent(),paths,zf);
+			// A new path encountered
+			String directory = path.toString() + "/";
+			System.out.println("ADDING DIRECTORY: " + directory);
+			zf.add(new ZipEntry(directory), new byte[0]);
+			paths.add(path);
+		}
 	}
 
 	/**
