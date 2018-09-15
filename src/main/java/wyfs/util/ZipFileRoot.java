@@ -18,9 +18,13 @@ import java.util.*;
 import java.util.zip.*;
 
 import wyfs.lang.Content;
+import wyfs.lang.Content.Filter;
+import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.ID;
 import wyfs.lang.Path.RelativeRoot;
+import wyfs.lang.Path.Root;
 
 /**
  * Provides an implementation of <code>Path.Root</code> for representing the
@@ -82,10 +86,41 @@ public final class ZipFileRoot extends AbstractRoot<ZipFileRoot.Folder> implemen
 	}
 
 	@Override
+	public Path.RelativeRoot createRelativeRoot(Path.ID path) throws IOException {
+		return new RelativeRoot(new Folder(path));
+	}
+
+	@Override
 	public String toString() {
 		return entry.location();
 	}
 
+	/**
+	 * Represents a relative root.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public class RelativeRoot extends AbstractRoot<ZipFileRoot.Folder> implements Path.RelativeRoot {
+		public RelativeRoot(ZipFileRoot.Folder root) throws IOException {
+			super(ZipFileRoot.this.contentTypes, root);
+		}
+
+		@Override
+		public Root getParent() {
+			return ZipFileRoot.this;
+		}
+
+		@Override
+		public wyfs.lang.Path.RelativeRoot createRelativeRoot(ID id) throws IOException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		protected Folder root() {
+			return root;
+		}
+	}
 
 	/**
 	 * Represents a directory on a physical file system.
@@ -182,10 +217,5 @@ public final class ZipFileRoot extends AbstractRoot<ZipFileRoot.Folder> implemen
 		public void write(T contents) {
 			throw new UnsupportedOperationException();
 		}
-	}
-
-	@Override
-	public RelativeRoot createRelativeRoot(ID id) throws IOException {
-		throw new UnsupportedOperationException();
 	}
 }

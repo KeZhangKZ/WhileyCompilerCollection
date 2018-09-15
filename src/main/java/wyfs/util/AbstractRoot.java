@@ -44,6 +44,11 @@ public abstract class AbstractRoot<T extends Folder> implements Root {
 		this.root = root();
 	}
 
+	public AbstractRoot(Content.Registry contentTypes, T root) {
+		this.contentTypes = contentTypes;
+		this.root = root;
+	}
+
 	@Override
 	public boolean contains(Path.Entry<?> e) throws IOException {
 		return root.contains(e);
