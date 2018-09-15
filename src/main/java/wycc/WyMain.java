@@ -256,6 +256,22 @@ public class WyMain implements Command {
 		return localRoot;
 	}
 
+	/**
+	 * Get the appropriate configuration schema for a project. This defines what
+	 * keys are permitted.
+	 *
+	 * @return
+	 */
+	public Configuration.Schema getBuildSchema() {
+		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size() + 1];
+		schemas[0] = LOCAL_CONFIG_SCHEMA;
+		for (int i = 0; i != buildPlatforms.size(); ++i) {
+			wybs.lang.Build.Platform platform = buildPlatforms.get(i);
+			schemas[i + 1] = platform.getConfigurationSchema();
+		}
+		return Configuration.toCombinedSchema(schemas);
+	}
+
 	@Override
 	public Descriptor getDescriptor() {
 		return null;

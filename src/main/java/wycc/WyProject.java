@@ -26,6 +26,7 @@ import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wybs.util.StdBuildRule;
 import wybs.util.StdProject;
+import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.commands.Help;
@@ -35,6 +36,7 @@ import wycc.util.CommandParser;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.Root;
 import wyfs.util.ZipFileRoot;
 import wyfs.util.Trie;
 import wyfs.util.ZipFile;
@@ -291,7 +293,7 @@ public class WyProject implements Command {
 	 */
 	private void resolvePackageDependencies() throws IOException {
 		// FIXME: should produce a wy.lock file?
-
+		Configuration.Schema buildSchema = environment.getBuildSchema();
 		// Global root is where all dependencies will be stored
 		Path.Root repository = getRepositoryRoot();
 		// Dig out all the defined dependencies
@@ -313,8 +315,14 @@ public class WyProject implements Command {
 			} else {
 				// Extract entry for ZipFile
 				Path.Entry<ZipFile> zipfile = repository.get(root, ZipFile.ContentType);
+				// Construct root repesenting this ZipFile
+				Path.Root pkgRoot = new ZipFileRoot(zipfile, environment.getContentRegistry());
+				// Extract configuration from package
+				ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType).read();
+				// Construct a package representation of this root.
+				Build.Package pkg = new Package(pkgRoot,pkgcfg.toConfiguration(buildSchema));
 				// Add a relative ZipFile root
-				project.roots().add(new ZipFileRoot(zipfile, environment.getContentRegistry()));
+				project.getPackages().add(pkg);
 			}
 		}
 	}
@@ -335,10 +343,10 @@ public class WyProject implements Command {
 			platform.apply(configuration);
 			// Configure Source root
 			Path.Root srcRoot = platform.getSourceRoot(root);
-			project.roots().add(srcRoot);
+			project.getRoots().add(srcRoot);
 			// Configure Binary root
 			Path.Root binRoot = platform.getTargetRoot(root);
-			project.roots().add(binRoot);
+			project.getRoots().add(binRoot);
 			// Initialise build task
 			Build.Task task = platform.initialise(project);
 			// Add the appropriate build rule(s)
@@ -346,7 +354,6 @@ public class WyProject implements Command {
 					new StdBuildRule(task, srcRoot, platform.getSourceFilter(), platform.getTargetFilter(), binRoot));
 		}
 	}
-
 
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
@@ -363,6 +370,26 @@ public class WyProject implements Command {
 		if (err.getCause() != null) {
 			out.print("Caused by: ");
 			printStackTrace(out, err.getCause());
+		}
+	}
+
+	private static class Package implements Build.Package {
+		private final Path.Root root;
+		private final Configuration configuration;
+
+		public Package(Path.Root root, Configuration configuration) {
+			this.root = root;
+			this.configuration = configuration;
+		}
+
+		@Override
+		public Configuration getConfiguration() {
+			return configuration;
+		}
+
+		@Override
+		public Root getRoot() {
+			return root;
 		}
 	}
 }
