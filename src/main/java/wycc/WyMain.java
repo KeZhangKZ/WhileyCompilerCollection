@@ -51,6 +51,7 @@ import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
+import wyfs.util.ZipFile;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is
@@ -62,11 +63,18 @@ import wyfs.util.Trie;
  *
  */
 public class WyMain implements Command {
+	/**
+	 * This determines what files are included in a package be default (i.e. when
+	 * the build/includes attribute is not specified).
+	 */
 	public static final Value.Array DEFAULT_BUILD_INCLUDES = new Value.Array(
 			// Include package description by default
 			new Value.UTF8("wy.toml"),
 			// Include all wyil files by default
-			new Value.UTF8("**/*.wyil"));
+			new Value.UTF8("**/*.wyil"),
+			// Include all whiley files by default
+			new Value.UTF8("**/*.whiley")
+		);
 
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
@@ -184,7 +192,7 @@ public class WyMain implements Command {
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
-		this.contentTypes.add(WyProject.JAR_CONTENT_TYPE);
+		this.contentTypes.add(ZipFile.ContentType);
 		// Add default commands
 		this.commandDescriptors.add(Build.DESCRIPTOR);
 		this.commandDescriptors.add(Clean.DESCRIPTOR);
@@ -248,6 +256,22 @@ public class WyMain implements Command {
 		return localRoot;
 	}
 
+	/**
+	 * Get the appropriate configuration schema for a project. This defines what
+	 * keys are permitted.
+	 *
+	 * @return
+	 */
+	public Configuration.Schema getBuildSchema() {
+		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size() + 1];
+		schemas[0] = LOCAL_CONFIG_SCHEMA;
+		for (int i = 0; i != buildPlatforms.size(); ++i) {
+			wybs.lang.Build.Platform platform = buildPlatforms.get(i);
+			schemas[i + 1] = platform.getConfigurationSchema();
+		}
+		return Configuration.toCombinedSchema(schemas);
+	}
+
 	@Override
 	public Descriptor getDescriptor() {
 		return null;
@@ -262,19 +286,25 @@ public class WyMain implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
+	public boolean execute(Command.Template template) {
 		// TODO Auto-generated method stub
 		return false;
 	}
 
-	public void execute(String[] args) throws IOException {
+	public void execute(String[] args) throws Exception {
 		try {
 			// Construct the root descriptor
-			Command.Descriptor descriptor = WyProject.getDescriptor(registry, commandDescriptors);
+			Command.Descriptor descriptor = WyProject.DESCRIPTOR(commandDescriptors);
 			// Parse the given comand-line
 			Command.Template pipeline = new CommandParser(descriptor).parse(args);
+			// Create command instance
+			Command instance = descriptor.initialise(this, configuration);
+			// Initialise command
+			instance.initialise();
 			// Execute the command (if applicable)
-			execute(this, pipeline);
+			instance.execute(pipeline);
+			// Finalise command
+			instance.finalise();
 		} catch(IllegalArgumentException e) {
 			System.out.println(e.getMessage());
 		}
@@ -365,30 +395,11 @@ public class WyMain implements Command {
 		return schemas;
 	}
 
-	public void execute(Command parent, Command.Template template) throws IOException {
-		// Access the descriptor
-		Command.Descriptor descriptor = template.getCommandDescriptor();
-		// Construct an instance of the command
-		Command command = descriptor.initialise(parent, template.getOptions(), configuration);
-		// Initialise command
-					command.initialise();
-		// Determine whether or not to execute this command
-		if (template.getChild() != null) {
-			// Indicates a sub-command is actually being executed.
-			execute(command, template.getChild());
-		} else {
-			// Execute command with given arguments
-			command.execute(template.getArguments());
-		}
-		// Finalise command
-		command.finalise();
-	}
-
 	// ==================================================================
 	// Main Method
 	// ==================================================================
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		// Determine system-wide directory
 		String systemDir = determineSystemRoot();
 		// Determine user-wide directory

@@ -60,8 +60,8 @@ public class Run implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
-			return new Run((WyProject) environment, options, configuration, System.out, System.err);
+		public Command initialise(Command environment, Configuration configuration) {
+			return new Run((WyProject) environment, configuration, System.out, System.err);
 		}
 
 	};
@@ -90,7 +90,7 @@ public class Run implements Command {
 
 	private final Value.UTF8 method;
 
-	public Run(WyProject project, Command.Options options, Configuration configuration, OutputStream sysout,
+	public Run(WyProject project, Configuration configuration, OutputStream sysout,
 			OutputStream syserr) {
 		this.project = project;
 		this.sysout = new PrintStream(sysout);
@@ -119,7 +119,7 @@ public class Run implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
+	public boolean execute(Template template) {
 		if(method == null) {
 			sysout.println("Must specific method signature via build/main attribute or command-line option");
 			return false;

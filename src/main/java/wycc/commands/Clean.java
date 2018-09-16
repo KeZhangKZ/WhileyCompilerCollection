@@ -59,8 +59,8 @@ public class Clean implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
-			return new Clean((WyProject) environment, options, System.out, System.err);
+		public Command initialise(Command environment, Configuration configuration) {
+			return new Clean((WyProject) environment, System.out, System.err);
 		}
 
 	};
@@ -70,14 +70,8 @@ public class Clean implements Command {
 	 */
 	private final WyProject project;
 
-	/**
-	 * Options passed into this command.
-	 */
-	private final Command.Options options;
-
-	public Clean(WyProject project, Command.Options options, OutputStream sysout, OutputStream syserr) {
+	public Clean(WyProject project, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
-		this.options = options;
 	}
 
 	@Override
@@ -96,7 +90,7 @@ public class Clean implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
+	public boolean execute(Template template) {
 		try {
 			// Identify the project root
 			Path.Root root = project.getParent().getLocalRoot();

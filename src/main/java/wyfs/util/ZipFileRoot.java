@@ -15,34 +15,31 @@ package wyfs.util;
 
 import java.io.*;
 import java.util.*;
-import java.util.jar.*;
+import java.util.zip.*;
 
 import wyfs.lang.Content;
+import wyfs.lang.Content.Filter;
+import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.ID;
 import wyfs.lang.Path.RelativeRoot;
-import wyfs.lang.Content.Type;
+import wyfs.lang.Path.Root;
 
 /**
  * Provides an implementation of <code>Path.Root</code> for representing the
- * contents of a jar file.
+ * contents of a zip file.
  *
  * @author David J. Pearce
  *
  */
-public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implements Path.Root {
-	private final File dir;
-	private Path.Item[] jfContents;
+public final class ZipFileRoot extends AbstractRoot<ZipFileRoot.Folder> implements Path.Root {
+	private final Path.Entry<ZipFile> entry;
+	private Path.Item[] contents;
 
-	public JarFileRoot(String dir, Content.Registry contentTypes) throws IOException {
+	public ZipFileRoot(Path.Entry<ZipFile> entry, Content.Registry contentTypes) throws IOException {
 		super(contentTypes);
-		this.dir = new File(dir);
-		refresh();
-	}
-
-	public JarFileRoot(File dir, Content.Registry contentTypes) throws IOException {
-		super(contentTypes);
-		this.dir = dir;
+		this.entry = entry;
 		refresh();
 	}
 
@@ -53,31 +50,32 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 
 	@Override
 	public void flush() {
-		// no-op, since jar files are read-only.
+		// no-op, since zip files are read-only.
 	}
 
 	@Override
 	public void refresh() throws IOException {
-		JarFile jf = new JarFile(dir);
-		Enumeration<JarEntry> entries = jf.entries();
-		this.jfContents = new Path.Item[jf.size()];
-		int i = 0;
-		while (entries.hasMoreElements()) {
-			JarEntry e = entries.nextElement();
+		// Reread the contents of the zip file
+		ZipFile file = entry.read();
+		// Create new array of contents
+		this.contents = new Path.Item[file.size()];
+		// Extract all items from the ZipFile
+		for (int i = 0; i != file.size(); ++i) {
+			ZipFile.Entry e = file.get(i);
 			String filename = e.getName();
 			int lastSlash = filename.lastIndexOf('/');
 			Trie pkg = lastSlash == -1 ? Trie.ROOT : Trie.fromString(filename.substring(0, lastSlash));
-			if(!e.isDirectory()) {
+			if (!e.isDirectory()) {
 				int lastDot = filename.lastIndexOf('.');
 				String name = lastDot >= 0 ? filename.substring(lastSlash + 1, lastDot) : filename;
-				String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;
+				// String suffix = lastDot >= 0 ? filename.substring(lastDot + 1) : null;
 				Trie id = pkg.append(name);
-				Entry pe = new Entry(id, jf, e);
+				Entry<?> pe = new Entry<>(id, e);
 				contentTypes.associate(pe);
-				jfContents[i++] = pe;
+				contents[i] = pe;
 			} else {
 				// folder
-				jfContents[i++] = new Folder(pkg);
+				contents[i] = new Folder(pkg);
 			}
 		}
 	}
@@ -88,10 +86,81 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 	}
 
 	@Override
-	public String toString() {
-		return dir.getPath();
+	public Path.RelativeRoot createRelativeRoot(Path.ID path) throws IOException {
+		return new RelativeRoot(new Folder(path));
 	}
 
+	@Override
+	public String toString() {
+		return entry.location();
+	}
+
+	/**
+	 * Represents a relative root.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public class RelativeRoot extends AbstractRoot<ZipFileRoot.Folder> implements Path.RelativeRoot {
+		public RelativeRoot(ZipFileRoot.Folder root) throws IOException {
+			super(ZipFileRoot.this.contentTypes, root);
+		}
+
+		@Override
+		public Root getParent() {
+			return ZipFileRoot.this;
+		}
+
+		@Override
+		public wyfs.lang.Path.RelativeRoot createRelativeRoot(ID id) throws IOException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public <T> List<Path.Entry<T>> get(Content.Filter<T> filter) throws IOException {
+			return super.get(relativeFilter(filter));
+		}
+
+		@Override
+		public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{
+			return super.match(relativeFilter(filter));
+		}
+
+		@Override
+		public int remove(Filter<?> filter) throws IOException {
+			return super.remove(relativeFilter(filter));
+		}
+
+		@Override
+		protected Folder root() {
+			return root;
+		}
+
+		private <S> Content.Filter<S> relativeFilter(Content.Filter<S> filter) {
+			return new Content.Filter<S>() {
+
+				@Override
+				public boolean matches(ID id, Type<S> ct) {
+					Path.ID r = root.id();
+					if(id.size() >= r.size() && id.subpath(0, r.size()).equals(r)) {
+						return filter.matches(id.subpath(r.size(), id.size()), ct);
+					} else {
+						return false;
+					}
+				}
+
+				@Override
+				public boolean matchesSubpath(ID id) {
+					Path.ID r = root.id();
+					if (id.size() >= r.size() && id.subpath(0, r.size()).equals(r)) {
+						return filter.matchesSubpath(id.subpath(r.size(), id.size()));
+					} else {
+						return false;
+					}
+				}
+			};
+		}
+	}
 
 	/**
 	 * Represents a directory on a physical file system.
@@ -109,8 +178,8 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 			// This algorithm is straightforward. I use a two loops instead of a
 			// single loop with ArrayList to avoid allocating on the heap.
 			int count = 0 ;
-			for(int i=0;i!=jfContents.length;++i) {
-				Path.Item item = jfContents[i];
+			for(int i=0;i!=contents.length;++i) {
+				Path.Item item = contents[i];
 				if(item.id().parent() == id) {
 					count++;
 				}
@@ -118,8 +187,8 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 
 			Path.Item[] myContents = new Path.Item[count];
 			count=0;
-			for(int i=0;i!=jfContents.length;++i) {
-				Path.Item item = jfContents[i];
+			for(int i=0;i!=contents.length;++i) {
+				Path.Item item = contents[i];
 				if(item.id().parent() == id) {
 					myContents[count++] = item;
 				}
@@ -135,18 +204,16 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 	}
 
 	private static final class Entry<T> extends AbstractEntry<T> implements Path.Entry<T> {
-		private final JarFile parent;
-		private final JarEntry entry;
+		private final ZipFile.Entry entry;
 
-		public Entry(Trie mid, JarFile parent, JarEntry entry) {
+		public Entry(Trie mid, ZipFile.Entry entry) {
 			super(mid);
-			this.parent = parent;
 			this.entry = entry;
 		}
 
 		@Override
 		public String location() {
-			return parent.getName();
+			return entry.getName();
 		}
 
 		@Override
@@ -178,7 +245,7 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 
 		@Override
 		public InputStream inputStream() throws IOException {
-			return parent.getInputStream(entry);
+			return entry.getInputStream();
 		}
 
 		@Override
@@ -190,10 +257,5 @@ public final class JarFileRoot extends AbstractRoot<JarFileRoot.Folder> implemen
 		public void write(T contents) {
 			throw new UnsupportedOperationException();
 		}
-	}
-
-	@Override
-	public RelativeRoot createRelativeRoot(ID id) throws IOException {
-		throw new UnsupportedOperationException();
 	}
 }

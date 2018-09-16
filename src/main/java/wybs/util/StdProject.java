@@ -42,27 +42,34 @@ import wyfs.lang.Path;
 public class StdProject implements Build.Project {
 
 	/**
-	 * The roots of all entries known to the system which form the global
-	 * namespace used by the builder(s).
+	 * The roots of all entries known to the system which form the global namespace
+	 * used by the builder(s).
 	 */
 	protected final ArrayList<Path.Root> roots;
 
 	/**
+	 * The set of packages on which this project depends.
+	 */
+	protected final ArrayList<Build.Package> packages;
+
+	/**
 	 * The rules associated with this project for transforming content. It is
-	 * assumed that for any given transformation there is only one possible
-	 * pathway described.
+	 * assumed that for any given transformation there is only one possible pathway
+	 * described.
 	 */
 	protected final ArrayList<Build.Rule> rules;
 
 	public StdProject(Collection<Path.Root> roots) {
 		this.roots = new ArrayList<>(roots);
 		this.rules = new ArrayList<>();
+		this.packages = new ArrayList<>();
 	}
 
 	public StdProject(Collection<Path.Root>... roots) {
 		this.rules = new ArrayList<>();
+		this.packages = new ArrayList<>();
 		this.roots = new ArrayList<>();
-		for(Collection<Path.Root> root : roots) {
+		for (Collection<Path.Root> root : roots) {
 			this.roots.addAll(root);
 		}
 	}
@@ -85,7 +92,8 @@ public class StdProject implements Build.Project {
 	 *
 	 * @return
 	 */
-	public List<Path.Root> roots() {
+	@Override
+	public List<Path.Root> getRoots() {
 		return roots;
 	}
 
@@ -94,131 +102,46 @@ public class StdProject implements Build.Project {
 	 *
 	 * @return
 	 */
-	public List<Build.Rule> rules() {
+	public List<Build.Rule> getRules() {
 		return rules;
+	}
+
+	/**
+	 * Get the packages (i.e. dependencies) associated with this projects.
+	 *
+	 * @return
+	 */
+	@Override
+	public List<Build.Package> getPackages() {
+		return packages;
 	}
 
 	// ======================================================================
 	// Accessors
 	// ======================================================================
 
-
-	/**
-	 * Check whether or not a given entry is contained in this root;
-	 *
-	 * @param entry
-	 * @return
-	 */
-	@Override
-	public boolean contains(Path.Entry<?> entry) throws IOException {
-		for(int i=0;i!=roots.size();++i) {
-			if(roots.get(i).contains(entry)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Check whether or not a given entry and content-type is contained in
-	 * this root.
-	 *
-	 * @throws IOException
-	 *             --- in case of some I/O failure.
-	 */
-	@Override
-	public boolean exists(Path.ID id, Content.Type<?> ct) throws IOException {
-		for(int i=0;i!=roots.size();++i) {
-			if(roots.get(i).exists(id, ct)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Get the entry corresponding to a given ID and content type. If no
-	 * such entry exists, return null.
-	 *
-	 * @param id
-	 *            --- id of module to lookup.
-	 * @throws IOException
-	 *             --- in case of some I/O failure.
-	 *
-	 */
-	@Override
-	public <T> Path.Entry<T> get(Path.ID id, Content.Type<T> ct) throws IOException {
-		for(int i=0;i!=roots.size();++i) {
-			Path.Entry<T> e = roots.get(i).get(id, ct);
-			if(e != null) {
-				return e;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Get all objects matching a given content filter stored in this root.
-	 * In the case of no matches, an empty list is returned.
-	 *
-	 * @throws IOException
-	 *             --- in case of some I/O failure.
-	 *
-	 * @param ct
-	 * @return
-	 */
-	@Override
-	public <T> ArrayList<Path.Entry<T>> get(Content.Filter<T> filter) throws IOException {
-		ArrayList<Path.Entry<T>> r = new ArrayList<>();
-		for(int i=0;i!=roots.size();++i) {
-			r.addAll(roots.get(i).get(filter));
-		}
-		return r;
-	}
-
-	/**
-	 * Identify all entries matching a given content filter stored in this
-	 * root. In the case of no matches, an empty set is returned.
-	 *
-	 * @throws IOException
-	 *             --- in case of some I/O failure.
-	 *
-	 * @param filter
-	 *            --- filter to match entries with.
-	 * @return
-	 */
-	@Override
-	public <T> HashSet<Path.ID> match(Content.Filter<T> filter) throws IOException {
-		HashSet<Path.ID> r = new HashSet<>();
-		for(int i=0;i!=roots.size();++i) {
-			r.addAll(roots.get(i).match(filter));
-		}
-		return r;
-	}
-
 	// ======================================================================
 	// Mutators
 	// ======================================================================
 
 	/**
-	 * Force root to flush entries to permanent storage (where appropriate).
-	 * This is essential as, at any given moment, path entries may only be
-	 * stored in memory. We must flush them to disk in order to preserve any
-	 * changes that were made.
+	 * Force root to flush entries to permanent storage (where appropriate). This is
+	 * essential as, at any given moment, path entries may only be stored in memory.
+	 * We must flush them to disk in order to preserve any changes that were made.
 	 */
 	public void flush() throws IOException {
-		for(int i=0;i!=roots.size();++i) {
+		for (int i = 0; i != roots.size(); ++i) {
 			roots.get(i).flush();
 		}
 	}
 
 	/**
-	 * Force root to refresh entries from permanent storage (where
-	 * appropriate). For items which has been modified, this operation has
-	 * no effect (i.e. the new contents are retained).
+	 * Force root to refresh entries from permanent storage (where appropriate). For
+	 * items which has been modified, this operation has no effect (i.e. the new
+	 * contents are retained).
 	 */
 	public void refresh() throws IOException {
-		for(int i=0;i!=roots.size();++i) {
+		for (int i = 0; i != roots.size(); ++i) {
 			roots.get(i).refresh();
 		}
 	}
@@ -228,12 +151,12 @@ public class StdProject implements Build.Project {
 	// ======================================================================
 
 	/**
-	 * Build a given set of source entries, including all files which depend
-	 * upon them.
+	 * Build a given set of source entries, including all files which depend upon
+	 * them.
 	 *
 	 * @param sources
-	 *            --- a collection of source file entries. This will not be
-	 *            modified by this method.
+	 *            --- a collection of source file entries. This will not be modified
+	 *            by this method.
 	 * @throws Exception
 	 */
 	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
@@ -245,7 +168,7 @@ public class StdProject implements Build.Project {
 		do {
 			HashSet<Path.Entry<?>> generated = new HashSet<>();
 			for (Build.Rule r : rules) {
-				generated.addAll(r.apply(sources,graph));
+				generated.addAll(r.apply(sources, graph));
 			}
 			sources = generated;
 		} while (sources.size() > 0);

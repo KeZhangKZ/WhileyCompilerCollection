@@ -70,8 +70,7 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options,
-				Configuration configuration) {
+		public Command initialise(Command environment, Configuration configuration) {
 			return new Config(System.out, configuration);
 		}
 	};
@@ -98,9 +97,20 @@ public class Config implements Command {
 	}
 
 	@Override
-	public boolean execute(List<String> args) {
-		Help.print(System.out,DESCRIPTOR);
-		return false;
+	public boolean execute(Template template) throws Exception {
+		if(template.getChild() != null) {
+			// Execute a subcommand
+			template = template.getChild();
+			// Access the descriptor
+			Command.Descriptor descriptor = template.getCommandDescriptor();
+			// Construct an instance of the command
+			Command command = descriptor.initialise(this, configuration);
+			//
+			return command.execute(template);
+		} else {
+			Help.print(System.out,DESCRIPTOR);
+			return false;
+		}
 	}
 
 	// ================================================================================
@@ -138,7 +148,7 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Command.Options options, Configuration configuration) {
+		public Command initialise(Command environment, Configuration configuration) {
 			return new ListCmd(System.out,configuration);
 		}
 
@@ -167,7 +177,7 @@ public class Config implements Command {
 		public void finalise() {
 		}
 		@Override
-		public boolean execute(List<String> args) {
+		public boolean execute(Template template) {
 			for (Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
 				out.print(key);
 				out.print("=");
