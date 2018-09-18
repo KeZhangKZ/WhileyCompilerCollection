@@ -318,11 +318,16 @@ public class WyProject implements Command {
 				// Construct root repesenting this ZipFile
 				Path.Root pkgRoot = new ZipFileRoot(zipfile, environment.getContentRegistry());
 				// Extract configuration from package
-				ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType).read();
-				// Construct a package representation of this root.
-				Build.Package pkg = new Package(pkgRoot,pkgcfg.toConfiguration(buildSchema));
-				// Add a relative ZipFile root
-				project.getPackages().add(pkg);
+				Path.Entry<ConfigFile> entry = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType);
+				if(entry == null) {
+					throw new RuntimeException("corrupt package (missing wy.toml) \"" + name + "-" + version + "\"");
+				} else {
+					ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType).read();
+					// Construct a package representation of this root.
+					Build.Package pkg = new Package(pkgRoot,pkgcfg.toConfiguration(buildSchema));
+					// Add a relative ZipFile root
+					project.getPackages().add(pkg);
+				}
 			}
 		}
 	}
