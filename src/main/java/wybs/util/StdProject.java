@@ -159,9 +159,7 @@ public class StdProject implements Build.Project {
 	 *            by this method.
 	 * @throws Exception
 	 */
-	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
-		Build.Graph graph = new StdBuildGraph();
-
+	public void build(Collection<? extends Path.Entry<?>> sources, Build.Graph graph) throws Exception {
 		// Continue building all source files until there are none left. This is
 		// actually quite a naive implementation, as it ignores the potential
 		// need for staging dependencies.

@@ -276,8 +276,8 @@ public class WyProject implements Command {
 		return environment.getContentRegistry();
 	}
 
-	public void build(Collection<Path.Entry<?>> delta) throws Exception {
-		project.build(delta);
+	public void build(Collection<Path.Entry<?>> delta, Build.Graph graph) throws Exception {
+		project.build(delta,graph);
 	}
 
 	// ==================================================================
