@@ -35,6 +35,7 @@ import wycc.commands.Build;
 import wycc.commands.Clean;
 import wycc.commands.Config;
 import wycc.commands.Help;
+import wycc.commands.Inspect;
 import wycc.commands.Install;
 import wycc.commands.Run;
 import wycc.lang.Command;
@@ -199,6 +200,7 @@ public class WyMain implements Command {
 		this.commandDescriptors.add(Config.DESCRIPTOR);
 		this.commandDescriptors.add(Help.DESCRIPTOR);
 		this.commandDescriptors.add(Install.DESCRIPTOR);
+		this.commandDescriptors.add(Inspect.DESCRIPTOR);
 		this.commandDescriptors.add(Run.DESCRIPTOR);
 		// Setup project roots
 		this.systemRoot = new DirectoryRoot(systemDir, registry);
