@@ -13,6 +13,8 @@
 // limitations under the License.
 package wybs.lang;
 
+import wyfs.lang.Content;
+
 /**
  * A syntactic heap represents a collection of syntactic items.
  *
@@ -20,6 +22,7 @@ package wybs.lang;
  *
  */
 public interface SyntacticHeap {
+
 	/**
 	 * Get the number of items in the heap.
 	 *
