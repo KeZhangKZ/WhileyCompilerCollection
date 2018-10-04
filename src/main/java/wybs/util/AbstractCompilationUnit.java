@@ -34,7 +34,7 @@ import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyfs.util.Trie;
 
-public class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
+public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
 		implements CompilationUnit {
 
 	// ITEMS: 0000000 (0) -- 00001111 (15)

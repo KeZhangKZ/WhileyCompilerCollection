@@ -28,6 +28,24 @@ public interface SyntacticHeap {
 	public int size();
 
 	/**
+	 * Get the "root" of this syntactic heap. That is a distinguished item which is
+	 * considered the root of all active items. Any item not reachable from the root
+	 * is considered to be eligible for garbage collection.
+	 *
+	 * @return
+	 */
+	public SyntacticItem getRootItem();
+
+	/**
+	 * Set the "root" of this syntactic heap. That is a distinguished item which is
+	 * considered the root of all active items. Any item not reachable from the root
+	 * is considered to be eligible for garbage collection.
+	 *
+	 * @param item
+	 */
+	public void setRootItem(SyntacticItem item);
+
+	/**
 	 * Return the ith syntactic item in this heap. This may return null if the
 	 * item in question has been garbage collected.
 	 *
