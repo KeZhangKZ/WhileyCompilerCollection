@@ -24,6 +24,7 @@ import java.util.List;
 
 import wybs.io.SyntacticHeapPrinter;
 import wybs.lang.SyntacticHeap;
+import wybs.util.AbstractCompilationUnit.Value;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
@@ -35,10 +36,16 @@ import wyfs.util.Trie;
 
 public class Inspect implements Command {
 
-	public static final Configuration.Schema SCHEMA = Configuration
-			.fromArray();
+	public static final Trie INSPECT_WIDTH = Trie.fromString("inspect/width");
+	public static final Trie INSPECT_INDENT = Trie.fromString("inspect/indent");
 
-	public static final List<Option.Descriptor> OPTIONS = Arrays.asList();
+	public static final Configuration.Schema SCHEMA = Configuration
+			.fromArray(Configuration.BOUND_INTEGER(INSPECT_WIDTH, "fix display width", new Value.Int(80), 0),
+					Configuration.BOUND_INTEGER(INSPECT_INDENT, "indentation width (for structured view)",
+							new Value.Int(3), 0));
+
+	public static final List<Option.Descriptor> OPTIONS = Arrays
+			.asList(Command.OPTION_FLAG("raw", "raw output for syntactic heaps", false));
 
 	/**
 	 * The descriptor for this command.
@@ -80,12 +87,15 @@ public class Inspect implements Command {
 	private final PrintStream out;
 	private final WyProject project;
 	private final Configuration configuration;
-	private final int width = 16;
+	private final int indent;
+	private final int width;
 
 	public Inspect(PrintStream out, WyProject project, Configuration configuration) {
 		this.project = project;
 		this.configuration = configuration;
 		this.out = out;
+		this.width = configuration.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
+		this.indent = configuration.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
 	}
 
 	@Override
@@ -103,6 +113,8 @@ public class Inspect implements Command {
 
 	@Override
 	public boolean execute(Template template) throws Exception {
+		boolean raw = template.getOptions().get("raw", Boolean.class);
+
 		List<String> files = template.getArguments();
 		for (String file : files) {
 			Content.Type<?> ct = getContentType(file);
@@ -110,7 +122,7 @@ public class Inspect implements Command {
 			if(entry == null) {
 				out.println("unknown file: " + file);
 			} else {
-				inspect(entry, ct);
+				inspect(entry, ct, raw);
 			}
 		}
 		return true;
@@ -159,10 +171,10 @@ public class Inspect implements Command {
 	 * @param ct
 	 * @throws IOException
 	 */
-	private void inspect(Path.Entry<?> entry, Content.Type<?> ct) throws IOException {
+	private void inspect(Path.Entry<?> entry, Content.Type<?> ct, boolean raw) throws IOException {
 		Object o = entry.read();
 		if(o instanceof SyntacticHeap) {
-			new SyntacticHeapPrinter(new PrintWriter(out)).print((SyntacticHeap) o);
+			new SyntacticHeapPrinter(new PrintWriter(out), indent, !raw).print((SyntacticHeap) o);
 		} else {
 			inspectBinaryFile(readAllBytes(entry.inputStream()));
 		}

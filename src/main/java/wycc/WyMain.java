@@ -388,11 +388,18 @@ public class WyMain implements Command {
 	}
 
 	private Configuration.Schema[] constructLocalSchema() {
-		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size() + 1];
+		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size()  + commandDescriptors.size() + 1];
 		schemas[0] = LOCAL_CONFIG_SCHEMA;
+		// Add build platforms
+		int index = 1;
 		for(int i=0;i!=buildPlatforms.size();++i) {
 			wybs.lang.Build.Platform platform = buildPlatforms.get(i);
-			schemas[i+1] = platform.getConfigurationSchema();
+			schemas[index++] = platform.getConfigurationSchema();
+		}
+		// Add command descriptors
+		for(int i=0;i!=commandDescriptors.size();++i) {
+			Command.Descriptor descriptor = commandDescriptors.get(i);
+			schemas[index++] = descriptor.getConfigurationSchema();
 		}
 		return schemas;
 	}
