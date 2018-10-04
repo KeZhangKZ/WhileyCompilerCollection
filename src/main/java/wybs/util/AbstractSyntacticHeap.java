@@ -26,7 +26,15 @@ import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 
 public abstract class AbstractSyntacticHeap implements SyntacticHeap {
+	/**
+	 * The list of syntactic items contained in this heap.
+	 */
 	protected final ArrayList<SyntacticItem> syntacticItems = new ArrayList<>();
+
+	/**
+	 * The root item for this heap.
+	 */
+	protected int root;
 
 	public AbstractSyntacticHeap() {
 
@@ -44,6 +52,16 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	@Override
 	public int size() {
 		return syntacticItems.size();
+	}
+
+	@Override
+	public SyntacticItem getRootItem() {
+		return getSyntacticItem(root);
+	}
+
+	@Override
+	public void setRootItem(SyntacticItem item) {
+		this.root = allocate(item).getIndex();
 	}
 
 	@Override
