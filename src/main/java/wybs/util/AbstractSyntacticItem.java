@@ -80,11 +80,13 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	}
 
 	/**
-	 * Get the first syntactic item of a given kind which refers to this item either indirectly or directly.
+	 * Get the first syntactic item of a given kind which refers to this item either
+	 * indirectly or directly.
 	 *
 	 * @param kind
 	 * @return
 	 */
+	@Override
 	public <T extends SyntacticItem> T getAncestor(Class<T> kind) {
 		return parent.getAncestor(this, kind);
 	}

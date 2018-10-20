@@ -105,6 +105,15 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	public <T extends SyntacticItem> T getParent(Class<T> kind);
 
 	/**
+	 * Get the first syntactic item of a given kind which refers directly or
+	 * indirectly to this item.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> T getAncestor(Class<T> kind);
+
+	/**
 	 * Create a new copy of the given syntactic item with the given operands.
 	 * The number of operands must match <code>size()</code> for this item, and
 	 * be of appropriate type.
