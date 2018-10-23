@@ -45,7 +45,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		this.data = null;
 	}
 
-	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem[] operands) {
+	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = data;

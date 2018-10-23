@@ -122,6 +122,7 @@ public class SyntaxError extends RuntimeException {
 				}
 			}
 		}
+		//
 		EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);
 		if(enclosing == null) {
 			output.println("syntax error: " + getMessage());
