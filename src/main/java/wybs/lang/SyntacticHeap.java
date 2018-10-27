@@ -13,6 +13,9 @@
 // limitations under the License.
 package wybs.lang;
 
+import java.util.List;
+import java.util.Map;
+
 import wyfs.lang.Content;
 
 /**
@@ -111,4 +114,32 @@ public interface SyntacticHeap {
 	 * @return
 	 */
 	public SyntacticHeap getParent();
+
+	/**
+	 * Abstracts the mechanism for allocating items into this heap.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Allocator<H extends SyntacticHeap> {
+
+		/**
+		 * <p>
+		 * Allocate a given syntactic item into a heap. The item must not already be
+		 * allocated to another heap. This will recursively allocate children not
+		 * already allocated to this heap. Observe that the item returned is the actual
+		 * object allocated into this heap. One should not assume that the item given is
+		 * that which is actually allocated.
+		 * </p>
+		 * <p>
+		 * This method will not permit mixed allocation items. That is, when it
+		 * encounters an item already allocated to another heap it will simple throw an
+		 * exception.
+		 * </p>
+		 *
+		 * @param item
+		 * @return
+		 */
+		public SyntacticItem allocate(SyntacticItem item);
+	}
 }

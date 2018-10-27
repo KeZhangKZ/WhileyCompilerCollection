@@ -41,11 +41,15 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	}
 
 	public AbstractSyntacticHeap(SyntacticHeap heap) {
-		IdentityHashMap<SyntacticItem,SyntacticItem> map = new IdentityHashMap<>();
-		for(int i=0;i!=heap.size();++i) {
+		// Copy over the root
+		this.root = heap.getRootItem().getIndex();
+		// Now, clone items from heap in here
+		Allocator allocator = new Allocator(this);
+		//
+		for (int i = 0; i != heap.size(); ++i) {
 			SyntacticItem oitem = heap.getSyntacticItem(i);
-			SyntacticItem item = clone(oitem,map);
-			internalAllocate(item,map);
+			SyntacticItem item = clone(oitem, allocator.map);
+			allocator.allocate(item);
 		}
 	}
 
@@ -135,10 +139,8 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 				for (int j = 0; j != parent.size(); ++j) {
 					if (parent.get(j) == child) {
 						// FIXME: this is not specifically efficient. It would
-						// be
-						// helpful if SyntacticItems actually contained
-						// references to
-						// their parent items.
+						// be helpful if SyntacticItems actually contained
+						// references to their parent items.
 						T tmp = getAncestor(parent, kind);
 						if (tmp != null) {
 							return tmp;
@@ -153,38 +155,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 
 	@Override
 	public <T extends SyntacticItem> T allocate(T item) {
-		return internalAllocate(item, new IdentityHashMap<>());
-	}
-
-	private <T extends SyntacticItem> T internalAllocate(T item, Map<SyntacticItem,SyntacticItem> map) {
-		SyntacticHeap parent = item.getHeap();
-		T allocated = (T) map.get(item);
-		if(allocated != null) {
-			return allocated;
-		} else if (parent == this) {
-			// Item already allocated to this heap, hence nothing to do.
-			return item;
-		} else {
-			// Determine index for allocation
-			int index = syntacticItems.size();
-			// Clone item prior to allocation
-			T nItem = (T) item.clone(new SyntacticItem[item.size()]);
-			// Allocate item
-			syntacticItems.add(nItem);
-			// ... and allocate item itself
-			nItem.allocate(this, index);
-			map.put(item, nItem);
-			// Item not allocated to this heap. Therefore, recursively allocate
-			// all children.
-			for (int i = 0; i != nItem.size(); ++i) {
-				SyntacticItem child = item.get(i);
-				if (child != null) {
-					child = internalAllocate(child,map);
-				}
-				nItem.setOperand(i, child);
-			}
-			return nItem;
-		}
+		return (T) new Allocator(this).allocate(item);
 	}
 
 	public void print(PrintWriter out) {
@@ -400,4 +371,46 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			return nItem;
 		}
 	}
+
+	public static class Allocator implements SyntacticHeap.Allocator<AbstractSyntacticHeap> {
+		protected final AbstractSyntacticHeap heap;
+		protected final Map<SyntacticItem, SyntacticItem> map;
+
+		public Allocator(AbstractSyntacticHeap heap) {
+			this.heap = heap;
+			this.map = new IdentityHashMap<>();
+		}
+
+		@Override
+		public SyntacticItem allocate(SyntacticItem item) {
+			SyntacticHeap parent = item.getHeap();
+			SyntacticItem allocated = map.get(item);
+			if (allocated != null) {
+				return allocated;
+			} else if (parent == heap) {
+				// Item already allocated to this heap, hence nothing to do.
+				return item;
+			} else {
+				// Determine index for allocation
+				int index = heap.size();
+				// Clone item prior to allocation
+				SyntacticItem nItem = item.clone(new SyntacticItem[item.size()]);
+				// Allocate item
+				heap.syntacticItems.add(nItem);
+				// ... and allocate item itself
+				nItem.allocate(heap, index);
+				map.put(item, nItem);
+				// Item not allocated to this heap. Therefore, recursively allocate
+				// all children.
+				for (int i = 0; i != nItem.size(); ++i) {
+					SyntacticItem child = item.get(i);
+					if (child != null) {
+						child = allocate(child);
+					}
+					nItem.setOperand(i, child);
+				}
+				return nItem;
+			}
+		}
+	};
 }
