@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameID;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
@@ -329,16 +328,6 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				r += "::" + get(i).get();
 			}
 			return r;
-		}
-
-		@Override
-		public NameID toNameID() {
-			Trie pkg = Trie.ROOT;
-			for (int i = 0; i < size() - 1; ++i) {
-				pkg = pkg.append(get(i).get());
-			}
-			String n = get(size() - 1).get();
-			return new NameID(pkg, n);
 		}
 
 		private static Identifier[] path2ids(Path.ID id) {
