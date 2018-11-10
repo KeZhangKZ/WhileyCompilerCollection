@@ -20,84 +20,66 @@ import wybs.lang.SyntacticItem;
 
 public class SyntacticHeapPrinter {
 	private final PrintWriter out;
-	/**
-	 * Number of spaces per indentation.
-	 */
-	private final int indent;
-	private final boolean structured;
 
-	public SyntacticHeapPrinter(PrintWriter out, int indent, boolean structured) {
+	/**
+	 * Signals whether or not to show garbage.
+	 */
+	private final boolean showGarbage;
+
+	public SyntacticHeapPrinter(PrintWriter out, boolean showGarbage) {
 		this.out = out;
-		this.indent = indent;
-		this.structured = structured;
+		this.showGarbage = showGarbage;
 	}
 
 	public void print(SyntacticHeap heap) {
-		if(structured) {
-			print(heap.getRootItem(), 0, heap);
-		} else {
-			printRaw(heap);
+		boolean[] reachable = new boolean[heap.size()];
+		search(heap.getRootItem().getIndex(),heap, reachable);
+		//
+		out.println("root=" + heap.getRootItem().getIndex());
+		for(int i=0;i!=heap.size();++i) {
+			SyntacticItem item = heap.getSyntacticItem(i);
+			if(reachable[i] || showGarbage) {
+				out.print("#" + i);
+				out.print(" ");
+				out.print(item.getClass().getSimpleName());
+				if(item.size() > 0) {
+					out.print("(");
+					for(int j=0;j!=item.size();++j) {
+						if(j!=0) {
+							out.print(",");
+						}
+						out.print(item.get(j).getIndex());
+					}
+					out.print(")");
+				}
+				byte[] data = item.getData();
+				if(data != null && data.length > 0) {
+					out.print("[");
+					for(int j=0;j!=data.length;++j) {
+						if(j!=0) {
+							out.print(",");
+						}
+						out.print("0x" + Integer.toHexString(data[j]));
+					}
+					out.print("] ");
+					// FIXME: there should be a better way of doing this really
+					out.print(item);
+				}
+				out.println();
+			}
 		}
 		out.flush();
 	}
 
-	private void printRaw(SyntacticHeap heap) {
-		out.println("root=" + heap.getRootItem().getIndex());
-		for(int i=0;i!=heap.size();++i) {
-			SyntacticItem item = heap.getSyntacticItem(i);
-			out.print("#" + i);
-			out.print(" ");
-			out.print(item.getClass().getSimpleName());
-			if(item.size() > 0) {
-				out.print("(");
-				for(int j=0;j!=item.size();++j) {
-					if(j!=0) {
-						out.print(",");
-					}
-					out.print(item.get(j).getIndex());
-				}
-				out.print(")");
+	private void search(int index, SyntacticHeap heap, boolean[] visited) {
+		visited[index] = true;
+		//
+		SyntacticItem item = heap.getSyntacticItem(index);
+		for (int j = 0; j != item.size(); ++j) {
+			int jth = item.get(j).getIndex();
+			if(!visited[jth]) {
+				search(jth, heap, visited);
 			}
-			byte[] data = item.getData();
-			if(data != null && data.length > 0) {
-				out.print("[");
-				for(int j=0;j!=data.length;++j) {
-					if(j!=0) {
-						out.print(",");
-					}
-					out.print("0x" + Integer.toHexString(data[j]));
-				}
-				out.print("] ");
-				// FIXME: there should be a better way of doing this really
-				out.print(item);
-			}
-			out.println();
-		}
-	}
-
-	public void print(SyntacticItem item, int indent, SyntacticHeap heap) {
-		printIndent(indent);
-		if(item.size() > 0) {
-			out.print("(");
-			out.println(item.getClass().getSimpleName());
-			for(int j=0;j!=item.size();++j) {
-				if(j!=0) {
-					out.println(",");
-				}
-				print(item.get(j), indent + 1, heap);
-			}
-			out.println();
-			printIndent(indent);
-			out.print(")");
-		} else {
-			out.print(item);
-		}
-	}
-
-	private void printIndent(int indent) {
-		indent = indent * this.indent;
-		for(int i=0;i!=indent;++i) {
-			out.print(" ");
 		}
 	}
 }

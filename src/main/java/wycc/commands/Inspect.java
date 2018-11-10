@@ -45,7 +45,7 @@ public class Inspect implements Command {
 							new Value.Int(3), 0));
 
 	public static final List<Option.Descriptor> OPTIONS = Arrays
-			.asList(Command.OPTION_FLAG("raw", "raw output for syntactic heaps", false));
+			.asList(Command.OPTION_FLAG("full", "display full output (i.e. including unreachable garbage)", false));
 
 	/**
 	 * The descriptor for this command.
@@ -113,7 +113,7 @@ public class Inspect implements Command {
 
 	@Override
 	public boolean execute(Template template) throws Exception {
-		boolean raw = template.getOptions().get("raw", Boolean.class);
+		boolean garbage = template.getOptions().get("full", Boolean.class);
 
 		List<String> files = template.getArguments();
 		for (String file : files) {
@@ -122,7 +122,7 @@ public class Inspect implements Command {
 			if(entry == null) {
 				out.println("unknown file: " + file);
 			} else {
-				inspect(entry, ct, raw);
+				inspect(entry, ct, garbage);
 			}
 		}
 		return true;
@@ -171,10 +171,10 @@ public class Inspect implements Command {
 	 * @param ct
 	 * @throws IOException
 	 */
-	private void inspect(Path.Entry<?> entry, Content.Type<?> ct, boolean raw) throws IOException {
+	private void inspect(Path.Entry<?> entry, Content.Type<?> ct, boolean garbage) throws IOException {
 		Object o = entry.read();
-		if(o instanceof SyntacticHeap) {
-			new SyntacticHeapPrinter(new PrintWriter(out), indent, !raw).print((SyntacticHeap) o);
+		if (o instanceof SyntacticHeap) {
+			new SyntacticHeapPrinter(new PrintWriter(out), garbage).print((SyntacticHeap) o);
 		} else {
 			inspectBinaryFile(readAllBytes(entry.inputStream()));
 		}
