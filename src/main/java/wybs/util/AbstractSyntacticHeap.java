@@ -409,7 +409,6 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 					}
 					nItem.setOperand(i, child);
 				}
-				System.out.println("ALLOCATED: " + index + " " + item.getClass().getName() + " : " + item.toString());
 				return nItem;
 			}
 		}
