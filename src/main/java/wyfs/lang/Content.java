@@ -16,6 +16,8 @@ package wyfs.lang;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
 
 import wycc.lang.Feature;
 import wyfs.lang.Path.Entry;
@@ -64,6 +66,23 @@ public class Content {
 		 *            --- value to be converted into bytes.
 		 */
 		public void write(OutputStream output, T value) throws IOException;
+	}
+
+	/**
+	 * Provide a simple mechanism for printing content to an output stream. This is
+	 * mostly useful for debugging.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Printable<T> extends Type<T> {
+		/**
+		 * Print this content type to a given input stream.
+		 *
+		 * @param output
+		 * @throws IOException
+		 */
+		public void print(PrintStream output, T content) throws IOException;
 	}
 
 	/**

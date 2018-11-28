@@ -121,6 +121,9 @@ public class Inspect implements Command {
 			Path.Entry<?> entry = getEntry(file, ct);
 			if(entry == null) {
 				out.println("unknown file: " + file);
+			} else if(ct instanceof Content.Printable<?>){
+				Content.Printable cp = (Content.Printable<?>) ct;
+				cp.print(out, entry.read());
 			} else {
 				inspect(entry, ct, garbage);
 			}
