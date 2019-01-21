@@ -141,7 +141,7 @@ public class WyProject implements Command {
 	public WyProject(WyMain environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.configuration = configuration;
 		this.environment = environment;
-		this.project = new StdProject();
+		this.project = new StdProject(environment.getLocalRoot());
 		this.platforms = configuration.get(Value.Array.class, BUILD_PLATFORMS).toArray(Value.UTF8.class);
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
@@ -348,10 +348,8 @@ public class WyProject implements Command {
 			platform.apply(configuration);
 			// Configure Source root
 			Path.Root srcRoot = platform.getSourceRoot(root);
-			project.getRoots().add(srcRoot);
 			// Configure Binary root
 			Path.Root binRoot = platform.getTargetRoot(root);
-			project.getRoots().add(binRoot);
 			// Initialise build task
 			Build.Task task = platform.initialise(project);
 			// Add the appropriate build rule(s)

@@ -63,11 +63,11 @@ public interface Build {
 	public interface Project {
 
 		/**
-		 * Get the local roots associated with this project.
+		 * Get the root of the project. That is, the top-level location for the project.
 		 *
 		 * @return
 		 */
-		List<Path.Root> getRoots();
+		Path.Root getRoot();
 
 		/**
 		 * Get the list of dependencies associated with this project.
@@ -360,7 +360,7 @@ public interface Build {
 		 * @param name
 		 * @param args
 		 */
-		public void execute(Build.Project project, Path.ID path, String name, Value... args);
+		public void execute(Build.Project project, Path.ID path, String name, Value... args) throws IOException;
 	}
 
 	/**
