@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import wybs.lang.Build.Graph;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.StdBuildGraph;
@@ -127,53 +128,34 @@ public class Build implements Command {
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
 		// Identify the project root
 		Path.Root root = project.getParent().getLocalRoot();
+		// Create our build graph
+		Graph graph = new StdBuildGraph();
 		// Extract all registered platforms
 		List<wybs.lang.Build.Platform> platforms = project.getTargetPlatforms();
-		ArrayList<Path.Entry<?>> sources = new ArrayList<>();
-		// Construct build rules for each platform in turn.
+		// Refresh the build graph
 		for (int i = 0; i != platforms.size(); ++i) {
 			wybs.lang.Build.Platform platform = platforms.get(i);
-			Content.Type<?> binType = platform.getTargetType();
 			Path.Root srcRoot = platform.getSourceRoot(root);
 			Path.Root binRoot = platform.getTargetRoot(root);
 			// Determine the list of modified source files.
-			List modified = getModifiedSourceFiles(srcRoot, platform.getSourceFilter(), binRoot, binType);
-			// Add the list of modified source files to the list.
-			sources.addAll(modified);
+			platform.refresh(graph, srcRoot, binRoot);
 		}
-		// Finally, rebuild everything!
-		project.build(sources);
-		return true;
-	}
-
-	// =======================================================================
-	// Helpers
-	// =======================================================================
-
-	/**
-	 * Generate the list of source files which need to be recompiled. By default,
-	 * this is done by comparing modification times of each whiley file against its
-	 * corresponding wyil file. Wyil files which are out-of-date are scheduled to be
-	 * recompiled.
-	 *
-	 * @return
-	 * @throws IOException
-	 */
-	public static <T, S> List<Path.Entry<T>> getModifiedSourceFiles(Path.Root sourceDir,
-			Content.Filter<T> sourceIncludes, Path.Root binaryDir, Content.Type<S> binaryContentType)
-			throws IOException {
-		// Now, touch all source files which have modification date after
-		// their corresponding binary.
-		ArrayList<Path.Entry<T>> sources = new ArrayList<>();
-		for (Path.Entry<T> source : sourceDir.get(sourceIncludes)) {
-			// currently, I'm assuming everything is modified!
-			Path.Entry<S> binary = binaryDir.get(source.id(), binaryContentType);
-			// first, check whether wyil file out-of-date with source file
-			if (binary == null || binary.lastModified() < source.lastModified()) {
-				sources.add(source);
+		// Determine modified files
+		ArrayList<Path.Entry<?>> sources = new ArrayList<>();
+		//
+		for(Path.Entry<?> source : graph.getEntries()) {
+			// Get all children derived from this entry
+			List<Path.Entry<?>> children = graph.getChildren(source);
+			// Check for any which are out-of-date
+			for(Path.Entry<?> binary : children) {
+				if (binary.lastModified() < source.lastModified()) {
+					// Binary modified before source.
+					sources.add(source);
+				}
 			}
 		}
-
-		return sources;
+		// Finally, rebuild everything!
+		project.build(sources, graph);
+		return true;
 	}
 }

@@ -39,8 +39,6 @@ public interface CompilationUnit extends SyntacticHeap {
 	public interface Name extends SyntacticItem {
 		@Override
 		public Identifier get(int x);
-
-		public NameID toNameID();
 	}
 
 	/**

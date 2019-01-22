@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
-import wybs.lang.NameID;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
@@ -34,7 +33,7 @@ import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
 import wyfs.util.Trie;
 
-public class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
+public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
 		implements CompilationUnit {
 
 	// ITEMS: 0000000 (0) -- 00001111 (15)
@@ -187,6 +186,18 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return new Tuple<>((S[]) elements);
 		}
 
+		/**
+		 * Append a new item onto this tuple
+		 *
+		 * @param item
+		 * @return
+		 */
+		public Tuple<T> append(T item) {
+			SyntacticItem[] nitems = Arrays.copyOf(operands, operands.length+1);
+			nitems[operands.length] = item;
+			return new Tuple<>((T[]) nitems);
+		}
+
 		@Override
 		public Tuple<T> clone(SyntacticItem[] operands) {
 			return new Tuple(ArrayUtils.toArray(SyntacticItem.class, operands));
@@ -279,6 +290,10 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			super(ITEM_name, components);
 		}
 
+		public Name(Path.ID path) {
+			super(ITEM_name, path2ids(path));
+		}
+
 		@Override
 		public Identifier get(int i) {
 			return (Identifier) super.get(i);
@@ -315,14 +330,12 @@ public class AbstractCompilationUnit<T extends CompilationUnit> extends Abstract
 			return r;
 		}
 
-		@Override
-		public NameID toNameID() {
-			Trie pkg = Trie.ROOT;
-			for (int i = 0; i < size() - 1; ++i) {
-				pkg = pkg.append(get(i).get());
+		private static Identifier[] path2ids(Path.ID id) {
+			Identifier[] ids = new Identifier[id.size()];
+			for(int i=0;i!=id.size();++i) {
+				ids[i] = new Identifier(id.get(i));
 			}
-			String n = get(size() - 1).get();
-			return new NameID(pkg, n);
+			return ids;
 		}
 	}
 

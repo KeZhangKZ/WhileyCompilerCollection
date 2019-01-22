@@ -13,6 +13,7 @@
 // limitations under the License.
 package wycc.commands;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.Collections;
@@ -120,18 +121,22 @@ public class Run implements Command {
 
 	@Override
 	public boolean execute(Template template) {
-		if(method == null) {
-			sysout.println("Must specific method signature via build/main attribute or command-line option");
+		try {
+			if (method == null) {
+				sysout.println("Must specific method signature via build/main attribute or command-line option");
+				return false;
+			} else {
+				Path.ID target = Trie.fromString(method.toString().replace("::", "/"));
+				// FIXME: should have command-line option for build platform
+				Build.Platform platform = getBuildPlatform("whiley");
+				// Execute the given function
+				platform.execute(project.getBuildProject(), target.parent(), target.last());
+				// Done
+				return true;
+			}
+		} catch (IOException e) {
+			e.printStackTrace(syserr);
 			return false;
-		} else {
-			Path.ID target = Trie.fromString(method.toString().replace("::", "/"));
-			System.out.println("TARGET: " + target);
-			// FIXME: should have command-line option for build platform
-			Build.Platform platform = getBuildPlatform("whiley");
-			// Execute the given function
-			platform.execute(project.getBuildProject(), target.parent(), target.last());
-			// Done
-			return true;
 		}
 	}
 

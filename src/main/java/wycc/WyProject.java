@@ -141,7 +141,7 @@ public class WyProject implements Command {
 	public WyProject(WyMain environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.configuration = configuration;
 		this.environment = environment;
-		this.project = new StdProject();
+		this.project = new StdProject(environment.getLocalRoot());
 		this.platforms = configuration.get(Value.Array.class, BUILD_PLATFORMS).toArray(Value.UTF8.class);
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
@@ -276,8 +276,8 @@ public class WyProject implements Command {
 		return environment.getContentRegistry();
 	}
 
-	public void build(Collection<Path.Entry<?>> delta) throws Exception {
-		project.build(delta);
+	public void build(Collection<Path.Entry<?>> delta, Build.Graph graph) throws Exception {
+		project.build(delta,graph);
 	}
 
 	// ==================================================================
@@ -318,11 +318,16 @@ public class WyProject implements Command {
 				// Construct root repesenting this ZipFile
 				Path.Root pkgRoot = new ZipFileRoot(zipfile, environment.getContentRegistry());
 				// Extract configuration from package
-				ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType).read();
-				// Construct a package representation of this root.
-				Build.Package pkg = new Package(pkgRoot,pkgcfg.toConfiguration(buildSchema));
-				// Add a relative ZipFile root
-				project.getPackages().add(pkg);
+				Path.Entry<ConfigFile> entry = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType);
+				if(entry == null) {
+					throw new RuntimeException("corrupt package (missing wy.toml) \"" + name + "-" + version + "\"");
+				} else {
+					ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType).read();
+					// Construct a package representation of this root.
+					Build.Package pkg = new Package(pkgRoot,pkgcfg.toConfiguration(buildSchema));
+					// Add a relative ZipFile root
+					project.getPackages().add(pkg);
+				}
 			}
 		}
 	}
@@ -343,10 +348,8 @@ public class WyProject implements Command {
 			platform.apply(configuration);
 			// Configure Source root
 			Path.Root srcRoot = platform.getSourceRoot(root);
-			project.getRoots().add(srcRoot);
 			// Configure Binary root
 			Path.Root binRoot = platform.getTargetRoot(root);
-			project.getRoots().add(binRoot);
 			// Initialise build task
 			Build.Task task = platform.initialise(project);
 			// Add the appropriate build rule(s)

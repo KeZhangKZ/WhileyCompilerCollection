@@ -45,7 +45,7 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		this.data = null;
 	}
 
-	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem[] operands) {
+	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = data;
@@ -80,11 +80,13 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	}
 
 	/**
-	 * Get the first syntactic item of a given kind which refers to this item either indirectly or directly.
+	 * Get the first syntactic item of a given kind which refers to this item either
+	 * indirectly or directly.
 	 *
 	 * @param kind
 	 * @return
 	 */
+	@Override
 	public <T extends SyntacticItem> T getAncestor(Class<T> kind) {
 		return parent.getAncestor(this, kind);
 	}

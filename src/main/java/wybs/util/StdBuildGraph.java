@@ -13,7 +13,11 @@
 // limitations under the License.
 package wybs.util;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import wybs.lang.Build;
 import wyfs.lang.Path;
@@ -30,15 +34,55 @@ public class StdBuildGraph implements Build.Graph {
 	 * The derived from relation maps child entries to the parents they are
 	 * derived from.
 	 */
-	private HashMap<Path.Entry<?>, Path.Entry<?>> derivedFrom = new HashMap<>();
+	private ArrayList<Edge> edges = new ArrayList<>();
 
 	@Override
-	public Entry<?> parent(Entry<?> child) {
-		return derivedFrom.get(child);
+	public List<Entry<?>> getParents(Entry<?> child) {
+		ArrayList<Entry<?>> parents = new ArrayList<>();
+		for (int i = 0; i != edges.size(); ++i) {
+			Edge e = edges.get(i);
+			if (e.child == child) {
+				parents.add(e.parent);
+			}
+		}
+		return parents;
 	}
 
 	@Override
-	public void registerDerivation(Path.Entry<?> parent, Path.Entry<?> child) {
-		derivedFrom.put(child, parent);
+	public List<Entry<?>> getChildren(Entry<?> parent) {
+		ArrayList<Entry<?>> children = new ArrayList<>();
+		for (int i = 0; i != edges.size(); ++i) {
+			Edge e = edges.get(i);
+			if (e.parent == parent) {
+				children.add(e.child);
+			}
+		}
+		return children;
+	}
+
+	@Override
+	public Set<Entry<?>> getEntries() {
+		HashSet<Entry<?>> entries = new HashSet<>();
+		for (int i = 0; i != edges.size(); ++i) {
+			Edge e = edges.get(i);
+			entries.add(e.parent);
+			entries.add(e.child);
+		}
+		return entries;
+	}
+
+	@Override
+	public void connect(Path.Entry<?> parent, Path.Entry<?> child) {
+		edges.add(new Edge(parent,child));
+	}
+
+	private static class Edge {
+		private final Path.Entry<?> parent;
+		private final Path.Entry<?> child;
+
+		public Edge(Path.Entry<?> parent, Path.Entry<?> child) {
+			this.parent = parent;
+			this.child = child;
+		}
 	}
 }

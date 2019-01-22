@@ -40,12 +40,10 @@ import wyfs.lang.Path;
  * @author David J. Pearce
  */
 public class StdProject implements Build.Project {
-
 	/**
-	 * The roots of all entries known to the system which form the global namespace
-	 * used by the builder(s).
+	 * The top-level root for the project. Everything is below this.
 	 */
-	protected final ArrayList<Path.Root> roots;
+	protected final Path.Root root;
 
 	/**
 	 * The set of packages on which this project depends.
@@ -59,19 +57,10 @@ public class StdProject implements Build.Project {
 	 */
 	protected final ArrayList<Build.Rule> rules;
 
-	public StdProject(Collection<Path.Root> roots) {
-		this.roots = new ArrayList<>(roots);
+	public StdProject(Path.Root root) {
+		this.root = root;
 		this.rules = new ArrayList<>();
 		this.packages = new ArrayList<>();
-	}
-
-	public StdProject(Collection<Path.Root>... roots) {
-		this.rules = new ArrayList<>();
-		this.packages = new ArrayList<>();
-		this.roots = new ArrayList<>();
-		for (Collection<Path.Root> root : roots) {
-			this.roots.addAll(root);
-		}
 	}
 
 	// ======================================================================
@@ -88,13 +77,13 @@ public class StdProject implements Build.Project {
 	}
 
 	/**
-	 * Get the roots associated with this project.
+	 * Get the top-level root associated with this project.
 	 *
 	 * @return
 	 */
 	@Override
-	public List<Path.Root> getRoots() {
-		return roots;
+	public Path.Root getRoot() {
+		return root;
 	}
 
 	/**
@@ -130,9 +119,7 @@ public class StdProject implements Build.Project {
 	 * We must flush them to disk in order to preserve any changes that were made.
 	 */
 	public void flush() throws IOException {
-		for (int i = 0; i != roots.size(); ++i) {
-			roots.get(i).flush();
-		}
+		root.flush();
 	}
 
 	/**
@@ -141,9 +128,7 @@ public class StdProject implements Build.Project {
 	 * contents are retained).
 	 */
 	public void refresh() throws IOException {
-		for (int i = 0; i != roots.size(); ++i) {
-			roots.get(i).refresh();
-		}
+		root.refresh();
 	}
 
 	// ======================================================================
@@ -159,9 +144,7 @@ public class StdProject implements Build.Project {
 	 *            by this method.
 	 * @throws Exception
 	 */
-	public void build(Collection<? extends Path.Entry<?>> sources) throws Exception {
-		Build.Graph graph = new StdBuildGraph();
-
+	public void build(Collection<? extends Path.Entry<?>> sources, Build.Graph graph) throws Exception {
 		// Continue building all source files until there are none left. This is
 		// actually quite a naive implementation, as it ignores the potential
 		// need for staging dependencies.

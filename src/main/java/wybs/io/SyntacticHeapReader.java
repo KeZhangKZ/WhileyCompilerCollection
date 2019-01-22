@@ -19,6 +19,7 @@ import java.util.Arrays;
 
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
 
 /**
@@ -46,18 +47,28 @@ public abstract class SyntacticHeapReader {
 
 	public abstract SyntacticHeap read() throws IOException;
 
-	protected SyntacticItem[] readItems() throws IOException {
+	/**
+	 * Read all the items in this heap, returning the identified root item and an
+	 * array of all items contained therein.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
+	protected Pair<Integer, SyntacticItem[]> readItems() throws IOException {
 		// first, write magic number
 		checkHeader();
-		// third, determine number of items
+		// second, determine number of items
 		int size = in.read_uv();
+		// third, determine the root item
+		int root = in.read_uv();
+		//
 		Bytecode[] items = new Bytecode[size];
 		// third, read abstract syntactic items
-		for(int i=0;i!=items.length;++i) {
+		for (int i = 0; i != items.length; ++i) {
 			items[i] = readItem();
 		}
 		//
-		return constructItems(items);
+		return new Pair<>(root, constructItems(items));
 	}
 
 	protected abstract void checkHeader() throws IOException;

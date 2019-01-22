@@ -47,9 +47,12 @@ public abstract class SyntacticHeapWriter {
 	public void write(SyntacticHeap module) throws IOException {
 		// first, write magic number
 		writeHeader();
-		// third, write syntactic items
+		// second, write syntactic items
 		out.write_uv(module.size());
-		for(int i=0;i!=module.size();++i) {
+		// third, write root item
+		out.write_uv(module.getRootItem().getIndex());
+		// Write out each item in turn
+		for (int i = 0; i != module.size(); ++i) {
 			writeSyntacticItem(module.getSyntacticItem(i));
 		}
 		// finally, flush to disk
