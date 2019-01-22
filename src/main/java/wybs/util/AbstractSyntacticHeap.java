@@ -137,7 +137,8 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			for (int i = 0; i != syntacticItems.size(); ++i) {
 				SyntacticItem parent = syntacticItems.get(i);
 				for (int j = 0; j != parent.size(); ++j) {
-					if (parent.get(j) == child) {
+					// Don't follow cross-references
+					if (parent.get(j) == child && !(parent instanceof AbstractCompilationUnit.Ref)) {
 						// FIXME: this is not specifically efficient. It would
 						// be helpful if SyntacticItems actually contained
 						// references to their parent items.
