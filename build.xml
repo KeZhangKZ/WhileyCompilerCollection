@@ -22,6 +22,7 @@
   <target name="compile" depends="setup">
     <javac includeantruntime="false"
 	   target="${JAVA_VERSION}"
+ 	   source="${JAVA_VERSION}"
 	   srcdir="${JAVA_DIR}"
 	   destdir="${CLASS_DIR}">
       <classpath>
