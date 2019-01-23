@@ -384,4 +384,23 @@ public interface Command {
 			}
 		};
 	}
+
+	/**
+	 * An string option
+	 *
+	 * @param name
+	 * @param argument
+	 * @param description
+
+	 * @return
+	 */
+	public static Option.Descriptor OPTION_STRING(String name, String description, String defaultValue) {
+		return new AbstractOptionDescriptor(name, null, description, defaultValue) {
+			@Override
+			public Option Initialise(String arg) {
+				return new OptionValue(this, arg);
+			}
+		};
+	}
+
 }

@@ -93,8 +93,6 @@ public class Help implements Command {
 
 	@Override
 	public boolean execute(Template template) {
-		// Extract options
-		int width = template.getOptions().get("width", Integer.class);
 		// Extract arguments
 		List<String> args = template.getArguments();
 		//
