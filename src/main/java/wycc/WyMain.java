@@ -513,7 +513,6 @@ public class WyMain implements Command {
 		DirectoryRoot root = new DirectoryRoot(dir, BOOT_REGISTRY);
 		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
 		if (config == null) {
-			System.err.println("Unable to read configuration file " + root + "/" + name + ".toml");
 			return Configuration.EMPTY;
 		}
 		try {

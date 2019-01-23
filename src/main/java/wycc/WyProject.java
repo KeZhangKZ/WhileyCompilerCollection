@@ -118,11 +118,6 @@ public class WyProject implements Command {
 	protected final StdProject project;
 
 	/**
-	 * List of target build platforms.
-	 */
-	private final Value.UTF8[] platforms;
-
-	/**
 	 * Provides a generic place to which normal output should be directed. This
 	 * should eventually be replaced.
 	 */
@@ -142,7 +137,6 @@ public class WyProject implements Command {
 		this.configuration = configuration;
 		this.environment = environment;
 		this.project = new StdProject(environment.getLocalRoot());
-		this.platforms = configuration.get(Value.Array.class, BUILD_PLATFORMS).toArray(Value.UTF8.class);
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}
@@ -168,17 +162,21 @@ public class WyProject implements Command {
 	 * @return
 	 */
 	public List<wybs.lang.Build.Platform> getTargetPlatforms() {
-		// Get list of all build platforms.
-		List<wybs.lang.Build.Platform> platforms = environment.getBuildPlatforms();
 		ArrayList<Build.Platform> targetPlatforms = new ArrayList<>();
-		// Check each platform for inclusion
-		for (int i = 0; i != platforms.size(); ++i) {
-			Build.Platform platform = platforms.get(i);
-			// Convert name to UTF8 value (ugh)
-			Value.UTF8 name = new Value.UTF8(platform.getName().getBytes());
-			// Determine whether is a target platform or not
-			if (ArrayUtils.firstIndexOf(this.platforms, name) >= 0) {
-				targetPlatforms.add(platform);
+		// Ensure target platforms are specified
+		if(configuration.hasKey(BUILD_PLATFORMS)) {
+			Value.UTF8[] targetPlatformNames = configuration.get(Value.Array.class, BUILD_PLATFORMS).toArray(Value.UTF8.class);
+			// Get list of all build platforms.
+			List<wybs.lang.Build.Platform> platforms = environment.getBuildPlatforms();
+			// Check each platform for inclusion
+			for (int i = 0; i != platforms.size(); ++i) {
+				Build.Platform platform = platforms.get(i);
+				// Convert name to UTF8 value (ugh)
+				Value.UTF8 name = new Value.UTF8(platform.getName().getBytes());
+				// Determine whether is a target platform or not
+				if (ArrayUtils.firstIndexOf(targetPlatformNames, name) >= 0) {
+					targetPlatforms.add(platform);
+				}
 			}
 		}
 		// Done
