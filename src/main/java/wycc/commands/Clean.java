@@ -14,6 +14,7 @@
 package wycc.commands;
 
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -70,8 +71,14 @@ public class Clean implements Command {
 	 */
 	private final WyProject project;
 
-	public Clean(WyProject project, OutputStream sysout, OutputStream syserr) {
+	/**
+	 * Output stream
+	 */
+	private final PrintStream sysout;
+
+	public Clean(WyProject project, PrintStream sysout, PrintStream syserr) {
 		this.project = project;
+		this.sysout = sysout;
 	}
 
 	@Override
@@ -95,7 +102,7 @@ public class Clean implements Command {
 			// Identify the project root
 			Path.Root root = project.getParent().getLocalRoot();
 			// Extract all registered platforms
-			List<Build.Platform> platforms = project.getParent().getBuildPlatforms();
+			List<Build.Platform> platforms = project.getTargetPlatforms();
 			//
 			for (int i = 0; i != platforms.size(); ++i) {
 				Build.Platform platform = platforms.get(i);
@@ -103,7 +110,7 @@ public class Clean implements Command {
 				Content.Filter<?> binFilter = platform.getTargetFilter();
 				// Remove all files being cleaned
 				int count = binRoot.remove(binFilter);
-				System.out.println("CLEANED " + count + " files");
+				sysout.println("CLEANED " + count + " files");
 				// FIXME: print number of files removed.
 			}
 			//

@@ -86,80 +86,8 @@ public final class ZipFileRoot extends AbstractRoot<ZipFileRoot.Folder> implemen
 	}
 
 	@Override
-	public Path.RelativeRoot createRelativeRoot(Path.ID path) throws IOException {
-		return new RelativeRoot(new Folder(path));
-	}
-
-	@Override
 	public String toString() {
 		return entry.location();
-	}
-
-	/**
-	 * Represents a relative root.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public class RelativeRoot extends AbstractRoot<ZipFileRoot.Folder> implements Path.RelativeRoot {
-		public RelativeRoot(ZipFileRoot.Folder root) throws IOException {
-			super(ZipFileRoot.this.contentTypes, root);
-		}
-
-		@Override
-		public Root getParent() {
-			return ZipFileRoot.this;
-		}
-
-		@Override
-		public wyfs.lang.Path.RelativeRoot createRelativeRoot(ID id) throws IOException {
-			throw new UnsupportedOperationException();
-		}
-
-		@Override
-		public <T> List<Path.Entry<T>> get(Content.Filter<T> filter) throws IOException {
-			return super.get(relativeFilter(filter));
-		}
-
-		@Override
-		public <T> Set<Path.ID> match(Content.Filter<T> filter) throws IOException{
-			return super.match(relativeFilter(filter));
-		}
-
-		@Override
-		public int remove(Filter<?> filter) throws IOException {
-			return super.remove(relativeFilter(filter));
-		}
-
-		@Override
-		protected Folder root() {
-			return root;
-		}
-
-		private <S> Content.Filter<S> relativeFilter(Content.Filter<S> filter) {
-			return new Content.Filter<S>() {
-
-				@Override
-				public boolean matches(ID id, Type<S> ct) {
-					Path.ID r = root.id();
-					if(id.size() >= r.size() && id.subpath(0, r.size()).equals(r)) {
-						return filter.matches(id.subpath(r.size(), id.size()), ct);
-					} else {
-						return false;
-					}
-				}
-
-				@Override
-				public boolean matchesSubpath(ID id) {
-					Path.ID r = root.id();
-					if (id.size() >= r.size() && id.subpath(0, r.size()).equals(r)) {
-						return filter.matchesSubpath(id.subpath(r.size(), id.size()));
-					} else {
-						return false;
-					}
-				}
-			};
-		}
 	}
 
 	/**

@@ -87,7 +87,7 @@ public abstract class AbstractRoot<T extends Folder> implements Root {
 	}
 
 	@Override
-	public RelativeRoot createRelativeRoot(ID id) throws IOException {
+	public final RelativeRoot createRelativeRoot(ID id) throws IOException {
 		return new Relative(this,id);
 	}
 

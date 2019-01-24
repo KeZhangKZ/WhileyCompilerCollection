@@ -248,13 +248,11 @@ public class Path {
 		public boolean exists(ID id, Content.Type<?> ct) throws IOException;
 
 		/**
-		 * Get the entry corresponding to a given ID (taken relative to this
-		 * folder) and content type. If no such entry exists, return null.
+		 * Get the entry corresponding to a given ID and content type. If no such entry
+		 * exists, return null.
 		 *
-		 * @param id
-		 *            --- id of module to lookup.
-		 * @throws IOException
-		 *             --- in case of some I/O failure.
+		 * @param id --- id of module to lookup.
+		 * @throws IOException --- in case of some I/O failure.
 		 */
 		public <T> Path.Entry<T> get(ID id, Content.Type<T> ct)
 				throws IOException;
@@ -301,12 +299,10 @@ public class Path {
 				throws IOException;
 
 		/**
-		 * Create a new entry in this folder with the given ID (taken relative
-		 * to this folder) and content-type. This will recursively construct
-		 * sub-folders as necessary.
+		 * Create a new entry in this folder with the given ID and content-type. This
+		 * will recursively construct sub-folders as necessary.
 		 *
-		 * @throws IOException
-		 *             --- in case of some I/O failure.
+		 * @throws IOException --- in case of some I/O failure.
 		 *
 		 * @param entry
 		 */
