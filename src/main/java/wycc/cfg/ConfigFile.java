@@ -242,9 +242,17 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 
 		@Override
 		public boolean hasKey(ID key) {
+			// Find the key-value pair
 			KeyValuePair kvp = getKeyValuePair(key, declarations);
-			//
-			return kvp != null;
+			// If didn't find a value, still might have default
+			if(kvp == null && schema.isKey(key)) {
+				// Get the descriptor for this key
+				Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);
+				// Check whether have a default
+				return descriptor.hasDefault();
+			} else {
+				return kvp != null;
+			}
 		}
 
 		@Override
