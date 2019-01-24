@@ -77,6 +77,14 @@ public class Path {
 		 * @return
 		 */
 		public ID append(String component);
+
+		/**
+		 * Append all components from an ID onto the end of this ID.
+		 *
+		 * @param id
+		 * @return
+		 */
+		public ID append(ID id);
 	}
 
 	/**

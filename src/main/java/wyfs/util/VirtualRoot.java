@@ -66,25 +66,6 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 		return new Folder(Trie.ROOT);
 	}
 
-
-	@Override
-	public RelativeRoot createRelativeRoot(ID id) throws IOException {
-		return new Relative(contentTypes);
-	}
-
-	public final class Relative extends VirtualRoot implements Path.RelativeRoot {
-
-		public Relative(Registry contentTypes) {
-			super(contentTypes);
-		}
-
-		@Override
-		public Root getParent() {
-			return VirtualRoot.this;
-		}
-
-	}
-
 	/**
 	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a

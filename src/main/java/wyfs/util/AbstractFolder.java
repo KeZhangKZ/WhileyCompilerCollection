@@ -245,11 +245,12 @@ public abstract class AbstractFolder implements Path.Folder {
 		int count = 0;
 		//
 		for (int i = 0; i != nentries; ++i) {
+			//
 			Path.Item item = contents[i];
+			//
 			if (item instanceof Entry) {
 				Entry entry = (Entry) item;
-				if (filter.matches(entry.id(), entry.contentType())) {
-					remove(entry.id(), entry.contentType());
+				if (filter.matches(entry.id(), entry.contentType()) && remove(entry.id(), entry.contentType())) {
 					count = count + 1;
 					i = i - 1;
 				}
