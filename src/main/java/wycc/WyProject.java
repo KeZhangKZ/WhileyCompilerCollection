@@ -33,6 +33,7 @@ import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.util.ArrayUtils;
 import wycc.util.CommandParser;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
@@ -118,6 +119,11 @@ public class WyProject implements Command {
 	protected final StdProject project;
 
 	/**
+	 * Generic logger
+	 */
+	private Logger logger;
+
+	/**
 	 * Provides a generic place to which normal output should be directed. This
 	 * should eventually be replaced.
 	 */
@@ -201,12 +207,11 @@ public class WyProject implements Command {
 	}
 
 	@Override
-	public void initialise() {
+	public void initialise(Logger logger) {
+		this.logger = logger;
 		try {
 			// Find and resolve package dependencies
 			resolvePackageDependencies();
-			// Configure package directory structure
-			configurePlatforms();
 			// Find dependencies
 		} catch (IOException e) {
 			// FIXME
@@ -232,6 +237,9 @@ public class WyProject implements Command {
 		// Extract options
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
 		try {
+			// Configure package directory structure
+			configurePlatforms(verbose ? logger : Logger.NULL);
+			//
 			if(template.getChild() != null) {
 				// Execute a subcommand
 				template = template.getChild();
@@ -239,6 +247,8 @@ public class WyProject implements Command {
 				Command.Descriptor descriptor = template.getCommandDescriptor();
 				// Construct an instance of the command
 				Command command = descriptor.initialise(this, configuration);
+				//
+				command.initialise(verbose ? logger : Logger.NULL);
 				//
 				return command.execute(template);
 			} else {
@@ -336,7 +346,7 @@ public class WyProject implements Command {
 	 *
 	 * @throws IOException
 	 */
-	private void configurePlatforms() throws IOException {
+	private void configurePlatforms(Logger logger) throws IOException {
 		Path.Root root = environment.getLocalRoot();
 		List<Build.Platform> platforms = getTargetPlatforms();
 		//
@@ -349,7 +359,7 @@ public class WyProject implements Command {
 			// Configure Binary root
 			Path.Root binRoot = platform.getTargetRoot(root);
 			// Initialise build task
-			Build.Task task = platform.initialise(project);
+			Build.Task task = platform.initialise(project,logger);
 			// Add the appropriate build rule(s)
 			project.add(
 					new StdBuildRule(task, srcRoot, platform.getSourceFilter(), platform.getTargetFilter(), binRoot));

@@ -25,6 +25,7 @@ import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wycc.util.Logger;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 
@@ -110,7 +111,7 @@ public class Run implements Command {
 	}
 
 	@Override
-	public void initialise() {
+	public void initialise(Logger logger) {
 
 	}
 
@@ -135,7 +136,6 @@ public class Run implements Command {
 				return true;
 			}
 		} catch (IOException e) {
-			e.printStackTrace(syserr);
 			return false;
 		}
 	}

@@ -20,6 +20,7 @@ import java.util.function.Predicate;
 
 import wycc.cfg.Configuration;
 import wycc.lang.Command.Option;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -42,7 +43,7 @@ public interface Command {
 	 * Perform any necessary initialisation for this command (e.g. opening
 	 * resources).
 	 */
-	public void initialise();
+	public void initialise(Logger logger);
 
 	/**
 	 * Perform any necessary finalisation for this command (e.g. closing resources).
