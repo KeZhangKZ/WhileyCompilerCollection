@@ -79,7 +79,7 @@ public class Clean implements Command {
 
 	public Clean(WyProject project) {
 		this.project = project;
-		this.logger = Logger.NULL;
+		this.logger = project.getBuildProject().getLogger();
 	}
 
 	@Override
@@ -88,8 +88,7 @@ public class Clean implements Command {
 	}
 
 	@Override
-	public void initialise(Logger logger) {
-		this.logger = logger;
+	public void initialise() {
 	}
 
 	@Override

@@ -100,7 +100,7 @@ public class Install implements Command {
 
 	public Install(WyProject project, Configuration configuration) {
 		this.project = project;
-		this.logger = Logger.NULL;
+		this.logger = project.getBuildProject().getLogger();
 		this.configuration = configuration;
 		this.includes = configuration.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
 	}
@@ -111,7 +111,7 @@ public class Install implements Command {
 	}
 
 	@Override
-	public void initialise(Logger logger) {
+	public void initialise() {
 		// Nothing to do here?
 	}
 

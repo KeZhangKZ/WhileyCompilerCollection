@@ -76,6 +76,11 @@ public interface Build {
 		 * @return
 		 */
 		public List<Package> getPackages();
+
+		/**
+		 * Get the default logger assocated with this project
+		 */
+		public Logger getLogger();
 	}
 
 	/**
@@ -295,7 +300,7 @@ public interface Build {
 		 * @param project Enclosing project for this build task
 		 * @return
 		 */
-		public Build.Task initialise(Build.Project project, Logger logger);
+		public Build.Task initialise(Build.Project project);
 
 		/**
 		 * Refresh the build graph to represent the compilation structure used by this

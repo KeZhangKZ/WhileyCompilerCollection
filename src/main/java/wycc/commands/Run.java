@@ -111,7 +111,7 @@ public class Run implements Command {
 	}
 
 	@Override
-	public void initialise(Logger logger) {
+	public void initialise() {
 
 	}
 

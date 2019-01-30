@@ -90,7 +90,7 @@ public class Config implements Command {
 	}
 
 	@Override
-	public void initialise(Logger logger) {
+	public void initialise() {
 	}
 
 	@Override
@@ -171,7 +171,7 @@ public class Config implements Command {
 		}
 
 		@Override
-		public void initialise(Logger logger) {
+		public void initialise() {
 		}
 
 		@Override

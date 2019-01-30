@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.*;
 
 import wybs.lang.*;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -57,10 +58,16 @@ public class StdProject implements Build.Project {
 	 */
 	protected final ArrayList<Build.Rule> rules;
 
+	/**
+	 * The standard logger associated with this project.
+	 */
+	protected Logger logger;
+
 	public StdProject(Path.Root root) {
 		this.root = root;
 		this.rules = new ArrayList<>();
 		this.packages = new ArrayList<>();
+		this.logger = Logger.NULL;
 	}
 
 	// ======================================================================
@@ -103,6 +110,15 @@ public class StdProject implements Build.Project {
 	@Override
 	public List<Build.Package> getPackages() {
 		return packages;
+	}
+
+	@Override
+	public Logger getLogger() {
+		return logger;
+	}
+
+	public void setLogger(Logger logger) {
+		this.logger = logger;
 	}
 
 	// ======================================================================

@@ -207,11 +207,12 @@ public class WyProject implements Command {
 	}
 
 	@Override
-	public void initialise(Logger logger) {
-		this.logger = logger;
+	public void initialise() {
 		try {
 			// Find and resolve package dependencies
 			resolvePackageDependencies();
+			// Configure package directory structure
+			configurePlatforms();
 			// Find dependencies
 		} catch (IOException e) {
 			// FIXME
@@ -237,8 +238,7 @@ public class WyProject implements Command {
 		// Extract options
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
 		try {
-			// Configure package directory structure
-			configurePlatforms(verbose ? logger : Logger.NULL);
+			project.setLogger(verbose ? new Logger.Default(System.err) : Logger.NULL);
 			//
 			if(template.getChild() != null) {
 				// Execute a subcommand
@@ -247,8 +247,6 @@ public class WyProject implements Command {
 				Command.Descriptor descriptor = template.getCommandDescriptor();
 				// Construct an instance of the command
 				Command command = descriptor.initialise(this, configuration);
-				//
-				command.initialise(verbose ? logger : Logger.NULL);
 				//
 				return command.execute(template);
 			} else {
@@ -346,7 +344,7 @@ public class WyProject implements Command {
 	 *
 	 * @throws IOException
 	 */
-	private void configurePlatforms(Logger logger) throws IOException {
+	private void configurePlatforms() throws IOException {
 		Path.Root root = environment.getLocalRoot();
 		List<Build.Platform> platforms = getTargetPlatforms();
 		//
@@ -359,7 +357,7 @@ public class WyProject implements Command {
 			// Configure Binary root
 			Path.Root binRoot = platform.getTargetRoot(root);
 			// Initialise build task
-			Build.Task task = platform.initialise(project,logger);
+			Build.Task task = platform.initialise(project);
 			// Add the appropriate build rule(s)
 			project.add(
 					new StdBuildRule(task, srcRoot, platform.getSourceFilter(), platform.getTargetFilter(), binRoot));
