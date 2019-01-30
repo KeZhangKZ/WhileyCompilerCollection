@@ -280,7 +280,7 @@ public class WyMain implements Command {
 	}
 
 	@Override
-	public void initialise() {
+	public void initialise(Logger logger) {
 	}
 
 	@Override
@@ -302,7 +302,7 @@ public class WyMain implements Command {
 			// Create command instance
 			Command instance = descriptor.initialise(this, configuration);
 			// Initialise command
-			instance.initialise();
+			instance.initialise(new Logger.Default(System.err));
 			// Execute the command (if applicable)
 			instance.execute(pipeline);
 			// Finalise command

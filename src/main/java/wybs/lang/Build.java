@@ -21,6 +21,7 @@ import java.util.Set;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.Configuration;
 import wycc.lang.Feature;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -294,7 +295,7 @@ public interface Build {
 		 * @param project Enclosing project for this build task
 		 * @return
 		 */
-		public Build.Task initialise(Build.Project project);
+		public Build.Task initialise(Build.Project project, Logger logger);
 
 		/**
 		 * Refresh the build graph to represent the compilation structure used by this

@@ -30,6 +30,7 @@ import wycc.cfg.Configuration;
 import wycc.lang.Command;
 import wycc.lang.Command.Descriptor;
 import wycc.lang.Command.Option;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -104,7 +105,7 @@ public class Inspect implements Command {
 	}
 
 	@Override
-	public void initialise() {
+	public void initialise(Logger logger) {
 	}
 
 	@Override
