@@ -13,7 +13,9 @@
 // limitations under the License.
 package wybs.lang;
 
-public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticItem> {
+import java.util.List;
+
+public interface SyntacticItem extends Comparable<SyntacticItem> {
 
 	/**
 	 * Get the enclosing compilation unit in which this syntactic item is
@@ -73,6 +75,13 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	public SyntacticItem[] getAll();
 
 	/**
+	 * Get all attributes associated with this bytecode.
+	 *
+	 * @return
+	 */
+	public List<Attribute> getAttributes();
+
+	/**
 	 * Mutate the ith child of this item
 	 *
 	 * @param ith
@@ -122,6 +131,21 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 * @return
 	 */
 	public SyntacticItem clone(SyntacticItem[] operands);
+
+	// ============================================================
+	// Attributes
+	// ============================================================
+
+	/**
+	 * Attributes represent various additional pieces of information inferred
+	 * about a given item in the heap.  For example, source line information.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Attribute {
+
+	}
 
 	// ============================================================
 	// Schema
