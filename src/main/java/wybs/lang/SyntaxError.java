@@ -113,14 +113,6 @@ public class SyntaxError extends RuntimeException {
 		} else  {
 			SyntacticHeap parent = element.getHeap();
 			span = parent.getParent(element,Attribute.Span.class);
-			if(span == null) {
-				// FIXME: This is a terrible hack. Basically, we attempt to convert from the
-				// old-style attributes to the new style spans.
-				wybs.lang.Attribute.Source src = element.attribute(wybs.lang.Attribute.Source.class);
-				if(src != null) {
-					span = new Attribute.Span(null, src.start, src.end);
-				}
-			}
 		}
 		//
 		EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);

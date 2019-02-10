@@ -14,22 +14,22 @@
 package wybs.util;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.List;
 
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wycc.util.ArrayUtils;
 
-public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
-		implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
+public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
 	// Constants;
 	private SyntacticHeap parent;
 	private int index; // index in the parent
 	protected int opcode;
 	protected SyntacticItem[] operands;
+	protected List<Attribute> attributes;
 	protected byte[] data;
 
 	public AbstractSyntacticItem(int opcode) {
@@ -37,18 +37,21 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		this.opcode = opcode;
 		this.operands = null;
 		this.data = null;
+		this.attributes = new ArrayList<>();
 	}
 
 	public AbstractSyntacticItem(int opcode, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = null;
+		this.attributes = new ArrayList<>();
 	}
 
 	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = data;
+		this.attributes = new ArrayList<>();
 	}
 
 	@Override
@@ -137,6 +140,11 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 	@Override
 	public SyntacticItem[] getAll() {
 		return operands;
+	}
+
+	@Override
+	public List<Attribute> getAttributes() {
+		return attributes;
 	}
 
 	@Override
