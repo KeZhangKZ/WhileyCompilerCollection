@@ -14,6 +14,7 @@
 package wycc.commands;
 
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -25,6 +26,7 @@ import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
 import wycc.lang.Command.Descriptor;
 import wycc.lang.Command.Option;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
@@ -60,7 +62,7 @@ public class Clean implements Command {
 
 		@Override
 		public Command initialise(Command environment, Configuration configuration) {
-			return new Clean((WyProject) environment, System.out, System.err);
+			return new Clean((WyProject) environment);
 		}
 
 	};
@@ -70,8 +72,14 @@ public class Clean implements Command {
 	 */
 	private final WyProject project;
 
-	public Clean(WyProject project, OutputStream sysout, OutputStream syserr) {
+	/**
+	 * Logger
+	 */
+	private Logger logger;
+
+	public Clean(WyProject project) {
 		this.project = project;
+		this.logger = project.getBuildProject().getLogger();
 	}
 
 	@Override
@@ -81,7 +89,6 @@ public class Clean implements Command {
 
 	@Override
 	public void initialise() {
-		// Nothing to do here
 	}
 
 	@Override
@@ -95,7 +102,7 @@ public class Clean implements Command {
 			// Identify the project root
 			Path.Root root = project.getParent().getLocalRoot();
 			// Extract all registered platforms
-			List<Build.Platform> platforms = project.getParent().getBuildPlatforms();
+			List<Build.Platform> platforms = project.getTargetPlatforms();
 			//
 			for (int i = 0; i != platforms.size(); ++i) {
 				Build.Platform platform = platforms.get(i);
@@ -103,8 +110,7 @@ public class Clean implements Command {
 				Content.Filter<?> binFilter = platform.getTargetFilter();
 				// Remove all files being cleaned
 				int count = binRoot.remove(binFilter);
-				System.out.println("CLEANED " + count + " files");
-				// FIXME: print number of files removed.
+				logger.logTimedMessage("cleaned  " + binRoot.toString() + " ... removed " + count + " file(s)", 0, 0);
 			}
 			//
 			return true;

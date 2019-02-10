@@ -21,6 +21,7 @@ import java.util.Set;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.Configuration;
 import wycc.lang.Feature;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -75,6 +76,11 @@ public interface Build {
 		 * @return
 		 */
 		public List<Package> getPackages();
+
+		/**
+		 * Get the default logger assocated with this project
+		 */
+		public Logger getLogger();
 	}
 
 	/**

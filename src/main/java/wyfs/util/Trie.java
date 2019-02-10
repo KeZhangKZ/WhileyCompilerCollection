@@ -213,6 +213,16 @@ public final class Trie implements Path.ID, Path.Filter {
 	}
 
 	@Override
+	public Trie append(final Path.ID id) {
+		Trie r = this;
+		// TODO: this could be more efficient
+		for (int i = 0; i != id.size(); ++i) {
+			r = r.append(id.get(i));
+		}
+		return r;
+	}
+
+	@Override
 	public String toString() {
 		if(parent == null || parent == ROOT) {
 			return component;

@@ -21,6 +21,7 @@ import java.util.List;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wycc.util.Logger;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 

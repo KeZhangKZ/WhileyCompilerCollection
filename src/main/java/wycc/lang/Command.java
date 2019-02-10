@@ -13,15 +13,10 @@
 // limitations under the License.
 package wycc.lang;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Predicate;
 
 import wycc.cfg.Configuration;
-import wycc.lang.Command.Option;
-import wyfs.lang.Content;
-import wyfs.lang.Path;
 
 /**
  * A command which can be executed (e.g. from the command-line)

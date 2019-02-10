@@ -60,21 +60,6 @@ public abstract class AbstractFolder implements Path.Folder {
 	public boolean contains(Path.Entry<?> e) throws IOException {
 		updateContents();
 		Path.ID eid = e.id();
-		boolean contained;
-
-		if (id == eid.parent()) {
-			// The requested entry is contained in this folder. Therefore, we
-			// need to search for it.
-			contained = true;
-		} else if (id == eid.subpath(0, id.size())) {
-			// This folder is a parent of the requested entry. Therefore, we
-			// need to looking for a matching folder entry. If we find one, then
-			// we ask it for the requested entry.
-			eid = eid.subpath(0, id.size() + 1);
-			contained = false;
-		} else {
-			return false;
-		}
 
 		int idx = binarySearch(contents, nentries, eid);
 		if (idx >= 0) {
@@ -86,7 +71,7 @@ public abstract class AbstractFolder implements Path.Folder {
 			do {
 				if (item == e) {
 					return true;
-				} else if (!contained && item instanceof Path.Folder) {
+				} else if (item instanceof Path.Folder && eid.size() > id.size()) {
 					Path.Folder folder = (Path.Folder) item;
 					return folder.contains(e);
 				}
@@ -105,9 +90,9 @@ public abstract class AbstractFolder implements Path.Folder {
 	@Override
 	public <T> Path.Entry<T> get(ID eid, Content.Type<T> ct) throws IOException {
 		updateContents();
-		ID tid = id.append(eid.get(0));
-
-		int idx = binarySearch(contents, nentries, tid);
+		final int id_size = id().size();
+		//
+		int idx = binarySearch(contents, nentries, eid);
 		if (idx >= 0) {
 			// At this point, we've found a matching index for the given ID.
 			// However, there maybe multiple matching IDs with different
@@ -115,20 +100,20 @@ public abstract class AbstractFolder implements Path.Folder {
 			// they match the requested entry.
 			Path.Item item = contents[idx];
 			do {
-				if (item instanceof Entry && eid.size() == 1) {
+				if (item instanceof Entry && eid.equals(item.id())) {
 					// In this case, we're looking for and have found an exact
 					// item.
 					Entry entry = (Entry) item;
 					if (entry.contentType() == ct) {
 						return entry;
 					}
-				} else if (item instanceof Path.Folder && eid.size() > 1) {
+				} else if (item instanceof Path.Folder && eid.size() > id_size) {
 					// In this case, the ID is indicates the item is not
 					// contained in this folder.
 					Path.Folder folder = (Path.Folder) item;
-					return folder.get(eid.subpath(1, eid.size()), ct);
+					return folder.get(eid, ct);
 				}
-			} while (++idx < nentries && (item = contents[idx]).id().equals(tid));
+			} while (++idx < nentries && (item = contents[idx]).id().equals(eid));
 		}
 
 		// no dice
@@ -245,11 +230,12 @@ public abstract class AbstractFolder implements Path.Folder {
 		int count = 0;
 		//
 		for (int i = 0; i != nentries; ++i) {
+			//
 			Path.Item item = contents[i];
+			//
 			if (item instanceof Entry) {
 				Entry entry = (Entry) item;
-				if (filter.matches(entry.id(), entry.contentType())) {
-					remove(entry.id(), entry.contentType());
+				if (filter.matches(entry.id(), entry.contentType()) && remove(entry.id(), entry.contentType())) {
 					count = count + 1;
 					i = i - 1;
 				}

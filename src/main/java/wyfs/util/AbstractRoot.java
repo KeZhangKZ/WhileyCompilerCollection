@@ -26,7 +26,9 @@ import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Folder;
 import wyfs.lang.Path.ID;
+import wyfs.lang.Path.RelativeRoot;
 import wyfs.lang.Path.Root;
+import wyfs.util.AbstractRoot.Relative;
 
 /**
  * Provides a simple implementation of <code>Path.Root</code>. This maintains a
@@ -85,6 +87,11 @@ public abstract class AbstractRoot<T extends Folder> implements Root {
 	}
 
 	@Override
+	public final RelativeRoot createRelativeRoot(ID id) throws IOException {
+		return new Relative(this,id);
+	}
+
+	@Override
 	public boolean remove(ID id, Type<?> ct) throws IOException {
 		return root.remove(id,ct);
 	}
@@ -112,4 +119,123 @@ public abstract class AbstractRoot<T extends Folder> implements Root {
 	 * @return
 	 */
 	protected abstract T root();
+
+	public final static class Relative implements Path.RelativeRoot {
+		private final Path.Root parent;
+		private final ID prefix;
+
+		public Relative(Path.Root parent, ID prefix) throws IOException {
+			if(prefix == null) {
+				throw new IllegalArgumentException("prefix cannot be null");
+			}
+			this.parent = parent;
+			this.prefix = prefix;
+		}
+
+		@Override
+		public Root getParent() {
+			return parent;
+		}
+
+		@Override
+		public boolean contains(Path.Entry<?> entry) throws IOException {
+			// FIXME: unsure whether this makes sense or not
+			return parent.contains(entry);
+		}
+
+		@Override
+		public boolean exists(ID id, Type<?> ct) throws IOException {
+			return parent.exists(prefix.append(id), ct);
+		}
+
+		@Override
+		public <T> Path.Entry<T> get(ID id, Type<T> ct) throws IOException {
+			return parent.get(prefix.append(id),ct);
+		}
+
+		@Override
+		public <T> List<wyfs.lang.Path.Entry<T>> get(Filter<T> cf) throws IOException {
+			return parent.get(new RelativeFilter<>(prefix, cf));
+		}
+
+		@Override
+		public <T> Set<ID> match(Filter<T> cf) throws IOException {
+			return parent.match(new RelativeFilter<>(prefix, cf));
+		}
+
+		@Override
+		public <T> wyfs.lang.Path.Entry<T> create(ID id, Type<T> ct) throws IOException {
+			return parent.create(prefix.append(id), ct);
+		}
+
+		@Override
+		public boolean remove(ID id, Type<?> ct) throws IOException {
+			return parent.remove(prefix.append(id), ct);
+		}
+
+		@Override
+		public int remove(Filter<?> cf) throws IOException {
+			return parent.remove(new RelativeFilter<>(prefix, cf));
+		}
+
+		@Override
+		public RelativeRoot createRelativeRoot(ID id) throws IOException {
+			return new Relative(parent,prefix.append(id));
+		}
+
+		@Override
+		public void flush() throws IOException {
+			parent.flush();
+		}
+
+		@Override
+		public void refresh() throws IOException {
+			parent.flush();
+		}
+
+		@Override
+		public String toString() {
+			return parent.toString() + "::" + prefix;
+		}
+	}
+
+	private static final class RelativeFilter<T> implements Content.Filter<T> {
+		private final ID prefix;
+		private final Content.Filter<T> filter;
+
+		public RelativeFilter(ID prefix, Content.Filter<T> filter) {
+			if(prefix == null) {
+				throw new IllegalArgumentException("prefix cannot be null");
+			}
+			this.prefix = prefix;
+			this.filter = filter;
+		}
+
+		@Override
+		public boolean matches(ID id, Type<T> ct) {
+			if (id.size() >= prefix.size()) {
+				Path.ID id_prefix = id.subpath(0, prefix.size());
+				if (id_prefix.equals(prefix)) {
+					Path.ID id_suffix = id.subpath(prefix.size(), id.size());
+					return filter.matches(id_suffix,ct);
+				}
+			}
+			return false;
+		}
+
+		@Override
+		public boolean matchesSubpath(ID id) {
+			if (id.size() < prefix.size()) {
+				return prefix.subpath(0, id.size()).equals(id);
+			} else {
+				Path.ID id_prefix = id.subpath(0, prefix.size());
+				if (id_prefix.equals(prefix)) {
+					Path.ID id_suffix = id.subpath(prefix.size(), id.size());
+					return filter.matchesSubpath(id_suffix);
+				}
+			}
+			return false;
+		}
+
+	}
 }

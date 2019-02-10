@@ -127,12 +127,6 @@ public class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		return new Folder(Trie.ROOT);
 	}
 
-	@Override
-	public RelativeRoot createRelativeRoot(ID id) throws IOException {
-		File subdir = new File(dir,id.toString().replace('/',File.separatorChar));
-		return new Relative(subdir,filter,contentTypes);
-	}
-
 	/**
 	 * Given a list of physical files on the file system, determine their
 	 * corresponding <code>Path.Entry</code> instances in this root (if there
@@ -178,18 +172,6 @@ public class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		return sources;
 	}
 
-	public final class Relative extends DirectoryRoot implements Path.RelativeRoot {
-
-		public Relative(File dir, FileFilter filter, Registry contentTypes) throws IOException {
-			super(dir,filter,contentTypes);
-		}
-
-		@Override
-		public Root getParent() {
-			return DirectoryRoot.this;
-		}
-
-	}
 	/**
 	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
@@ -299,12 +281,11 @@ public class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 		@Override
 		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct)
 				throws IOException {
-			if (nid.size() == 1) {
+			if (nid.size() == id.size() + 1) {
 				// attempting to create an entry in this folder
 				Path.Entry<T> e = super.get(nid.subpath(0, 1), ct);
 				if (e == null) {
 					// Entry doesn't already exist, so create it
-					nid = id.append(nid.get(0));
 					String physID = nid.toString().replace('/',
 							File.separatorChar);
 					physID = physID + "." + contentTypes.suffix(ct);
@@ -317,13 +298,14 @@ public class DirectoryRoot extends AbstractRoot<DirectoryRoot.Folder> {
 				return e;
 			} else {
 				// attempting to create entry in subfolder.
-				Path.Folder folder = getFolder(nid.get(0));
+				String folderName = nid.get(id.size());
+				Path.Folder folder = getFolder(folderName);
 				if (folder == null) {
 					// Folder doesn't already exist, so create it.
-					folder = new Folder(id.append(nid.get(0)));
+					folder = new Folder(id.append(folderName));
 					super.insert(folder);
 				}
-				return folder.create(nid.subpath(1, nid.size()), ct);
+				return folder.create(nid, ct);
 			}
 		}
 

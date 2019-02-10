@@ -66,25 +66,6 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 		return new Folder(Trie.ROOT);
 	}
 
-
-	@Override
-	public RelativeRoot createRelativeRoot(ID id) throws IOException {
-		return new Relative(contentTypes);
-	}
-
-	public final class Relative extends VirtualRoot implements Path.RelativeRoot {
-
-		public Relative(Registry contentTypes) {
-			super(contentTypes);
-		}
-
-		@Override
-		public Root getParent() {
-			return VirtualRoot.this;
-		}
-
-	}
-
 	/**
 	 * An entry is a file on the file system which represents a Whiley module. The
 	 * file may be encoded in a range of different formats. For example, it may be a
@@ -200,12 +181,11 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 
 		@Override
 		public <T> Path.Entry<T> create(ID nid, Content.Type<T> ct) throws IOException {
-			if (nid.size() == 1) {
+			if (nid.size() == id.size() + 1) {
 				// attempting to create an entry in this folder
-				Path.Entry<T> e = super.get(nid.subpath(0, 1), ct);
+				Path.Entry<T> e = super.get(nid, ct);
 				if (e == null) {
 					// Entry doesn't already exist, so create it
-					nid = id.append(nid.get(0));
 					e = new Entry(nid, contentTypes);
 					e.associate(ct, null);
 					super.insert(e);
@@ -213,13 +193,14 @@ public class VirtualRoot extends AbstractRoot<VirtualRoot.Folder> {
 				return e;
 			} else {
 				// attempting to create entry in subfolder.
-				Path.Folder folder = getFolder(nid.get(0));
+				String folderName = nid.get(id.size());
+				Path.Folder folder = getFolder(folderName);
 				if (folder == null) {
 					// Folder doesn't already exist, so create it.
-					folder = new Folder(id.append(nid.get(0)));
+					folder = new Folder(id.append(folderName));
 					super.insert(folder);
 				}
-				return folder.create(nid.subpath(1, nid.size()), ct);
+				return folder.create(nid, ct);
 			}
 		}
 

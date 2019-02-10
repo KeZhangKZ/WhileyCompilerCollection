@@ -32,6 +32,7 @@ import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
 import wycc.util.ArrayUtils;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -116,6 +117,7 @@ public class Build implements Command {
 
 	@Override
 	public void initialise() {
+
 	}
 
 	@Override

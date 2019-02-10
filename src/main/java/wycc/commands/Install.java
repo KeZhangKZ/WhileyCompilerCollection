@@ -31,6 +31,7 @@ import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -71,22 +72,16 @@ public class Install implements Command {
 
 		@Override
 		public Command initialise(Command environment, Configuration configuration) {
-			return new Install((WyProject) environment, configuration, System.out, System.err);
+			return new Install((WyProject) environment, configuration);
 		}
 
 	};
 
 	/**
-	 * Provides a generic place to which normal output should be directed. This
-	 * should eventually be replaced.
-	 */
-	private final PrintStream sysout;
-
-	/**
 	 * Provides a generic place to which error output should be directed. This
 	 * should eventually be replaced.
 	 */
-	private final PrintStream syserr;
+	private Logger logger;
 
 	/**
 	 * The enclosing project for this build
@@ -103,11 +98,9 @@ public class Install implements Command {
 	 */
 	private final Value.UTF8[] includes;
 
-	public Install(WyProject project, Configuration configuration, OutputStream sysout,
-			OutputStream syserr) {
+	public Install(WyProject project, Configuration configuration) {
 		this.project = project;
-		this.sysout = new PrintStream(sysout);
-		this.syserr = new PrintStream(syserr);
+		this.logger = project.getBuildProject().getLogger();
 		this.configuration = configuration;
 		this.includes = configuration.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
 	}
@@ -141,10 +134,9 @@ public class Install implements Command {
 			// Flush it to disk
 			target.flush();
 			// Done
-			System.out.println("WROTE: " + files);
+			logger.logTimedMessage("installed " + target.id() + " ... " + files + " file(s)", 0, 0);
 			return true;
 		} catch (IOException e) {
-			e.printStackTrace(syserr);
 			return false;
 		}
 	}

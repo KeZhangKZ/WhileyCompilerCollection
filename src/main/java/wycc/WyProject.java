@@ -33,6 +33,7 @@ import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.util.ArrayUtils;
 import wycc.util.CommandParser;
+import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
@@ -116,6 +117,11 @@ public class WyProject implements Command {
 	 * Contains project information.
 	 */
 	protected final StdProject project;
+
+	/**
+	 * Generic logger
+	 */
+	private Logger logger;
 
 	/**
 	 * Provides a generic place to which normal output should be directed. This
@@ -232,6 +238,8 @@ public class WyProject implements Command {
 		// Extract options
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
 		try {
+			project.setLogger(verbose ? new Logger.Default(System.err) : Logger.NULL);
+			//
 			if(template.getChild() != null) {
 				// Execute a subcommand
 				template = template.getChild();
