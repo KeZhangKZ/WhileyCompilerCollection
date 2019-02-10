@@ -82,6 +82,21 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	public List<Attribute> getAttributes();
 
 	/**
+	 * Get all matching attributes associated with this bytecode.
+	 *
+	 * @return
+	 */
+	public <T extends Attribute> List<T> getAttributes(Class<T> kind);
+
+	/**
+	 * Get first matching attribute associated with this bytecode, or null if no
+	 * match.
+	 *
+	 * @return
+	 */
+	public <T extends Attribute> T getAttribute(Class<T> kind);
+
+	/**
 	 * Mutate the ith child of this item
 	 *
 	 * @param ith
@@ -145,6 +160,24 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	 */
 	public interface Attribute {
 
+	}
+
+	/**
+	 * A marker represents some kind of information which should be communicated to
+	 * the user. For example, a syntax error or a warning. However, there are other
+	 * possible markers which could be used such as for reporting possible
+	 * refactoring positions, etc.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Marker extends Attribute {
+		/**
+		 * Get the message associated with this marker.
+		 *
+		 * @return
+		 */
+		public String getMessage();
 	}
 
 	// ============================================================

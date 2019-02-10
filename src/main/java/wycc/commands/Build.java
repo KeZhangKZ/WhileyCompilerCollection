@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 
 import wybs.lang.Build.Graph;
+import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
 import wybs.util.StdBuildGraph;
@@ -144,6 +145,7 @@ public class Build implements Command {
 		}
 		// Determine modified files
 		ArrayList<Path.Entry<?>> sources = new ArrayList<>();
+		ArrayList<Path.Entry<?>> binaries = new ArrayList<>();
 		//
 		for(Path.Entry<?> source : graph.getEntries()) {
 			// Get all children derived from this entry
@@ -153,11 +155,64 @@ public class Build implements Command {
 				if (binary.lastModified() < source.lastModified()) {
 					// Binary modified before source.
 					sources.add(source);
+					binaries.add(binary);
 				}
 			}
 		}
-		// Finally, rebuild everything!
+		// Now rebuild everything!
 		project.build(sources, graph);
+		// Finally look for error messages
+		printSyntacticMessages(binaries);
 		return true;
+	}
+
+	private void printSyntacticMessages(List<Path.Entry<?>> binaries) throws IOException {
+		// Extract all items which have been marked
+		List<SyntacticItem> items = extractSyntacticMarkers(binaries);
+		// Print out the error messages
+		for (int i = 0; i != items.size(); ++i) {
+			SyntacticItem item = items.get(i);
+			List<SyntacticItem.Marker> markers = item.getAttributes(SyntacticItem.Marker.class);
+			for (int j = 0; j != markers.size(); ++j) {
+				// Log the error message
+				syserr.println("syntax error: " + markers.get(j).getMessage());
+			}
+		}
+	}
+
+	/**
+	 * Traverse the various binaries which have been generated looking for error
+	 * messages.
+	 *
+	 * @param binaries
+	 * @return
+	 * @throws IOException
+	 */
+	private List<SyntacticItem> extractSyntacticMarkers(List<Path.Entry<?>> binaries) throws IOException {
+		List<SyntacticItem> annotated = new ArrayList<>();
+		//
+		for (Path.Entry<?> binary : binaries) {
+			Object o = binary.read();
+			// If the object in question can be decoded as a syntactic heap then we can look
+			// for syntactic messages.
+			if (o instanceof SyntacticHeap) {
+				SyntacticHeap h = (SyntacticHeap) o;
+				extractSyntacticMarkers(h.getRootItem(), annotated);
+			}
+		}
+		//
+		return annotated;
+	}
+
+	private void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem> items) {
+		// Check whether this item has a marker associated with it.
+		if (item.getAttribute(SyntacticItem.Marker.class) != null) {
+			// At least one marked assocaited with item.
+			items.add(item);
+		}
+		// Recursive children looking for other syntactic markers
+		for (int i = 0; i != item.size(); ++i) {
+			extractSyntacticMarkers(item.get(i), items);
+		}
 	}
 }

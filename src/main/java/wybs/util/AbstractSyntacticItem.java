@@ -148,6 +148,30 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 	}
 
 	@Override
+	public <S extends Attribute> List<S> getAttributes(Class<S> kind) {
+		List<S> matches = new ArrayList<>();
+		for (int i = 0; i != attributes.size(); ++i) {
+			Attribute a = attributes.get(i);
+			if (kind.isInstance(a)) {
+				matches.add((S) a);
+			}
+		}
+		return matches;
+	}
+
+	@Override
+	public <S extends Attribute> S getAttribute(Class<S> kind) {
+		List<S> matches = new ArrayList<>();
+		for (int i = 0; i != attributes.size(); ++i) {
+			Attribute a = attributes.get(i);
+			if (kind.isInstance(a)) {
+				return (S) a;
+			}
+		}
+		return null;
+	}
+
+	@Override
 	public byte[] getData() {
 		return data;
 	}
