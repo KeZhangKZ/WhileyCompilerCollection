@@ -128,7 +128,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		}
 
 		public Tuple<Identifier> getName() {
-			return (Tuple<Identifier>) get(0);
+			return (Tuple<Identifier>) getOperand(0);
 		}
 
 		public String getNameString() {
@@ -138,13 +138,13 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				if (i != 0) {
 					r = r + "/";
 				}
-				r = r + ids.get(i);
+				r = r + ids.getOperand(i);
 			}
 			return r;
 		}
 
 		public Tuple<KeyValuePair> getContents() {
-			return (Tuple) get(1);
+			return (Tuple) getOperand(1);
 		}
 
 		@Override
@@ -166,11 +166,11 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		}
 
 		public Identifier getKey() {
-			return (Identifier) get(0);
+			return (Identifier) getOperand(0);
 		}
 
 		public Value getValue() {
-			return (Value) get(1);
+			return (Value) getOperand(1);
 		}
 
 		@Override
@@ -183,7 +183,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		String table = key.parent().toString();
 		//
 		for(int i=0;i!=decls.size();++i) {
-			Declaration decl = decls.get(i);
+			Declaration decl = decls.getOperand(i);
 			if(key.size() > 1 && decl instanceof Table) {
 				Table s = (Table) decl;
 				if (s.getNameString().equals(table)) {
@@ -304,7 +304,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 
 		private void match(Trie id, Path.Filter filter, Tuple<? extends Declaration> declarations, ArrayList<ID> matches) {
 			for (int i = 0; i != declarations.size(); ++i) {
-				Declaration decl = declarations.get(i);
+				Declaration decl = declarations.getOperand(i);
 				if (decl instanceof Table) {
 					Table table = (Table) decl;
 					// FIXME: could be more efficient!

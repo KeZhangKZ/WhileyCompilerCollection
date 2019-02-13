@@ -65,14 +65,14 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	 * @param i
 	 * @return
 	 */
-	public SyntacticItem get(int i);
+	public SyntacticItem getOperand(int i);
 
 	/**
 	 * Return the top-level operands in this bytecode.
 	 *
 	 * @return
 	 */
-	public SyntacticItem[] getAll();
+	public SyntacticItem[] getOperandArray();
 
 	/**
 	 * Get all attributes associated with this bytecode.

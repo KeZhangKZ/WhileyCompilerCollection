@@ -89,7 +89,7 @@ public abstract class SyntacticHeapWriter {
 		}
 		//
 		for (int i = 0; i != item.size(); ++i) {
-			SyntacticItem operand = item.get(i);
+			SyntacticItem operand = item.getOperand(i);
 			out.write_uv(operand.getIndex());
 		}
 	}

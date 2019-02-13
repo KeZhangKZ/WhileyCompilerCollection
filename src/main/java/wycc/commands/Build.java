@@ -20,13 +20,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 import wybs.lang.Build.Graph;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntaxError;
+import wybs.util.AbstractCompilationUnit;
 import wybs.util.StdBuildGraph;
+import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
@@ -57,10 +60,8 @@ public class Build implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Arrays.asList(
-					Command.OPTION_FLAG("verbose","generate verbose information about the build",false),
-					Command.OPTION_FLAG("brief","generate brief output for syntax errors",false)
-					);
+			return Arrays.asList(Command.OPTION_FLAG("verbose", "generate verbose information about the build", false),
+					Command.OPTION_FLAG("brief", "generate brief output for syntax errors", false));
 		}
 
 		@Override
@@ -93,9 +94,9 @@ public class Build implements Command {
 	private final PrintStream syserr;
 
 	/**
-	 * Signals that brief error reporting should be used. This is primarily used
-	 * to help integration with external tools. More specifically, brief output
-	 * is structured so as to be machine readable.
+	 * Signals that brief error reporting should be used. This is primarily used to
+	 * help integration with external tools. More specifically, brief output is
+	 * structured so as to be machine readable.
 	 */
 	protected boolean brief = false;
 
@@ -104,8 +105,7 @@ public class Build implements Command {
 	 */
 	private final WyProject project;
 
-	public Build(WyProject project, Configuration configuration, OutputStream sysout,
-			OutputStream syserr) {
+	public Build(WyProject project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
@@ -145,39 +145,58 @@ public class Build implements Command {
 		}
 		// Determine modified files
 		ArrayList<Path.Entry<?>> sources = new ArrayList<>();
-		ArrayList<Path.Entry<?>> binaries = new ArrayList<>();
 		//
-		for(Path.Entry<?> source : graph.getEntries()) {
+		for (Path.Entry<?> source : graph.getEntries()) {
 			// Get all children derived from this entry
 			List<Path.Entry<?>> children = graph.getChildren(source);
 			// Check for any which are out-of-date
-			for(Path.Entry<?> binary : children) {
+			for (Path.Entry<?> binary : children) {
 				if (binary.lastModified() < source.lastModified()) {
 					// Binary modified before source.
 					sources.add(source);
-					binaries.add(binary);
 				}
 			}
 		}
 		// Now rebuild everything!
 		project.build(sources, graph);
-		// Finally look for error messages
-		printSyntacticMessages(binaries);
+		// Look for error messages
+		printSyntacticMarkers(graph);
+		//
 		return true;
 	}
 
-	private void printSyntacticMessages(List<Path.Entry<?>> binaries) throws IOException {
-		// Extract all items which have been marked
-		List<SyntacticItem> items = extractSyntacticMarkers(binaries);
-		// Print out the error messages
+	/**
+	 * Print out syntactic markers for all entries in the build graph. This requires
+	 * going through all entries, extracting the markers and then printing them.
+	 *
+	 * @param graph
+	 * @throws IOException
+	 */
+	private void printSyntacticMarkers(wybs.lang.Build.Graph graph) throws IOException {
+		// Extract all syntactic markers from entries in the build grpah
+		List<SyntacticItem> items = extractSyntacticMarkers(graph.getEntries());
+		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
 			SyntacticItem item = items.get(i);
 			List<SyntacticItem.Marker> markers = item.getAttributes(SyntacticItem.Marker.class);
 			for (int j = 0; j != markers.size(); ++j) {
 				// Log the error message
-				syserr.println("syntax error: " + markers.get(j).getMessage());
+				printSyntacticMarkers(item, markers.get(j));
 			}
 		}
+	}
+
+	/**
+	 * Print out an individual syntactic markers.
+	 *
+	 * @param marker
+	 */
+	private void printSyntacticMarkers(SyntacticItem parent, SyntacticItem.Marker marker) {
+		syserr.println("syntax error: " + marker.getMessage());
+		// What we need to do here is work out the lines which are spanned by the
+		// syntactic item in question and then print them (somehow).
+		Span span = parent.getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+		// FIXME: what to do now??
 	}
 
 	/**
@@ -188,7 +207,7 @@ public class Build implements Command {
 	 * @return
 	 * @throws IOException
 	 */
-	private List<SyntacticItem> extractSyntacticMarkers(List<Path.Entry<?>> binaries) throws IOException {
+	private List<SyntacticItem> extractSyntacticMarkers(Collection<Path.Entry<?>> binaries) throws IOException {
 		List<SyntacticItem> annotated = new ArrayList<>();
 		//
 		for (Path.Entry<?> binary : binaries) {
@@ -212,7 +231,7 @@ public class Build implements Command {
 		}
 		// Recursive children looking for other syntactic markers
 		for (int i = 0; i != item.size(); ++i) {
-			extractSyntacticMarkers(item.get(i), items);
+			extractSyntacticMarkers(item.getOperand(i), items);
 		}
 	}
 }

@@ -88,7 +88,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		}
 
 		public T get() {
-			return (T) get(0);
+			return (T) getOperand(0);
 		}
 
 		@Override
@@ -129,11 +129,11 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		}
 
 		public K getFirst() {
-			return (K) get(0);
+			return (K) getOperand(0);
 		}
 
 		public V getSecond() {
-			return (V) get(1);
+			return (V) getOperand(1);
 		}
 
 		@Override
@@ -165,14 +165,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		}
 
 		@Override
-		public T get(int i) {
-			return (T) super.get(i);
+		public T getOperand(int i) {
+			return (T) super.getOperand(i);
 		}
 
 		public Tuple<T> get(int start, int end) {
 			SyntacticItem[] items = new SyntacticItem[end - start];
 			for (int i = start; i < end; ++i) {
-				items[i] = super.get(i);
+				items[i] = super.getOperand(i);
 			}
 			return new Tuple(items);
 		}
@@ -181,7 +181,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			int size = size();
 			SyntacticItem[] elements = new SyntacticItem[size];
 			for (int i = 0; i != size; ++i) {
-				elements[i] = fn.apply(get(i));
+				elements[i] = fn.apply(getOperand(i));
 			}
 			return new Tuple<>((S[]) elements);
 		}
@@ -214,7 +214,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				if (i != 0) {
 					r += ",";
 				}
-				SyntacticItem child = get(i);
+				SyntacticItem child = getOperand(i);
 				if (child == null) {
 					r += "?";
 				} else {
@@ -237,7 +237,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 
 				@Override
 				public T next() {
-					return get(index++);
+					return getOperand(index++);
 				}
 
 			};
@@ -295,23 +295,23 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		}
 
 		@Override
-		public Identifier get(int i) {
-			return (Identifier) super.get(i);
+		public Identifier getOperand(int i) {
+			return (Identifier) super.getOperand(i);
 		}
 
 		@Override
-		public Identifier[] getAll() {
-			return (Identifier[]) super.getAll();
+		public Identifier[] getOperandArray() {
+			return (Identifier[]) super.getOperandArray();
 		}
 
 		public Identifier getLast() {
-			return get(size()-1);
+			return getOperand(size()-1);
 		}
 
 		public Identifier[] getPath() {
 			Identifier[] components = new Identifier[size()-1];
 			for(int i=0;i!=components.length;++i) {
-				components[i] = get(i);
+				components[i] = getOperand(i);
 			}
 			return components;
 		}
@@ -323,9 +323,9 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 
 		@Override
 		public String toString() {
-			String r = get(0).get();
+			String r = getOperand(0).get();
 			for (int i = 1; i != size(); ++i) {
-				r += "::" + get(i).get();
+				r += "::" + getOperand(i).get();
 			}
 			return r;
 		}
@@ -513,8 +513,8 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			}
 
 			@Override
-			public Value get(int i) {
-				return (Value) super.get(i);
+			public Value getOperand(int i) {
+				return (Value) super.getOperand(i);
 			}
 
 			@Override
@@ -533,7 +533,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 					if (i != 0) {
 						r += ",";
 					}
-					SyntacticItem child = get(i);
+					SyntacticItem child = getOperand(i);
 					if (child == null) {
 						r += "?";
 					} else {
@@ -581,7 +581,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			 * @return
 			 */
 			public SyntacticItem getItem() {
-				return get(0);
+				return getOperand(0);
 			}
 
 			/**
@@ -591,7 +591,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			 * @return
 			 */
 			public Value.Int getStart() {
-				return (Value.Int) get(1);
+				return (Value.Int) getOperand(1);
 			}
 
 			/**
@@ -601,7 +601,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			 * @return
 			 */
 			public Value.Int getEnd() {
-				return (Value.Int) get(2);
+				return (Value.Int) getOperand(2);
 			}
 
 			@Override
