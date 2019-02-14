@@ -159,7 +159,7 @@ public class Build implements Command {
 			Path.Root srcRoot = platform.getSourceRoot(root);
 			Path.Root binRoot = platform.getTargetRoot(root);
 			for (Path.Entry<?> binary : binRoot.get(platform.getTargetFilter())) {
-				printSyntacticMarkers(graph.getParents(binary), binary);
+				printSyntacticMarkers(syserr,graph.getParents(binary), binary);
 			}
 		}
 		//
@@ -173,13 +173,13 @@ public class Build implements Command {
 	 * @param graph
 	 * @throws IOException
 	 */
-	private void printSyntacticMarkers(Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
-		// Extract all syntactic markers from entries in the build grpah
+	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
+		// Extract all syntactic markers from entries in the build graph
 		List<SyntacticItem.Marker> items = extractSyntacticMarkers(target);
 		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
 			// Log the error message
-			printSyntacticMarkers(sources, items.get(i));
+			printSyntacticMarkers(output, sources, items.get(i));
 		}
 	}
 
@@ -188,7 +188,7 @@ public class Build implements Command {
 	 *
 	 * @param marker
 	 */
-	private void printSyntacticMarkers(Collection<Path.Entry<?>> sources, SyntacticItem.Marker marker) {
+	private static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, SyntacticItem.Marker marker) {
 		//
 		Path.Entry<?> source = getSourceEntry(sources,marker.getSource());
 		//
@@ -198,11 +198,11 @@ public class Build implements Command {
 		// Sanity check we found it
 		if(line != null) {
 			// print the error message
-			syserr.println(source.location() + ":" + line.lineNumber + ": " + marker.getMessage());
+			output.println(source.location() + ":" + line.lineNumber + ": " + marker.getMessage());
 			// Finally print the line highlight
-			printLineHighlight(syserr, line);
+			printLineHighlight(output, line);
 		} else {
-			syserr.println(source.location() + ":?: " + marker.getMessage());
+			output.println(source.location() + ":?: " + marker.getMessage());
 		}
 	}
 
@@ -214,7 +214,7 @@ public class Build implements Command {
 	 * @return
 	 * @throws IOException
 	 */
-	private List<SyntacticItem.Marker> extractSyntacticMarkers(Path.Entry<?>... binaries) throws IOException {
+	private static List<SyntacticItem.Marker> extractSyntacticMarkers(Path.Entry<?>... binaries) throws IOException {
 		List<SyntacticItem.Marker> annotated = new ArrayList<>();
 		//
 		for (Path.Entry<?> binary : binaries) {
@@ -230,7 +230,7 @@ public class Build implements Command {
 		return annotated;
 	}
 
-	private void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem.Marker> items) {
+	private static void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem.Marker> items) {
 		// Check whether this item has a marker associated with it.
 		if (item instanceof SyntacticItem.Marker) {
 			// At least one marked assocaited with item.
@@ -242,7 +242,7 @@ public class Build implements Command {
 		}
 	}
 
-	private Path.Entry<?> getSourceEntry(Collection<Path.Entry<?>> sources, Path.ID id) {
+	private static Path.Entry<?> getSourceEntry(Collection<Path.Entry<?>> sources, Path.ID id) {
 		String str = id.toString();
 		//
 		for (Path.Entry<?> s : sources) {
@@ -256,7 +256,7 @@ public class Build implements Command {
 	}
 
 
-	private void printLineHighlight(PrintStream output,
+	private static void printLineHighlight(PrintStream output,
 			EnclosingLine enclosing) {
 		// NOTE: in the following lines I don't print characters
 		// individually. The reason for this is that it messes up the
