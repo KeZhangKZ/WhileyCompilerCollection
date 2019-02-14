@@ -13,35 +13,29 @@
 // limitations under the License.
 package wycc.commands;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
 import wybs.lang.Build.Graph;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.StdBuildGraph;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
-import wybs.util.AbstractCompilationUnit.Value;
+import wybs.util.AbstractCompilationUnit.Attribute;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
-import wycc.util.ArrayUtils;
-import wycc.util.Logger;
-import wycc.util.Pair;
-import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.Trie;
-import wyfs.lang.Content.Type;
 
 public class Build implements Command {
 	/**
@@ -160,7 +154,14 @@ public class Build implements Command {
 		// Now rebuild everything!
 		project.build(sources, graph);
 		// Look for error messages
-		printSyntacticMarkers(graph);
+		for (int i = 0; i != platforms.size(); ++i) {
+			wybs.lang.Build.Platform platform = platforms.get(i);
+			Path.Root srcRoot = platform.getSourceRoot(root);
+			Path.Root binRoot = platform.getTargetRoot(root);
+			for (Path.Entry<?> binary : binRoot.get(platform.getTargetFilter())) {
+				printSyntacticMarkers(graph.getParents(binary), binary);
+			}
+		}
 		//
 		return true;
 	}
@@ -172,17 +173,13 @@ public class Build implements Command {
 	 * @param graph
 	 * @throws IOException
 	 */
-	private void printSyntacticMarkers(wybs.lang.Build.Graph graph) throws IOException {
+	private void printSyntacticMarkers(Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
 		// Extract all syntactic markers from entries in the build grpah
-		List<SyntacticItem> items = extractSyntacticMarkers(graph.getEntries());
+		List<SyntacticItem.Marker> items = extractSyntacticMarkers(target);
 		// For each marker, print out error messages appropriately
 		for (int i = 0; i != items.size(); ++i) {
-			SyntacticItem item = items.get(i);
-			List<SyntacticItem.Marker> markers = item.getAttributes(SyntacticItem.Marker.class);
-			for (int j = 0; j != markers.size(); ++j) {
-				// Log the error message
-				printSyntacticMarkers(item, markers.get(j));
-			}
+			// Log the error message
+			printSyntacticMarkers(sources, items.get(i));
 		}
 	}
 
@@ -191,12 +188,22 @@ public class Build implements Command {
 	 *
 	 * @param marker
 	 */
-	private void printSyntacticMarkers(SyntacticItem parent, SyntacticItem.Marker marker) {
-		syserr.println("syntax error: " + marker.getMessage());
-		// What we need to do here is work out the lines which are spanned by the
-		// syntactic item in question and then print them (somehow).
-		Span span = parent.getAncestor(AbstractCompilationUnit.Attribute.Span.class);
-		// FIXME: what to do now??
+	private void printSyntacticMarkers(Collection<Path.Entry<?>> sources, SyntacticItem.Marker marker) {
+		//
+		Path.Entry<?> source = getSourceEntry(sources,marker.getSource());
+		//
+		Span span = marker.getTarget().getAncestor(AbstractCompilationUnit.Attribute.Span.class);
+		// Read the enclosing line so we can print it
+		EnclosingLine line = readEnclosingLine(source, span);
+		// Sanity check we found it
+		if(line != null) {
+			// print the error message
+			syserr.println(source.location() + ":" + line.lineNumber + ": " + marker.getMessage());
+			// Finally print the line highlight
+			printLineHighlight(syserr, line);
+		} else {
+			syserr.println(source.location() + ":?: " + marker.getMessage());
+		}
 	}
 
 	/**
@@ -207,8 +214,8 @@ public class Build implements Command {
 	 * @return
 	 * @throws IOException
 	 */
-	private List<SyntacticItem> extractSyntacticMarkers(Collection<Path.Entry<?>> binaries) throws IOException {
-		List<SyntacticItem> annotated = new ArrayList<>();
+	private List<SyntacticItem.Marker> extractSyntacticMarkers(Path.Entry<?>... binaries) throws IOException {
+		List<SyntacticItem.Marker> annotated = new ArrayList<>();
 		//
 		for (Path.Entry<?> binary : binaries) {
 			Object o = binary.read();
@@ -223,15 +230,122 @@ public class Build implements Command {
 		return annotated;
 	}
 
-	private void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem> items) {
+	private void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem.Marker> items) {
 		// Check whether this item has a marker associated with it.
-		if (item.getAttribute(SyntacticItem.Marker.class) != null) {
+		if (item instanceof SyntacticItem.Marker) {
 			// At least one marked assocaited with item.
-			items.add(item);
+			items.add((SyntacticItem.Marker) item);
 		}
 		// Recursive children looking for other syntactic markers
 		for (int i = 0; i != item.size(); ++i) {
 			extractSyntacticMarkers(item.getOperand(i), items);
+		}
+	}
+
+	private Path.Entry<?> getSourceEntry(Collection<Path.Entry<?>> sources, Path.ID id) {
+		String str = id.toString();
+		//
+		for (Path.Entry<?> s : sources) {
+			// FIXME: this is obviously a bad hack for now
+			String sid = s.id().toString();
+			if (sid.endsWith(str)) {
+				return s;
+			}
+		}
+		return null;
+	}
+
+
+	private void printLineHighlight(PrintStream output,
+			EnclosingLine enclosing) {
+		// NOTE: in the following lines I don't print characters
+		// individually. The reason for this is that it messes up the
+		// ANT task output.
+		String str = enclosing.lineText;
+
+		if (str.length() > 0 && str.charAt(str.length() - 1) == '\n') {
+			output.print(str);
+		} else {
+			// this must be the very last line of output and, in this
+			// particular case, there is no new-line character provided.
+			// Therefore, we need to provide one ourselves!
+			output.println(str);
+		}
+		str = "";
+		for (int i = 0; i < enclosing.columnStart(); ++i) {
+			if (enclosing.lineText.charAt(i) == '\t') {
+				str += "\t";
+			} else {
+				str += " ";
+			}
+		}
+		for (int i = enclosing.columnStart(); i <= enclosing.columnEnd(); ++i) {
+			str += "^";
+		}
+		output.println(str);
+	}
+
+	private static EnclosingLine readEnclosingLine(Path.Entry<?> entry, Attribute.Span location) {
+		int spanStart = location.getStart().get().intValue();
+		int spanEnd = location.getEnd().get().intValue();
+		int line = 0;
+		int lineStart = 0;
+		int lineEnd = 0;
+		StringBuilder text = new StringBuilder();
+		try {
+			BufferedReader in = new BufferedReader(new InputStreamReader(entry.inputStream(), "UTF-8"));
+
+			// first, read whole file
+			int len = 0;
+			char[] buf = new char[1024];
+			while ((len = in.read(buf)) != -1) {
+				text.append(buf, 0, len);
+			}
+
+			while (lineEnd < text.length() && lineEnd <= spanStart) {
+				lineStart = lineEnd;
+				lineEnd = parseLine(text, lineEnd);
+				line = line + 1;
+			}
+		} catch (IOException e) {
+			return null;
+		}
+		lineEnd = Math.min(lineEnd, text.length());
+
+		return new EnclosingLine(spanStart, spanEnd, line, lineStart, lineEnd,
+				text.substring(lineStart, lineEnd));
+	}
+
+	private static int parseLine(StringBuilder buf, int index) {
+		while (index < buf.length() && buf.charAt(index) != '\n') {
+			index++;
+		}
+		return index + 1;
+	}
+
+	private static class EnclosingLine {
+		private int lineNumber;
+		private int start;
+		private int end;
+		private int lineStart;
+		private int lineEnd;
+		private String lineText;
+
+		public EnclosingLine(int start, int end, int lineNumber, int lineStart, int lineEnd, String lineText) {
+			this.start = start;
+			this.end = end;
+			this.lineNumber = lineNumber;
+			this.lineStart = lineStart;
+			this.lineEnd = lineEnd;
+			this.lineText = lineText;
+		}
+
+		public int columnStart() {
+			return start - lineStart;
+		}
+
+		public int columnEnd() {
+			return Math.min(end, lineEnd) - lineStart;
 		}
 	}
 }

@@ -15,6 +15,8 @@ package wybs.lang;
 
 import java.util.List;
 
+import wyfs.lang.Path;
+
 public interface SyntacticItem extends Comparable<SyntacticItem> {
 
 	/**
@@ -75,28 +77,6 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	public SyntacticItem[] getOperandArray();
 
 	/**
-	 * Get all attributes associated with this bytecode.
-	 *
-	 * @return
-	 */
-	public List<Attribute> getAttributes();
-
-	/**
-	 * Get all matching attributes associated with this bytecode.
-	 *
-	 * @return
-	 */
-	public <T extends Attribute> List<T> getAttributes(Class<T> kind);
-
-	/**
-	 * Get first matching attribute associated with this bytecode, or null if no
-	 * match.
-	 *
-	 * @return
-	 */
-	public <T extends Attribute> T getAttribute(Class<T> kind);
-
-	/**
 	 * Mutate the ith child of this item
 	 *
 	 * @param ith
@@ -119,7 +99,6 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	 */
 	public byte[] getData();
 
-
 	/**
 	 * Get the first syntactic item of a given kind which refers to this item.
 	 *
@@ -127,6 +106,14 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	 * @return
 	 */
 	public <T extends SyntacticItem> T getParent(Class<T> kind);
+
+	/**
+	 * Get all syntactic items of a given kind which refer to this item.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> List<T> getParents(Class<T> kind);
 
 	/**
 	 * Get the first syntactic item of a given kind which refers directly or
@@ -152,17 +139,6 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	// ============================================================
 
 	/**
-	 * Attributes represent various additional pieces of information inferred
-	 * about a given item in the heap.  For example, source line information.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Attribute {
-
-	}
-
-	/**
 	 * A marker represents some kind of information which should be communicated to
 	 * the user. For example, a syntax error or a warning. However, there are other
 	 * possible markers which could be used such as for reporting possible
@@ -171,13 +147,27 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Marker extends Attribute {
+	public interface Marker extends SyntacticItem {
 		/**
 		 * Get the message associated with this marker.
 		 *
 		 * @return
 		 */
 		public String getMessage();
+
+		/**
+		 * Get the syntactic item to which this marker is associated.
+		 *
+		 * @return
+		 */
+		public SyntacticItem getTarget();
+
+		/**
+		 * Get the Path.ID of the enclosing source file.
+		 *
+		 * @return
+		 */
+		public Path.ID getSource();
 	}
 
 	// ============================================================

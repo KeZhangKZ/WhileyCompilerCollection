@@ -14,9 +14,7 @@
 package wybs.util;
 
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 
 import wybs.lang.SyntacticHeap;
@@ -29,7 +27,6 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 	private int index; // index in the parent
 	protected int opcode;
 	protected SyntacticItem[] operands;
-	protected List<Attribute> attributes;
 	protected byte[] data;
 
 	public AbstractSyntacticItem(int opcode) {
@@ -37,21 +34,18 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 		this.opcode = opcode;
 		this.operands = null;
 		this.data = null;
-		this.attributes = new ArrayList<>();
 	}
 
 	public AbstractSyntacticItem(int opcode, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = null;
-		this.attributes = new ArrayList<>();
 	}
 
 	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem... operands) {
 		this.opcode = opcode;
 		this.operands = operands;
 		this.data = data;
-		this.attributes = new ArrayList<>();
 	}
 
 	@Override
@@ -82,6 +76,16 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 		return parent.getParent(this, kind);
 	}
 
+	/**
+	 * Get all syntactic items of a given kind which refer to this item.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	@Override
+	public <T extends SyntacticItem> List<T> getParents(Class<T> kind) {
+		return parent.getParents(this, kind);
+	}
 	/**
 	 * Get the first syntactic item of a given kind which refers to this item either
 	 * indirectly or directly.
@@ -140,35 +144,6 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 	@Override
 	public SyntacticItem[] getOperandArray() {
 		return operands;
-	}
-
-	@Override
-	public List<Attribute> getAttributes() {
-		return attributes;
-	}
-
-	@Override
-	public <S extends Attribute> List<S> getAttributes(Class<S> kind) {
-		List<S> matches = new ArrayList<>();
-		for (int i = 0; i != attributes.size(); ++i) {
-			Attribute a = attributes.get(i);
-			if (kind.isInstance(a)) {
-				matches.add((S) a);
-			}
-		}
-		return matches;
-	}
-
-	@Override
-	public <S extends Attribute> S getAttribute(Class<S> kind) {
-		List<S> matches = new ArrayList<>();
-		for (int i = 0; i != attributes.size(); ++i) {
-			Attribute a = attributes.get(i);
-			if (kind.isInstance(a)) {
-				return (S) a;
-			}
-		}
-		return null;
 	}
 
 	@Override

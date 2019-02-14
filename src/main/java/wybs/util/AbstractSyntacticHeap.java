@@ -117,6 +117,21 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 		return null;
 	}
 
+	public <T extends SyntacticItem> List<T> getParents(SyntacticItem child, Class<T> kind) {
+		List<T> parents = new ArrayList<>();
+		for (int i = 0; i != syntacticItems.size(); ++i) {
+			SyntacticItem parent = syntacticItems.get(i);
+			if(kind.isInstance(parent)) {
+				for(int j=0;j!=parent.size();++j) {
+					if(parent.getOperand(j) == child) {
+						parents.add((T) parent);
+					}
+				}
+			}
+		}
+		//
+		return parents;
+	}
 
 	/**
 	 * Get first ancestor of a syntactic item matching the given kind. If no item
@@ -170,18 +185,6 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			}
 			out.print("#" + i + " " + item);
 			//
-			List<SyntacticItem.Attribute> attributes = item.getAttributes();
-			if (attributes.size() > 0) {
-				out.print(" [");
-				for (int j = 0; j != attributes.size(); ++j) {
-					if (j != 0) {
-						out.print(", ");
-					}
-					out.print(attributes.get(j));
-				}
-				out.print("]");
-			}
-
 			out.println();
 		}
 		out.flush();
