@@ -20,6 +20,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -223,22 +224,27 @@ public class Build implements Command {
 			// for syntactic messages.
 			if (o instanceof SyntacticHeap) {
 				SyntacticHeap h = (SyntacticHeap) o;
-				extractSyntacticMarkers(h.getRootItem(), annotated);
+				extractSyntacticMarkers(h.getRootItem(), annotated, new BitSet());
 			}
 		}
 		//
 		return annotated;
 	}
 
-	private static void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem.Marker> items) {
-		// Check whether this item has a marker associated with it.
-		if (item instanceof SyntacticItem.Marker) {
-			// At least one marked assocaited with item.
-			items.add((SyntacticItem.Marker) item);
-		}
-		// Recursive children looking for other syntactic markers
-		for (int i = 0; i != item.size(); ++i) {
-			extractSyntacticMarkers(item.getOperand(i), items);
+	private static void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem.Marker> items, BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if(!visited.get(index)) {
+			visited.set(index);
+			// Check whether this item has a marker associated with it.
+			if (item instanceof SyntacticItem.Marker) {
+				// At least one marked assocaited with item.
+				items.add((SyntacticItem.Marker) item);
+			}
+			// Recursive children looking for other syntactic markers
+			for (int i = 0; i != item.size(); ++i) {
+				extractSyntacticMarkers(item.getOperand(i), items, visited);
+			}
 		}
 	}
 
