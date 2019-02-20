@@ -119,7 +119,7 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 	}
 
 	@Override
-	public SyntacticItem getOperand(int i) {
+	public SyntacticItem get(int i) {
 		return operands[i];
 	}
 
@@ -142,7 +142,7 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 	}
 
 	@Override
-	public SyntacticItem[] getOperandArray() {
+	public SyntacticItem[] getAll() {
 		return operands;
 	}
 
@@ -217,8 +217,8 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 			return diff;
 		}
 		for (int i = 0; i != size(); ++i) {
-			SyntacticItem my_ith = getOperand(i);
-			SyntacticItem other_ith = other.getOperand(i);
+			SyntacticItem my_ith = get(i);
+			SyntacticItem other_ith = other.get(i);
 			if (my_ith == null && other_ith == null) {
 				// skip
 			} else if(my_ith == null) {

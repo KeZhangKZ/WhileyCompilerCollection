@@ -622,7 +622,7 @@ public interface Configuration {
 			@Override
 			public boolean isValid(Value.Array value) {
 				for(int i=0;i!=value.size();++i) {
-					if(!(value.getOperand(i) instanceof Value.UTF8)) {
+					if(!(value.get(i) instanceof Value.UTF8)) {
 						return false;
 					}
 				}
@@ -645,7 +645,7 @@ public interface Configuration {
 			@Override
 			public boolean isValid(Value.Array value) {
 				for(int i=0;i!=value.size();++i) {
-					if(!(value.getOperand(i) instanceof Value.UTF8)) {
+					if(!(value.get(i) instanceof Value.UTF8)) {
 						return false;
 					}
 				}

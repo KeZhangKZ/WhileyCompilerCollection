@@ -107,7 +107,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			SyntacticItem parent = syntacticItems.get(i);
 			if(kind.isInstance(parent)) {
 				for(int j=0;j!=parent.size();++j) {
-					if(parent.getOperand(j) == child) {
+					if(parent.get(j) == child) {
 						return (T) parent;
 					}
 				}
@@ -123,7 +123,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			SyntacticItem parent = syntacticItems.get(i);
 			if(kind.isInstance(parent)) {
 				for(int j=0;j!=parent.size();++j) {
-					if(parent.getOperand(j) == child) {
+					if(parent.get(j) == child) {
 						parents.add((T) parent);
 					}
 				}
@@ -151,7 +151,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 				SyntacticItem parent = syntacticItems.get(i);
 				for (int j = 0; j != parent.size(); ++j) {
 					// Don't follow cross-references
-					if (parent.getOperand(j) == child && !(parent instanceof AbstractCompilationUnit.Ref)) {
+					if (parent.get(j) == child && !(parent instanceof AbstractCompilationUnit.Ref)) {
 						// FIXME: this is not specifically efficient. It would
 						// be helpful if SyntacticItems actually contained
 						// references to their parent items.
@@ -230,7 +230,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			// Item not previously cloned. Therefore, first create new item
 			SyntacticItem[] operands = new SyntacticItem[item.size()];
 			for (int i = 0; i != operands.length; ++i) {
-				SyntacticItem operand = item.getOperand(i);
+				SyntacticItem operand = item.get(i);
 				if (operand != null) {
 					operands[i] = clone(operand, mapping);
 				}
@@ -246,7 +246,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 		SyntacticItem clonedItem = mapping.get(item);
 		if (clonedItem == null) {
 			// Item not previously cloned. Therefore, first create new item
-			SyntacticItem[] operands = item.getOperandArray();
+			SyntacticItem[] operands = item.getAll();
 			SyntacticItem[] nOperands = operands;
 			if (operands != null) {
 				for (int i = 0; i != operands.length; ++i) {
@@ -335,7 +335,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			// for the item to replace. The challenge here is that we need to
 			// ensure the original item is preserved as is if there is no
 			// change.
-			SyntacticItem[] children = item.getOperandArray();
+			SyntacticItem[] children = item.getAll();
 			// Initially, this will alias children. In the event of a child
 			// which is actually updated, then this will refer to a new array.
 			// That will be the signal that we need to create a new item to
@@ -405,7 +405,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 				// Item not allocated to this heap. Therefore, recursively allocate
 				// all children.
 				for (int i = 0; i != nItem.size(); ++i) {
-					SyntacticItem child = item.getOperand(i);
+					SyntacticItem child = item.get(i);
 					if (child != null) {
 						child = allocate(child);
 					}

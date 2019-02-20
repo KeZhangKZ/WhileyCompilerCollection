@@ -48,7 +48,7 @@ public class SyntacticHeapPrinter {
 						if(j!=0) {
 							out.print(",");
 						}
-						out.print(item.getOperand(j).getIndex());
+						out.print(item.get(j).getIndex());
 					}
 					out.print(")");
 				}
@@ -76,7 +76,7 @@ public class SyntacticHeapPrinter {
 		//
 		SyntacticItem item = heap.getSyntacticItem(index);
 		for (int j = 0; j != item.size(); ++j) {
-			int jth = item.getOperand(j).getIndex();
+			int jth = item.get(j).getIndex();
 			if(!visited[jth]) {
 				search(jth, heap, visited);
 			}

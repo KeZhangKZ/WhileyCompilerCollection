@@ -243,7 +243,7 @@ public class Build implements Command {
 			}
 			// Recursive children looking for other syntactic markers
 			for (int i = 0; i != item.size(); ++i) {
-				extractSyntacticMarkers(item.getOperand(i), items, visited);
+				extractSyntacticMarkers(item.get(i), items, visited);
 			}
 		}
 	}

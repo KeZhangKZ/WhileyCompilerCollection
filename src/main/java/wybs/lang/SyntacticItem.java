@@ -62,19 +62,19 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	public int size();
 
 	/**
-	 * Return the ith top-level operand in this bytecode.
+	 * Return the ith top-level child in this bytecode.
 	 *
 	 * @param i
 	 * @return
 	 */
-	public SyntacticItem getOperand(int i);
+	public SyntacticItem get(int i);
 
 	/**
-	 * Return the top-level operands in this bytecode.
+	 * Return the top-level children in this bytecode.
 	 *
 	 * @return
 	 */
-	public SyntacticItem[] getOperandArray();
+	public SyntacticItem[] getAll();
 
 	/**
 	 * Mutate the ith child of this item
