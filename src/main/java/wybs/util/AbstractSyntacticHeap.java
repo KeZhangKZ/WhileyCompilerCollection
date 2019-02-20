@@ -16,12 +16,10 @@ package wybs.util;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 
-import wybs.lang.Attribute;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 
@@ -119,6 +117,21 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 		return null;
 	}
 
+	public <T extends SyntacticItem> List<T> getParents(SyntacticItem child, Class<T> kind) {
+		List<T> parents = new ArrayList<>();
+		for (int i = 0; i != syntacticItems.size(); ++i) {
+			SyntacticItem parent = syntacticItems.get(i);
+			if(kind.isInstance(parent)) {
+				for(int j=0;j!=parent.size();++j) {
+					if(parent.get(j) == child) {
+						parents.add((T) parent);
+					}
+				}
+			}
+		}
+		//
+		return parents;
+	}
 
 	/**
 	 * Get first ancestor of a syntactic item matching the given kind. If no item
@@ -172,18 +185,6 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			}
 			out.print("#" + i + " " + item);
 			//
-			List<Attribute> attributes = item.attributes();
-			if (attributes.size() > 0) {
-				out.print(" [");
-				for (int j = 0; j != attributes.size(); ++j) {
-					if (j != 0) {
-						out.print(", ");
-					}
-					out.print(attributes.get(j));
-				}
-				out.print("]");
-			}
-
 			out.println();
 		}
 		out.flush();

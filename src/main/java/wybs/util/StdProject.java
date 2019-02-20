@@ -167,11 +167,12 @@ public class StdProject implements Build.Project {
 		do {
 			HashSet<Path.Entry<?>> generated = new HashSet<>();
 			for (Build.Rule r : rules) {
-				generated.addAll(r.apply(sources, graph));
+				Set<Path.Entry<?>> built = r.apply(sources, graph);
+				generated.addAll(built);
+				// Sanity check for failed compilations
 			}
 			sources = generated;
 		} while (sources.size() > 0);
-
 		// Done!
 	}
 }

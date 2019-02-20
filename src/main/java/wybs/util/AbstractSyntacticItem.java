@@ -15,16 +15,13 @@ package wybs.util;
 
 import java.math.BigInteger;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.List;
 
-import wybs.lang.SyntacticElement;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wycc.util.ArrayUtils;
 
-public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
-		implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
+public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
 	// Constants;
 	private SyntacticHeap parent;
 	private int index; // index in the parent
@@ -79,6 +76,16 @@ public abstract class AbstractSyntacticItem extends SyntacticElement.Impl
 		return parent.getParent(this, kind);
 	}
 
+	/**
+	 * Get all syntactic items of a given kind which refer to this item.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	@Override
+	public <T extends SyntacticItem> List<T> getParents(Class<T> kind) {
+		return parent.getParents(this, kind);
+	}
 	/**
 	 * Get the first syntactic item of a given kind which refers to this item either
 	 * indirectly or directly.

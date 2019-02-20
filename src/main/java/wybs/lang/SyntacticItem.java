@@ -13,7 +13,11 @@
 // limitations under the License.
 package wybs.lang;
 
-public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticItem> {
+import java.util.List;
+
+import wyfs.lang.Path;
+
+public interface SyntacticItem extends Comparable<SyntacticItem> {
 
 	/**
 	 * Get the enclosing compilation unit in which this syntactic item is
@@ -58,7 +62,7 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	public int size();
 
 	/**
-	 * Return the ith top-level operand in this bytecode.
+	 * Return the ith top-level child in this bytecode.
 	 *
 	 * @param i
 	 * @return
@@ -66,7 +70,7 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	public SyntacticItem get(int i);
 
 	/**
-	 * Return the top-level operands in this bytecode.
+	 * Return the top-level children in this bytecode.
 	 *
 	 * @return
 	 */
@@ -95,7 +99,6 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 */
 	public byte[] getData();
 
-
 	/**
 	 * Get the first syntactic item of a given kind which refers to this item.
 	 *
@@ -103,6 +106,14 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 * @return
 	 */
 	public <T extends SyntacticItem> T getParent(Class<T> kind);
+
+	/**
+	 * Get all syntactic items of a given kind which refer to this item.
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> List<T> getParents(Class<T> kind);
 
 	/**
 	 * Get the first syntactic item of a given kind which refers directly or
@@ -122,6 +133,42 @@ public interface SyntacticItem extends SyntacticElement, Comparable<SyntacticIte
 	 * @return
 	 */
 	public SyntacticItem clone(SyntacticItem[] operands);
+
+	// ============================================================
+	// Attributes
+	// ============================================================
+
+	/**
+	 * A marker represents some kind of information which should be communicated to
+	 * the user. For example, a syntax error or a warning. However, there are other
+	 * possible markers which could be used such as for reporting possible
+	 * refactoring positions, etc.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Marker extends SyntacticItem {
+		/**
+		 * Get the message associated with this marker.
+		 *
+		 * @return
+		 */
+		public String getMessage();
+
+		/**
+		 * Get the syntactic item to which this marker is associated.
+		 *
+		 * @return
+		 */
+		public SyntacticItem getTarget();
+
+		/**
+		 * Get the Path.ID of the enclosing source file.
+		 *
+		 * @return
+		 */
+		public Path.ID getSource();
+	}
 
 	// ============================================================
 	// Schema
