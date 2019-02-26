@@ -16,6 +16,7 @@ package wybs.util;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -43,12 +44,12 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 	public static final int ITEM_utf8 = 3;
 	public static final int ITEM_pair = 4;
 	public static final int ITEM_tuple = 5;
-	public static final int ITEM_ident = 6;
-	public static final int ITEM_name = 7;
-
-	public static final int ATTR_span = 8;
-	public static final int ITEM_ref = 9;
-	public static final int ITEM_array = 10; // REORDER
+	public static final int ITEM_array = 6;
+	public static final int ITEM_ident = 7;
+	public static final int ITEM_name = 8;
+	public static final int ITEM_link = 9;
+	public static final int ITEM_ref = 10;
+	public static final int ATTR_span = 14;
 	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
@@ -336,6 +337,70 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				ids[i] = new Identifier(id.get(i));
 			}
 			return ids;
+		}
+	}
+
+	/**
+	 * Represents a link to a given syntactic item which is "resolvable". That is,
+	 * it is given as a name which is subsequently resolved during some compilation
+	 * stage.
+	 *
+	 * @author David J. Pearce
+	 *
+	 * @param <T>
+	 */
+	public static class Link<T extends SyntacticItem> extends AbstractSyntacticItem {
+		public Link(Name name) {
+			super(ITEM_link,name);
+		}
+
+		private Link(SyntacticItem[] operands) {
+			super(ITEM_link, operands);
+		}
+
+		public boolean isResolved() {
+			return operands.length == 2;
+		}
+
+		public boolean isPartiallyResolved() {
+			return operands.length >= 2;
+		}
+
+		public Name getName() {
+			return (Name) operands[0];
+		}
+
+		public T getTarget() {
+			if(isResolved()) {
+				return ((Ref<T>) operands[1]).get();
+			} else {
+				throw new IllegalArgumentException("link unresolved");
+			}
+		}
+
+		public List<T> getCandidates() {
+			ArrayList<T> candidates = new ArrayList<>();
+			for (int i = 1; i != operands.length; ++i) {
+				Ref<T> candidate = (Ref<T>) operands[i];
+				candidates.add(candidate.get());
+			}
+			return candidates;
+		}
+
+		@SuppressWarnings("unchecked")
+		public void resolve(T... items) {
+			SyntacticHeap heap = getHeap();
+			SyntacticItem first = operands[0];
+			this.operands = Arrays.copyOf(operands, items.length + 1);
+			this.operands[0] = first;
+			for(int i=1;i!=operands.length;++i) {
+				operands[i] = heap.allocate(new Ref<>(items[i - 1]));
+			}
+		}
+
+		@Override
+		public SyntacticItem clone(SyntacticItem[] operands) {
+			return new Link<T>(operands);
 		}
 	}
 
@@ -694,6 +759,13 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Attribute.Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_link] = new Schema(Operands.MANY,Data.ZERO, "ITEM_link") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Link(operands);
 			}
 		};
 		// ==========================================================================
