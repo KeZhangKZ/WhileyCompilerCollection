@@ -198,6 +198,18 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			return new Tuple<>((T[]) nitems);
 		}
 
+		/**
+		 * Append a new item onto this tuple
+		 *
+		 * @param item
+		 * @return
+		 */
+		public Tuple<T> appendAll(Tuple<T> items) {
+			SyntacticItem[] nitems = Arrays.copyOf(operands, operands.length + items.size());
+			System.arraycopy(items.operands, 0, nitems, operands.length, items.size());
+			return new Tuple<>((T[]) nitems);
+		}
+
 		@Override
 		public Tuple<T> clone(SyntacticItem[] operands) {
 			return new Tuple(ArrayUtils.toArray(SyntacticItem.class, operands));
