@@ -175,7 +175,7 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 	// ============================================================
 
 	public enum Operands {
-		ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, MANY
+		ZERO, ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, MANY
 	}
 
 	public enum Data {

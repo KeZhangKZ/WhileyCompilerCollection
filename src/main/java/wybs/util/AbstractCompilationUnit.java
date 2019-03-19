@@ -16,6 +16,7 @@ package wybs.util;
 import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
@@ -43,12 +44,11 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 	public static final int ITEM_utf8 = 3;
 	public static final int ITEM_pair = 4;
 	public static final int ITEM_tuple = 5;
-	public static final int ITEM_ident = 6;
-	public static final int ITEM_name = 7;
-
-	public static final int ATTR_span = 8;
-	public static final int ITEM_ref = 9;
-	public static final int ITEM_array = 10; // REORDER
+	public static final int ITEM_array = 6;
+	public static final int ITEM_ident = 7;
+	public static final int ITEM_name = 8;
+	public static final int ITEM_ref = 10;
+	public static final int ATTR_span = 14;
 	public static final int ITEM_byte = 15; // deprecated
 
 	protected final Path.Entry<T> entry;
@@ -195,6 +195,18 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		public Tuple<T> append(T item) {
 			SyntacticItem[] nitems = Arrays.copyOf(operands, operands.length+1);
 			nitems[operands.length] = item;
+			return new Tuple<>((T[]) nitems);
+		}
+
+		/**
+		 * Append a new item onto this tuple
+		 *
+		 * @param item
+		 * @return
+		 */
+		public Tuple<T> appendAll(Tuple<T> items) {
+			SyntacticItem[] nitems = Arrays.copyOf(operands, operands.length + items.size());
+			System.arraycopy(items.operands, 0, nitems, operands.length, items.size());
 			return new Tuple<>((T[]) nitems);
 		}
 
