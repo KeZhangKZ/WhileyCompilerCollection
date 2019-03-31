@@ -23,12 +23,14 @@ import wyfs.lang.Path;
 import wybs.util.AbstractCompilationUnit.Attribute;
 
 /**
- * This exception is thrown when a syntax error occurs in the parser.
+ * Represents an exception which has been raised on a synctic item. The purpose
+ * of the exception is to identify this item in order that better information
+ * can be reported.
  *
  * @author David J. Pearce
  *
  */
-public class SyntaxError extends RuntimeException {
+public class SyntacticException extends RuntimeException {
 	/**
 	 * The file entry to which this error applies
 	 */
@@ -49,7 +51,7 @@ public class SyntaxError extends RuntimeException {
 	 * @param element
 	 *            The syntactic element to this error refers
 	 */
-	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticItem element) {
+	public SyntacticException(String msg, Path.Entry<?> entry, SyntacticItem element) {
 		super(msg);
 		this.entry = entry;
 		this.element = element;
@@ -65,7 +67,7 @@ public class SyntaxError extends RuntimeException {
 	 * @param element
 	 *            The syntactic element to this error refers
 	 */
-	public SyntaxError(String msg, Path.Entry<?> entry, SyntacticItem element, Throwable ex) {
+	public SyntacticException(String msg, Path.Entry<?> entry, SyntacticItem element, Throwable ex) {
 		super(msg,ex);
 		this.entry = entry;
 		this.element = element;
@@ -130,23 +132,6 @@ public class SyntaxError extends RuntimeException {
 				+ enclosing.columnStart() + ":"
 				+ enclosing.columnEnd() + ":\""
 				+ escapeMessage(message) + "\"");
-
-		// Now print contextual information (if applicable)
-//		if(context != null && context.length > 0) {
-//			output.print(":");
-//			boolean firstTime=true;
-//			for(Attribute.Origin o : context) {
-//				if(!firstTime) {
-//					output.print(",");
-//				}
-//				firstTime=false;
-//				enclosing = readEnclosingLine(o.filename, o.start, o.end);
-//				output.print(filename + ":" + enclosing.lineNumber + ":"
-//						+ enclosing.columnStart() + ":"
-//						+ enclosing.columnEnd());
-//			}
-//		}
-
 		// Done
 		output.println();
 	}
@@ -156,16 +141,6 @@ public class SyntaxError extends RuntimeException {
 		output.println(entry.location() + ":" + enclosing.lineNumber + ": " + message);
 
 		printLineHighlight(output,enclosing);
-
-		// Now print contextual information (if applicable)
-//		if(context != null && context.length > 0) {
-//			for(Attribute.Origin o : context) {
-//				output.println();
-//				enclosing = readEnclosingLine(o.filename, o.start, o.end);
-//				output.println(o.filename + ":" + enclosing.lineNumber + " (context)");
-//				printLineHighlight(output,enclosing);
-//			}
-//		}
 	}
 
 	private void printLineHighlight(PrintStream output,
@@ -262,36 +237,6 @@ public class SyntaxError extends RuntimeException {
 	}
 
 	public static final long serialVersionUID = 1l;
-
-	/**
-	 * An internal failure is a special form of syntax error which indicates
-	 * something went wrong whilst processing some piece of syntax. In other
-	 * words, is an internal error in the compiler, rather than a mistake in the
-	 * input program.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public static class InternalFailure extends SyntaxError {
-		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticItem element) {
-			super(msg, entry, element);
-		}
-
-		public InternalFailure(String msg, Path.Entry<? extends CompilationUnit> entry, SyntacticItem element,
-				Throwable ex) {
-			super(msg, entry, element, ex);
-		}
-
-		@Override
-		public String getMessage() {
-			String msg = super.getMessage();
-			if (msg == null || msg.equals("")) {
-				return "internal failure";
-			} else {
-				return "internal failure, " + msg;
-			}
-		}
-	}
 
 	private static String escapeMessage(String message) {
 		message = message.replace("\n", "\\n");
