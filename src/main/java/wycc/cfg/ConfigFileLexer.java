@@ -20,7 +20,7 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wyfs.lang.Path;
 
 /**
@@ -250,7 +250,7 @@ public class ConfigFileLexer {
 	 */
 	private void syntaxError(String msg, int index) {
 		// FIXME: this is clearly not a sensible approach
-		throw new SyntaxError(msg, entry, new ConfigFile.Attribute.Span(null,index,index));
+		throw new SyntacticException(msg, entry, new ConfigFile.Attribute.Span(null,index,index));
 
 	}
 

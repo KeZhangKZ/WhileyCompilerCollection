@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Set;
 
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractSyntacticItem;
 import wyfs.lang.Content;
@@ -274,7 +274,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				// Convert into value
 				return (T) value;
 			} else {
-				throw new SyntaxError("invalid key access: " + key, getEntry(), null);
+				throw new SyntacticException("invalid key access: " + key, getEntry(), null);
 			}
 		}
 
@@ -337,7 +337,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				List<Path.ID> results = matchAll(descriptor.getFilter());
 				// Sanity check whether required
 				if(results.size() == 0 && descriptor.isRequired()) {
-					throw new SyntaxError("missing key value: " + descriptor.getFilter(), getEntry(), null);
+					throw new SyntacticException("missing key value: " + descriptor.getFilter(), getEntry(), null);
 				}
 				// Check all matching keys
 				for (Path.ID id : results) {
@@ -345,12 +345,12 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 					KeyValuePair kvp = getKeyValuePair(id, declarations);
 					// NOTE: kvp != null
 					if (!kind.isInstance(kvp.getValue())) {
-						throw new SyntaxError(
+						throw new SyntacticException(
 								"invalid key value (expected " + kind.getSimpleName() + ")",
 								getEntry(), kvp);
 					} else if (!descriptor.isValid(kvp.getValue())) {
 						// Identified invalid key-value pair
-						throw new SyntaxError("invalid key value", getEntry(), kvp);
+						throw new SyntacticException("invalid key value", getEntry(), kvp);
 					}
 				}
 				// Remember every matched attribute
@@ -363,7 +363,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				if(!matched.contains(id)) {
 					// Found unmatched attribute
 					KeyValuePair kvp = getKeyValuePair(id, declarations);
-					throw new SyntaxError("invalid key: " + id, getEntry(), kvp.getKey());
+					throw new SyntacticException("invalid key: " + id, getEntry(), kvp.getKey());
 				}
 			}
 			// Done

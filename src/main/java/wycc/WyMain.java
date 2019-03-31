@@ -23,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wycc.cfg.ConfigFile;
@@ -520,7 +520,7 @@ public class WyMain implements Command {
 			ConfigFile cf = config.read();
 			// Construct configuration according to given schema
 			return cf.toConfiguration(Configuration.toCombinedSchema(schemas));
-		} catch (SyntaxError e) {
+		} catch (SyntacticException e) {
 			e.outputSourceError(System.out, false);
 			System.exit(-1);
 			return null;
