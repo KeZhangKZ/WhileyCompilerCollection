@@ -21,7 +21,7 @@ import java.util.*;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
-import wybs.lang.SyntaxError;
+import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wybs.util.StdBuildRule;
@@ -255,7 +255,7 @@ public class WyProject implements Command {
 				// Execute command
 				return cmd.execute(template);
 			}
-		} catch (SyntaxError e) {
+		} catch (SyntacticException e) {
 			SyntacticItem element = e.getElement();
 			e.outputSourceError(syserr, false);
 			if (verbose) {
