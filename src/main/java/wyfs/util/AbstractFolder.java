@@ -191,6 +191,8 @@ public abstract class AbstractFolder implements Path.Folder {
 
 	@Override
 	public void refresh() {
+		// FIXME: this is broken because it will overwrite newly created files and
+		// (potentially) new contents which has been written to those files.
 		contents = null;
 	}
 
@@ -294,8 +296,9 @@ public abstract class AbstractFolder implements Path.Folder {
 		} else {
 			// indicates already an entry with a different content type
 		}
-
+		// Check whether sufficient space remaining
 		if ((nentries + 1) < contents.length) {
+			// Yes, move all items up the index
 			System.arraycopy(contents, index, contents, index + 1, nentries - index);
 		} else {
 			Path.Item[] tmp = new Path.Item[(nentries + 1) * 2];

@@ -17,18 +17,15 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
+import wybs.util.SequentialBuildExecutor;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
-import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.cfg.ConfigurationCombinator;
 import wycc.cfg.HashMapConfiguration;
 import wycc.commands.Build;
@@ -39,11 +36,9 @@ import wycc.commands.Inspect;
 import wycc.commands.Install;
 import wycc.commands.Run;
 import wycc.lang.Command;
-import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
 import wycc.util.CommandParser;
 import wycc.util.Logger;
-import wycc.util.Pair;
 import wycc.util.StdModuleContext;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -190,6 +185,16 @@ public class WyMain implements Command {
 	 */
 	protected Path.Root localRoot;
 
+	/**
+	 * Standard log output
+	 */
+	protected Logger logger;
+
+	/**
+	 * Top-level executor used for compiling all projects within this environment.
+	 */
+	protected wybs.lang.Build.Executor executor;
+
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
@@ -221,6 +226,9 @@ public class WyMain implements Command {
 		Configuration runtime = new HashMapConfiguration(SYSTEM_RUNTIME_SCHEMA);
 		// Construct the merged configuration
 		this.configuration = new ConfigurationCombinator(runtime, local, global, system);
+		this.logger = new Logger.Default(System.err);
+		// Construct the underlying executor
+		this.executor = new SequentialBuildExecutor().setLogger(logger);
 
 	}
 
@@ -256,6 +264,14 @@ public class WyMain implements Command {
 
 	public Path.Root getLocalRoot() {
 		return localRoot;
+	}
+
+	public Logger getLogger() {
+		return logger;
+	}
+
+	public wybs.lang.Build.Executor getBuildExecutor() {
+		return executor;
 	}
 
 	/**

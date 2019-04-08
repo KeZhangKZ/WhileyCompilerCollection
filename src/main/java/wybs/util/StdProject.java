@@ -59,15 +59,27 @@ public class StdProject implements Build.Project {
 	protected final ArrayList<Build.Rule> rules;
 
 	/**
+	 * The underlying build executor for this project which is responsible for actually
+	 * triggering tasks to build targets in the correct order.
+	 */
+	protected final Build.Executor executor;
+	/**
+	 * Indicates whether or not the build graph is up-to-date or not.
+	 */
+	protected boolean dirty;
+
+	/**
 	 * The standard logger associated with this project.
 	 */
 	protected Logger logger;
 
-	public StdProject(Path.Root root) {
+	public StdProject(Path.Root root, Build.Executor executor) {
 		this.root = root;
 		this.rules = new ArrayList<>();
 		this.packages = new ArrayList<>();
 		this.logger = Logger.NULL;
+		this.executor = executor;
+		this.dirty = true;
 	}
 
 	// ======================================================================
@@ -93,11 +105,17 @@ public class StdProject implements Build.Project {
 		return root;
 	}
 
+	@Override
+	public Build.Executor getExecutor() {
+		return executor;
+	}
+
 	/**
 	 * Get the build rules associated with this project.
 	 *
 	 * @return
 	 */
+	@Override
 	public List<Build.Rule> getRules() {
 		return rules;
 	}
@@ -140,11 +158,15 @@ public class StdProject implements Build.Project {
 
 	/**
 	 * Force root to refresh entries from permanent storage (where appropriate). For
-	 * items which has been modified, this operation has no effect (i.e. the new
+	 * items which have been modified, this operation has no effect (i.e. the new
 	 * contents are retained).
 	 */
 	public void refresh() throws IOException {
 		root.refresh();
+		//
+		for(Build.Rule rule : rules) {
+			rule.apply(executor);
+		}
 	}
 
 	// ======================================================================
@@ -160,19 +182,12 @@ public class StdProject implements Build.Project {
 	 *            by this method.
 	 * @throws Exception
 	 */
-	public void build(Collection<? extends Path.Entry<?>> sources, Build.Graph graph) throws Exception {
-		// Continue building all source files until there are none left. This is
-		// actually quite a naive implementation, as it ignores the potential
-		// need for staging dependencies.
-		do {
-			HashSet<Path.Entry<?>> generated = new HashSet<>();
-			for (Build.Rule r : rules) {
-				Set<Path.Entry<?>> built = r.apply(sources, graph);
-				generated.addAll(built);
-				// Sanity check for failed compilations
-			}
-			sources = generated;
-		} while (sources.size() > 0);
-		// Done!
+	public boolean build() throws Exception {
+		// Apply the build graph
+		boolean r = executor.build();
+		// Build is still dirty if it wasn't successful
+		this.dirty = !r;
+		// Return indication of status
+		return r;
 	}
 }
