@@ -15,6 +15,7 @@ package wycc.commands;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -47,7 +48,7 @@ public class Clean implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Collections.EMPTY_LIST;
+			return Arrays.asList(Command.OPTION_FLAG("verbose", "generate verbose information", false));
 		}
 
 		@Override
@@ -99,19 +100,26 @@ public class Clean implements Command {
 	@Override
 	public boolean execute(Template template) {
 		try {
+			// Extract options
+			boolean verbose = template.getOptions().get("verbose", Boolean.class);
 			// Identify the project root
 			Path.Root root = project.getParent().getLocalRoot();
 			// Extract all registered platforms
-			List<Build.Platform> platforms = project.getTargetPlatforms();
-			//
-			for (int i = 0; i != platforms.size(); ++i) {
-				Build.Platform platform = platforms.get(i);
-				Path.Root binRoot = platform.getTargetRoot(root);
-				Content.Filter<?> binFilter = platform.getTargetFilter();
-				// Remove all files being cleaned
-				int count = binRoot.remove(binFilter);
-				logger.logTimedMessage("cleaned  " + binRoot.toString() + " ... removed " + count + " file(s)", 0, 0);
+			List<Path.Entry<?>> targets = project.getBuildProject().getExecutor().getTargets();
+			// Remove all intermediate files
+			for (int i = 0; i != targets.size(); ++i) {
+				Path.Entry<?> target = targets.get(i);
+				boolean ok = root.remove(target.id(),target.contentType());
+				if (verbose && ok) {
+					logger.logTimedMessage("removing  " + target.id(), 0, 0);
+				} else if(verbose) {
+					logger.logTimedMessage("failed removing  " + target.id(), 0, 0);
+					return false;
+				} else if(!ok) {
+					return false;
+				}
 			}
+			logger.logTimedMessage("cleaned " + targets.size() + " file(s)", 0, 0);
 			//
 			return true;
 		} catch (Exception e) {

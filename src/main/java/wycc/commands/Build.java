@@ -25,17 +25,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import wybs.lang.Build.Graph;
+import wybs.lang.Build.Executor;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
-import wybs.util.StdBuildGraph;
+import wybs.util.AbstractBuildExecutor;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 public class Build implements Command {
@@ -122,56 +123,24 @@ public class Build implements Command {
 
 	@Override
 	public boolean execute(Template template) throws Exception {
-		// Extract options
-		boolean verbose = template.getOptions().get("verbose", Boolean.class);
-		// Identify the project root
-		Path.Root root = project.getParent().getLocalRoot();
-		// Create our build graph
-		Graph graph = new StdBuildGraph();
-		// Extract all registered platforms
-		List<wybs.lang.Build.Platform> platforms = project.getTargetPlatforms();
-		// Refresh the build graph
-		for (int i = 0; i != platforms.size(); ++i) {
-			wybs.lang.Build.Platform platform = platforms.get(i);
-			Path.Root srcRoot = platform.getSourceRoot(root);
-			Path.Root binRoot = platform.getTargetRoot(root);
-			// Determine the list of modified source files.
-			platform.refresh(graph, srcRoot, binRoot);
-		}
-		// Determine modified files
-		ArrayList<Path.Entry<?>> sources = new ArrayList<>();
-		//
-		for (Path.Entry<?> source : graph.getEntries()) {
-			// Get all children derived from this entry
-			List<Path.Entry<?>> children = graph.getChildren(source);
-			// Check for any which are out-of-date
-			for (Path.Entry<?> binary : children) {
-				if (binary.lastModified() < source.lastModified()) {
-					// Binary modified before source.
-					sources.add(source);
-				}
-			}
-		}
-		// Now rebuild everything!
-		project.build(sources, graph);
+		// Build the project
+		boolean r = project.build();
+		// Identify error messages
+		Executor executor = project.getBuildProject().getExecutor();
 		// Look for error messages
-		for (int i = 0; i != platforms.size(); ++i) {
-			wybs.lang.Build.Platform platform = platforms.get(i);
-			Path.Root srcRoot = platform.getSourceRoot(root);
-			Path.Root binRoot = platform.getTargetRoot(root);
-			for (Path.Entry<?> binary : binRoot.get(platform.getTargetFilter())) {
-				printSyntacticMarkers(syserr,graph.getParents(binary), binary);
-			}
+		for (Path.Entry<?> target : executor.getTargets()) {
+			wybs.lang.Build.Task task = executor.getTask(target);
+			printSyntacticMarkers(syserr, task.getSources(), target);
 		}
 		//
-		return true;
+		return r;
 	}
 
 	/**
 	 * Print out syntactic markers for all entries in the build graph. This requires
 	 * going through all entries, extracting the markers and then printing them.
 	 *
-	 * @param graph
+	 * @param executor
 	 * @throws IOException
 	 */
 	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
