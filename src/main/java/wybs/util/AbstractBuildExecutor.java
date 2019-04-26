@@ -74,5 +74,4 @@ public abstract class AbstractBuildExecutor implements Build.Executor {
 		// FIXME: should replace existing tasks for same target?
 		tasks.add(task);
 	}
-
 }
