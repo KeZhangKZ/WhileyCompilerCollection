@@ -18,12 +18,14 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.regex.Pattern;
 
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
-import wybs.util.SequentialBuildExecutor;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.ConfigurationCombinator;
@@ -193,7 +195,7 @@ public class WyMain implements Command {
 	/**
 	 * Top-level executor used for compiling all projects within this environment.
 	 */
-	protected wybs.lang.Build.Executor executor;
+	protected ExecutorService executor;
 
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
@@ -228,7 +230,7 @@ public class WyMain implements Command {
 		this.configuration = new ConfigurationCombinator(runtime, local, global, system);
 		this.logger = new Logger.Default(System.err);
 		// Construct the underlying executor
-		this.executor = new SequentialBuildExecutor().setLogger(logger);
+		this.executor = ForkJoinPool.commonPool();
 
 	}
 
@@ -268,10 +270,6 @@ public class WyMain implements Command {
 
 	public Logger getLogger() {
 		return logger;
-	}
-
-	public wybs.lang.Build.Executor getBuildExecutor() {
-		return executor;
 	}
 
 	/**

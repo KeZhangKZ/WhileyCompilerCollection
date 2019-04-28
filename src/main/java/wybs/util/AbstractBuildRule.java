@@ -87,7 +87,7 @@ public abstract class AbstractBuildRule<S,T> implements Build.Rule {
 	}
 
 	@Override
-	public void apply(Build.Executor executor) throws IOException {
+	public void apply(Collection<Build.Task> tasks) throws IOException {
 		//
 		ArrayList<Path.Entry<S>> matches = new ArrayList<>();
 		// Determine the set of matching files
@@ -98,7 +98,7 @@ public abstract class AbstractBuildRule<S,T> implements Build.Rule {
 			matches.add(e);
 		}
 		// process matches according to concrete strategy
-		apply(executor,matches);
+		apply(matches, tasks);
 	}
 
 	/**
@@ -109,5 +109,5 @@ public abstract class AbstractBuildRule<S,T> implements Build.Rule {
 	 * @param executor
 	 * @param matches
 	 */
-	protected abstract void apply(Build.Executor executor, List<Path.Entry<S>> matches) throws IOException;
+	protected abstract void apply(List<Path.Entry<S>> matches, Collection<Build.Task> tasks) throws IOException;
 }
