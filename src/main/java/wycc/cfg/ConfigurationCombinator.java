@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.Set;
 
 import wycc.cfg.Configuration.Schema;
+import wyfs.lang.Content;
+import wyfs.lang.Path;
 import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
 

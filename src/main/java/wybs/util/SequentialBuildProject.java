@@ -79,7 +79,6 @@ public class SequentialBuildProject implements Build.Project {
 		this.rules = new ArrayList<>();
 		this.packages = new ArrayList<>();
 		this.logger = Logger.NULL;
-		this.tasks = null;
 	}
 
 	// ======================================================================

@@ -84,6 +84,14 @@ public interface Build {
 		public Future<Boolean> build(ExecutorService executor);
 
 		/**
+		 * Refresh the project according to the latest system state. For example,
+		 * refresh files from the file system which have changed.
+		 *
+		 * @throws IOExcweption
+		 */
+		public void refresh() throws IOException;
+
+		/**
 		 * Get the list of dependencies associated with this project.
 		 *
 		 * @return
