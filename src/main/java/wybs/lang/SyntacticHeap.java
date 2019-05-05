@@ -135,6 +135,18 @@ public interface SyntacticHeap {
 	 */
 	public <T extends SyntacticItem> List<T> findAll(Class<T> kind);
 
+
+	/**
+	 * Replace all references to a given syntactic item with references to another
+	 * syntactic item. Observe that all reachable items are traversed, except for
+	 * those within the item being replaced. The original item remains until the
+	 * next garbage collection phase.
+	 *
+	 * @param from
+	 * @param to
+	 */
+	public <T extends SyntacticItem> void replace(T from, T to);
+
 	/**
 	 * Abstracts the mechanism for allocating items into this heap.
 	 *
