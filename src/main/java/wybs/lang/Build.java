@@ -17,6 +17,9 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.function.Predicate;
 
 import wybs.util.AbstractCompilationUnit.Value;
@@ -72,11 +75,21 @@ public interface Build {
 		public Path.Root getRoot();
 
 		/**
-		 * Get the build executor used by this project.
+		 * Build this project with a given executor. In essence, this forces all tasks
+		 * within the project to be submitted for execution within the executor.
 		 *
+		 * @param executor
 		 * @return
 		 */
-		public Build.Executor getExecutor();
+		public Future<Boolean> build(ExecutorService executor);
+
+		/**
+		 * Refresh the project according to the latest system state. For example,
+		 * refresh files from the file system which have changed.
+		 *
+		 * @throws IOExcweption
+		 */
+		public void refresh() throws IOException;
 
 		/**
 		 * Get the list of dependencies associated with this project.
@@ -96,6 +109,13 @@ public interface Build {
 		 * @return
 		 */
 		public List<Build.Rule> getRules();
+
+		/**
+		 * Get the set of build tasks currently used by this project.
+		 *
+		 * @return
+		 */
+		public List<Build.Task> getTasks();
 	}
 
 	/**
@@ -132,57 +152,15 @@ public interface Build {
 		 * <p>
 		 * Apply this rule to a given project root and register the results in a given
 		 * build-graph. That is, identify all matching source files and their
-		 * corresponding targets and register them with the graph.</p>
+		 * corresponding targets and register them with the graph.
+		 * </p>
 		 *
-		 * @return A build graph fragment mapping source files to targets.
+		 * @param tasks
+		 *            The collection of tasks being constructed. New tasks arising from
+		 *            this build rule should be added to this.
 		 * @throws IOException
 		 */
-		public void apply(Build.Executor graph) throws IOException;
-	}
-
-	/**
-	 * <p>
-	 * A build executor captures the relationships between compilation units. There are
-	 * two relationships of interest: <i>vertical</i> and <i>horizontal</i>
-	 * dependencies. For example one (or more) files being compiled to produce a
-	 * generated or <i>derived</i> file corresponds to a vertical dependency between
-	 * the original and the derived files. Horizontal dependencies correspond to
-	 * situations where one file at the same level uses symbols from another.
-	 * </p>
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Executor {
-		/**
-		 * Attempt to build all components in the correct order according to the graph.
-		 *
-		 * @return true if the build succeeded
-		 */
-		public boolean build() throws IOException;
-
-		/**
-		 * Get the task for this build entry.
-		 *
-		 * @return
-		 */
-		public Build.Task getTask(Path.Entry<?> target);
-
-		/**
-		 * Get the targets registered for this executor.
-		 *
-		 * @return
-		 */
-		public List<Path.Entry<?>> getTargets();
-
-		/**
-		 * Submit a given task to the build executor to be executed. Such a task may
-		 * itself divide down into a number of smaller tasks, etc.
-		 *
-		 * @param task
-		 *            The task used to build a target from one or more source(s)
-		 */
-		public void submit(Build.Task task);
+		public void apply(Collection<Build.Task> tasks) throws IOException;
 	}
 
 	/**
@@ -204,11 +182,12 @@ public interface Build {
 	public interface Task {
 
 		/**
-		 * Execute this task which either succeeds or fails.
+		 * Prepare this task for execution. In particular, must produce a callable
+		 * entity which will not block on some shared resource.
 		 *
 		 * @return
 		 */
-		public boolean apply() throws IOException;
+		public Callable<Boolean> initialise() throws IOException;
 
 		/**
 		 * Get the project this build task instance is operating on.
@@ -230,6 +209,10 @@ public interface Build {
 		 * @return
 		 */
 		public Path.Entry<?> getTarget();
+	}
+
+	public interface Stage {
+
 	}
 
 	/**

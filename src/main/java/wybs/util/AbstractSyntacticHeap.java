@@ -16,6 +16,7 @@ package wybs.util;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 		return null;
 	}
 
+	@Override
 	public <T extends SyntacticItem> List<T> getParents(SyntacticItem child, Class<T> kind) {
 		List<T> parents = new ArrayList<>();
 		for (int i = 0; i != syntacticItems.size(); ++i) {
@@ -168,6 +170,13 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	}
 
 	@Override
+	public <T extends SyntacticItem> List<T> findAll(Class<T> kind) {
+		ArrayList<T> matches = new ArrayList<>();
+		findAll(getRootItem(), kind, matches, new BitSet());
+		return matches;
+	}
+
+	@Override
 	public <T extends SyntacticItem> T allocate(T item) {
 		return (T) new Allocator(this).allocate(item);
 	}
@@ -212,6 +221,24 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	// ========================================================================
 	// HELPERS
 	// ========================================================================
+
+	private static <T extends SyntacticItem> void findAll(SyntacticItem item, Class<T> kind, ArrayList<T> matches,
+			BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if (!visited.get(index)) {
+			visited.set(index);
+			// Check whether this item has a marker associated with it.
+			if (kind.isInstance(item)) {
+				// At least one marked assocaited with item.
+				matches.add((T) item);
+			}
+			// Recursive children looking for other syntactic markers
+			for (int i = 0; i != item.size(); ++i) {
+				findAll(item.get(i), kind, matches, visited);
+			}
+		}
+	}
 
 	/**
 	 * Recursively copy this syntactic item. Observe the resulting cloned

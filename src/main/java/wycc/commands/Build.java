@@ -25,11 +25,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import wybs.lang.Build.Executor;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
-import wybs.util.AbstractBuildExecutor;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wycc.WyProject;
@@ -125,12 +123,11 @@ public class Build implements Command {
 	public boolean execute(Template template) throws Exception {
 		// Build the project
 		boolean r = project.build();
-		// Identify error messages
-		Executor executor = project.getBuildProject().getExecutor();
+		// Extract all build tasks
+		List<wybs.lang.Build.Task> tasks = project.getBuildProject().getTasks();
 		// Look for error messages
-		for (Path.Entry<?> target : executor.getTargets()) {
-			wybs.lang.Build.Task task = executor.getTask(target);
-			printSyntacticMarkers(syserr, task.getSources(), target);
+		for (wybs.lang.Build.Task task : tasks) {
+			printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
 		}
 		//
 		return r;
@@ -193,28 +190,12 @@ public class Build implements Command {
 			// for syntactic messages.
 			if (o instanceof SyntacticHeap) {
 				SyntacticHeap h = (SyntacticHeap) o;
-				extractSyntacticMarkers(h.getRootItem(), annotated, new BitSet());
+				// FIXME: this just reports all syntactic markers.
+				annotated.addAll(h.findAll(SyntacticItem.Marker.class));
 			}
 		}
 		//
 		return annotated;
-	}
-
-	private static void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem.Marker> items, BitSet visited) {
-		int index = item.getIndex();
-		// Check whether already visited this item
-		if(!visited.get(index)) {
-			visited.set(index);
-			// Check whether this item has a marker associated with it.
-			if (item instanceof SyntacticItem.Marker) {
-				// At least one marked assocaited with item.
-				items.add((SyntacticItem.Marker) item);
-			}
-			// Recursive children looking for other syntactic markers
-			for (int i = 0; i != item.size(); ++i) {
-				extractSyntacticMarkers(item.get(i), items, visited);
-			}
-		}
 	}
 
 	private static Path.Entry<?> getSourceEntry(Collection<Path.Entry<?>> sources, Path.ID id) {

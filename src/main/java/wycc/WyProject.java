@@ -17,14 +17,14 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.Future;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
-import wybs.util.SequentialBuildExecutor;
-import wybs.util.StdProject;
+import wybs.util.SequentialBuildProject;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
@@ -113,7 +113,7 @@ public class WyProject implements Command {
 	/**
 	 * Contains project information.
 	 */
-	protected final StdProject project;
+	protected final SequentialBuildProject project;
 
 	/**
 	 * Provides a generic place to which normal output should be directed. This
@@ -134,7 +134,7 @@ public class WyProject implements Command {
 	public WyProject(WyMain environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.configuration = configuration;
 		this.environment = environment;
-		this.project = new StdProject(environment.getLocalRoot(), environment.getBuildExecutor());
+		this.project = new SequentialBuildProject(environment.getLocalRoot());
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}
@@ -282,7 +282,7 @@ public class WyProject implements Command {
 	 * @throws Exception
 	 */
 	public boolean build() throws Exception {
-		return project.build();
+		return project.build(environment.executor).get();
 	}
 
 	// ==================================================================

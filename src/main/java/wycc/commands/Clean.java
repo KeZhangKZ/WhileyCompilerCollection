@@ -105,10 +105,10 @@ public class Clean implements Command {
 			// Identify the project root
 			Path.Root root = project.getParent().getLocalRoot();
 			// Extract all registered platforms
-			List<Path.Entry<?>> targets = project.getBuildProject().getExecutor().getTargets();
+			List<Build.Task> targets = project.getBuildProject().getTasks();
 			// Remove all intermediate files
 			for (int i = 0; i != targets.size(); ++i) {
-				Path.Entry<?> target = targets.get(i);
+				Path.Entry<?> target = targets.get(i).getTarget();
 				boolean ok = root.remove(target.id(),target.contentType());
 				if (verbose && ok) {
 					logger.logTimedMessage("removing  " + target.id(), 0, 0);
