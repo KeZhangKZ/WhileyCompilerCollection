@@ -177,6 +177,11 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	}
 
 	@Override
+	public <T extends SyntacticItem> void replace(T from, T to) {
+		replaceAll(getRootItem(), from, to, new BitSet());
+	}
+
+	@Override
 	public <T extends SyntacticItem> T allocate(T item) {
 		return (T) new Allocator(this).allocate(item);
 	}
@@ -236,6 +241,23 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			// Recursive children looking for other syntactic markers
 			for (int i = 0; i != item.size(); ++i) {
 				findAll(item.get(i), kind, matches, visited);
+			}
+		}
+	}
+
+	private static <T extends SyntacticItem> void replaceAll(SyntacticItem item, T from, T to, BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if (item != from && !visited.get(index)) {
+			// Record that have now visited
+			visited.set(index);
+			// Attempt the replacement
+			SyntacticItem[] children = item.getAll();
+			for (int i = 0; i != children.length; ++i) {
+				if (children[i] == from) {
+					// Time for replacement!
+					item.setOperand(i, to);
+				}
 			}
 		}
 	}

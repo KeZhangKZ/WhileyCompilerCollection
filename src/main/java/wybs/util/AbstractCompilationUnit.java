@@ -210,6 +210,27 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			return new Tuple<>((T[]) nitems);
 		}
 
+		/**
+		 * Append a new item onto this tuple
+		 *
+		 * @param item
+		 * @return
+		 */
+		public <S extends SyntacticItem> Tuple<T> removeAll(Collection<S> items) {
+			SyntacticItem[] noperands = Arrays.copyOf(operands, operands.length);
+			for(S item : items) {
+				for(int i=0;i!=operands.length;++i) {
+					if(operands[i] == item) {
+						noperands[i] = null;
+					}
+				}
+			}
+			//
+			noperands = ArrayUtils.removeAll(noperands, null);
+			//
+			return new Tuple<>((T[]) noperands);
+		}
+
 		@Override
 		public Tuple<T> clone(SyntacticItem[] operands) {
 			return new Tuple(ArrayUtils.toArray(SyntacticItem.class, operands));
