@@ -148,6 +148,12 @@ public interface SyntacticHeap {
 	public <T extends SyntacticItem> void replace(T from, T to);
 
 	/**
+	 * Trigger garbage collection for this heap. This may result in the indices of
+	 * all items being changed and, hence, is a relatively destructive operation.
+	 */
+	public boolean gc();
+
+	/**
 	 * Abstracts the mechanism for allocating items into this heap.
 	 *
 	 * @author David J. Pearce

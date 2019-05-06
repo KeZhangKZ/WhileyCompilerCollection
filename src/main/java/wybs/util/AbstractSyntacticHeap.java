@@ -186,6 +186,34 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 		return (T) new Allocator(this).allocate(item);
 	}
 
+	/**
+	 * Force a garbage collection event. This removes all items which are unreachable from the root, and compacts those remaining down.
+	 *
+	 * @return
+	 */
+	@Override
+	public boolean gc() {
+		// Mark all reachable items
+		BitSet reachable = findReachable(getRootItem(), new BitSet());
+		// Sweep all unreachable items away
+		int count = 0;
+		for(int i=0;i!=syntacticItems.size();++i) {
+			if(reachable.get(i)) {
+				SyntacticItem item = syntacticItems.get(i);
+				// Reset the index of this item
+				item.allocate(this, count);
+				// Move the item down
+				syntacticItems.set(count++, item);
+			}
+		}
+		// Remove all unreachable items.
+		for (int i = syntacticItems.size(); i > count; i = i - 1) {
+			syntacticItems.remove(i - 1);
+		}
+		// Indicate whether anything changed
+		return count < syntacticItems.size();
+	}
+
 	public void print(PrintWriter out) {
 		String lenStr = Integer.toString(syntacticItems.size());
 		for (int i = 0; i != syntacticItems.size(); ++i) {
@@ -260,6 +288,31 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 				}
 			}
 		}
+	}
+
+	/**
+	 * Mark all reachable items from a given item, whilst ignoring references. That
+	 * is, return all items owned by a given item.
+	 *
+	 * @param item
+	 * @param visited
+	 * @return
+	 */
+	public static BitSet findReachable(SyntacticItem item, BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if (!visited.get(index)) {
+			visited.set(index);
+			if(item instanceof AbstractCompilationUnit.Ref) {
+				// NOTE: do not traverse references as these are non-owning pointers.
+			} else {
+				// Recursive children looking for other syntactic markers
+				for (int i = 0; i != item.size(); ++i) {
+					findReachable(item.get(i), visited);
+				}
+			}
+		}
+		return visited;
 	}
 
 	/**
