@@ -16,6 +16,7 @@ package wybs.util;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
@@ -117,6 +118,7 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 		return null;
 	}
 
+	@Override
 	public <T extends SyntacticItem> List<T> getParents(SyntacticItem child, Class<T> kind) {
 		List<T> parents = new ArrayList<>();
 		for (int i = 0; i != syntacticItems.size(); ++i) {
@@ -168,8 +170,48 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	}
 
 	@Override
+	public <T extends SyntacticItem> List<T> findAll(Class<T> kind) {
+		ArrayList<T> matches = new ArrayList<>();
+		findAll(getRootItem(), kind, matches, new BitSet());
+		return matches;
+	}
+
+	@Override
+	public <T extends SyntacticItem> void replace(T from, T to) {
+		replaceAll(getRootItem(), from, to, new BitSet());
+	}
+
+	@Override
 	public <T extends SyntacticItem> T allocate(T item) {
 		return (T) new Allocator(this).allocate(item);
+	}
+
+	/**
+	 * Force a garbage collection event. This removes all items which are unreachable from the root, and compacts those remaining down.
+	 *
+	 * @return
+	 */
+	@Override
+	public boolean gc() {
+		// Mark all reachable items
+		BitSet reachable = findReachable(getRootItem(), new BitSet());
+		// Sweep all unreachable items away
+		int count = 0;
+		for(int i=0;i!=syntacticItems.size();++i) {
+			if(reachable.get(i)) {
+				SyntacticItem item = syntacticItems.get(i);
+				// Reset the index of this item
+				item.allocate(this, count);
+				// Move the item down
+				syntacticItems.set(count++, item);
+			}
+		}
+		// Remove all unreachable items.
+		for (int i = syntacticItems.size(); i > count; i = i - 1) {
+			syntacticItems.remove(i - 1);
+		}
+		// Indicate whether anything changed
+		return count < syntacticItems.size();
 	}
 
 	public void print(PrintWriter out) {
@@ -212,6 +254,66 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 	// ========================================================================
 	// HELPERS
 	// ========================================================================
+
+	private static <T extends SyntacticItem> void findAll(SyntacticItem item, Class<T> kind, ArrayList<T> matches,
+			BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if (!visited.get(index)) {
+			visited.set(index);
+			// Check whether this item has a marker associated with it.
+			if (kind.isInstance(item)) {
+				// At least one marked assocaited with item.
+				matches.add((T) item);
+			}
+			// Recursive children looking for other syntactic markers
+			for (int i = 0; i != item.size(); ++i) {
+				findAll(item.get(i), kind, matches, visited);
+			}
+		}
+	}
+
+	private static <T extends SyntacticItem> void replaceAll(SyntacticItem item, T from, T to, BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if (item != from && !visited.get(index)) {
+			// Record that have now visited
+			visited.set(index);
+			// Attempt the replacement
+			SyntacticItem[] children = item.getAll();
+			for (int i = 0; i != children.length; ++i) {
+				if (children[i] == from) {
+					// Time for replacement!
+					item.setOperand(i, to);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Mark all reachable items from a given item, whilst ignoring references. That
+	 * is, return all items owned by a given item.
+	 *
+	 * @param item
+	 * @param visited
+	 * @return
+	 */
+	public static BitSet findReachable(SyntacticItem item, BitSet visited) {
+		int index = item.getIndex();
+		// Check whether already visited this item
+		if (!visited.get(index)) {
+			visited.set(index);
+			if(item instanceof AbstractCompilationUnit.Ref) {
+				// NOTE: do not traverse references as these are non-owning pointers.
+			} else {
+				// Recursive children looking for other syntactic markers
+				for (int i = 0; i != item.size(); ++i) {
+					findReachable(item.get(i), visited);
+				}
+			}
+		}
+		return visited;
+	}
 
 	/**
 	 * Recursively copy this syntactic item. Observe the resulting cloned

@@ -46,7 +46,8 @@ public class Inspect implements Command {
 							new Value.Int(3), 0));
 
 	public static final List<Option.Descriptor> OPTIONS = Arrays
-			.asList(Command.OPTION_FLAG("full", "display full output (i.e. including unreachable garbage)", false));
+			.asList(Command.OPTION_FLAG("full", "display full output (i.e. including unreachable garbage)", false),
+					Command.OPTION_FLAG("raw", "display raw output", false));
 
 	/**
 	 * The descriptor for this command.
@@ -115,6 +116,7 @@ public class Inspect implements Command {
 	@Override
 	public boolean execute(Template template) throws Exception {
 		boolean garbage = template.getOptions().get("full", Boolean.class);
+		boolean raw = template.getOptions().get("raw", Boolean.class);
 
 		List<String> files = template.getArguments();
 		for (String file : files) {
@@ -122,7 +124,7 @@ public class Inspect implements Command {
 			Path.Entry<?> entry = getEntry(file, ct);
 			if(entry == null) {
 				out.println("unknown file: " + file);
-			} else if(ct instanceof Content.Printable<?>){
+			} else if(!raw && ct instanceof Content.Printable<?>){
 				Content.Printable cp = (Content.Printable<?>) ct;
 				cp.print(out, entry.read());
 			} else {

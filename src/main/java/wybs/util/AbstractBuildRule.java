@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 
 import wybs.lang.Build;
@@ -39,36 +40,25 @@ import wyfs.lang.Path;
  * @author David J. Pearce
  *
  */
-public class StdBuildRule implements Build.Rule {
-	/**
-	 * The builder used to build files using this rule.
-	 */
-	final Build.Task builder;
-
+public abstract class AbstractBuildRule<S,T> implements Build.Rule {
 	/**
 	 * The source root containing all files which might be built using this
 	 * rule. However, whether or not files contained in this root will actually
 	 * be built depends on the includes and excludes filters.
 	 */
-	final Path.Root source;
-
-	/**
-	 * The destination root into which all files built using this rule are
-	 * placed.
-	 */
-	final Path.Root target;
+	protected final Path.Root source;
 
 	/**
 	 * A content filter used to determine which files contained in the source
 	 * root should be built by this rule.  Maybe null.
 	 */
-	final Content.Filter<?> includes;
+	protected final Content.Filter<S> includes;
 
 	/**
 	 * A content filter used to determine which files contained in the source
 	 * root should be not built by this rule.  Maybe null.
 	 */
-	final Content.Filter<?> excludes;
+	protected final Content.Filter<S> excludes;
 
 	/**
 	 * Construct a standard build rule.
@@ -90,36 +80,34 @@ public class StdBuildRule implements Build.Rule {
 	 *            The destination root into which all files built using this
 	 *            rule are placed.
 	 */
-	public StdBuildRule(Build.Task builder, Path.Root srcRoot, Content.Filter<?> includes, Content.Filter<?> excludes,
-			Path.Root targetRoot) {
-		this.builder = builder;
+	public AbstractBuildRule(Path.Root srcRoot, Content.Filter<S> includes, Content.Filter<S> excludes) {
 		this.source = srcRoot;
-		this.target = targetRoot;
 		this.includes = includes;
 		this.excludes = excludes;
 	}
 
 	@Override
-	@SuppressWarnings({ "rawtypes", "unchecked" })
-	public Set<Path.Entry<?>> apply(Collection<? extends Path.Entry<?>> group, Build.Graph graph) throws IOException {
-		ArrayList<Pair<Path.Entry<?>, Path.Root>> matches = new ArrayList<>();
-
-		// First, determine the set of matching files
-		for (Path.Entry e : group) {
-			if (includes == null || !includes.matches(e.id(), e.contentType())) {
-				continue;
-			}
+	public void apply(Collection<Build.Task> tasks) throws IOException {
+		//
+		ArrayList<Path.Entry<S>> matches = new ArrayList<>();
+		// Determine the set of matching files
+		for (Path.Entry<S> e : source.get(includes)) {
 			if (excludes != null && excludes.matches(e.id(), e.contentType())) {
 				continue;
 			}
-			matches.add(new Pair<Path.Entry<?>, Path.Root>(e, target));
+			matches.add(e);
 		}
-
-		// Second, build all matching files
-		if (matches.size() > 0) {
-			return builder.build(matches, graph);
-		} else {
-			return Collections.EMPTY_SET;
-		}
+		// process matches according to concrete strategy
+		apply(matches, tasks);
 	}
+
+	/**
+	 * Process a given set of matches according to this rule. For example, we may
+	 * map each source to a corresponding binary target; or, we may map several (or
+	 * all) of the matches to a given binary target.
+	 *
+	 * @param executor
+	 * @param matches
+	 */
+	protected abstract void apply(List<Path.Entry<S>> matches, Collection<Build.Task> tasks) throws IOException;
 }

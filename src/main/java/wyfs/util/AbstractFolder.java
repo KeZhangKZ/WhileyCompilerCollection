@@ -59,6 +59,7 @@ public abstract class AbstractFolder implements Path.Folder {
 	@Override
 	public boolean contains(Path.Entry<?> e) throws IOException {
 		updateContents();
+		//
 		Path.ID eid = e.id();
 
 		int idx = binarySearch(contents, nentries, eid);
@@ -122,8 +123,8 @@ public abstract class AbstractFolder implements Path.Folder {
 
 	@Override
 	public List<Entry<?>> getAll() throws IOException {
-		ArrayList entries = new ArrayList();
 		updateContents();
+		ArrayList entries = new ArrayList();
 
 		// It would be nice to further optimise this loop. Basically, to avoid
 		// creating so many ArrayList objects. However, it's tricky to get right
@@ -146,7 +147,6 @@ public abstract class AbstractFolder implements Path.Folder {
 	@Override
 	public <T> void getAll(Content.Filter<T> filter, List<Entry<T>> entries) throws IOException {
 		updateContents();
-
 		// It would be nice to further optimise this loop. The key issue is that,
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
@@ -169,7 +169,6 @@ public abstract class AbstractFolder implements Path.Folder {
 	@Override
 	public <T> void getAll(Content.Filter<T> filter, Set<Path.ID> entries) throws IOException {
 		updateContents();
-
 		// It would be nice to further optimise this loop. The key issue is that,
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
@@ -190,13 +189,48 @@ public abstract class AbstractFolder implements Path.Folder {
 	}
 
 	@Override
-	public void refresh() {
-		contents = null;
+	public void refresh() throws IOException {
+		if(contents != null) {
+			// Extract contents
+			Path.Item[] items = contents();
+			// Sort them
+			Arrays.sort(items, entryComparator);
+			// Proceed to update contents
+			int oj = 0;
+			int ni = 0;
+			while(oj < nentries && ni < items.length) {
+				Path.Item o = contents[oj];
+				Path.Item n = items[ni];
+				int cmp = o.id().compareTo(n.id());
+				if (cmp > 0) {
+					// Old item after new item. This indicates a previously unseen item. Therefore,
+					// insert into contents.
+					insert(oj, n);
+				} else if(cmp < 0) {
+					// New item after old item. This indicates an item which either did not
+					// originally exist, or has been deleting by some external process. Therefore,
+					// we simply skip it.
+					ni = ni - 1;
+				}
+				oj = oj + 1;
+				ni = ni + 1;
+			}
+			// Anything remaining is new and therefore should be inserted.
+			while (ni < items.length) {
+				System.out.println("INSERTING: " + items[ni].id());
+				insert(oj++, items[ni++]);
+			}
+			// Recursively refresh everything
+			for(int i=0;i!=nentries;++i) {
+				contents[i].refresh();
+			}
+		}
 	}
+
 
 	@Override
 	public void flush() throws IOException {
-		if (contents != null) {
+		if(contents != null) {
 			for (int i = 0; i != nentries; ++i) {
 				contents[i].flush();
 			}
@@ -250,7 +284,6 @@ public abstract class AbstractFolder implements Path.Folder {
 
 	protected Path.Folder getFolder(String name) throws IOException {
 		updateContents();
-
 		ID tid = id.append(name);
 
 		int idx = binarySearch(contents, nentries, tid);
@@ -285,7 +318,7 @@ public abstract class AbstractFolder implements Path.Folder {
 					"Cannot insert with incorrect Path.Item (" + item.id() + ") into AbstractFolder (" + id + ")");
 		}
 		updateContents();
-
+		//
 		Path.ID id = item.id();
 		int index = binarySearch(contents, nentries, id);
 
@@ -294,8 +327,14 @@ public abstract class AbstractFolder implements Path.Folder {
 		} else {
 			// indicates already an entry with a different content type
 		}
+		// Insert item at given index
+		insert(index,item);
+	}
 
+	private void insert(int index, Path.Item item) {
+		// Check whether sufficient space remaining
 		if ((nentries + 1) < contents.length) {
+			// Yes, move all items up the index
 			System.arraycopy(contents, index, contents, index + 1, nentries - index);
 		} else {
 			Path.Item[] tmp = new Path.Item[(nentries + 1) * 2];
@@ -306,14 +345,6 @@ public abstract class AbstractFolder implements Path.Folder {
 
 		contents[index] = item;
 		nentries++;
-	}
-
-	private final void updateContents() throws IOException {
-		if (contents == null) {
-			contents = contents();
-			nentries = contents.length;
-			Arrays.sort(contents, entryComparator);
-		}
 	}
 
 	/**
@@ -342,6 +373,14 @@ public abstract class AbstractFolder implements Path.Folder {
 			}
 		}
 		return -(low + 1);
+	}
+
+	private final void updateContents() throws IOException {
+		if (contents == null) {
+			contents = contents();
+			nentries = contents.length;
+			Arrays.sort(contents, entryComparator);
+		}
 	}
 
 	private int match(int start, final Path.Item[] children, int nchildren, final Path.ID key,

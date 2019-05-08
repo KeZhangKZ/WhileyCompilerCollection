@@ -125,6 +125,35 @@ public interface SyntacticHeap {
 	public SyntacticHeap getParent();
 
 	/**
+	 * Find all instances of a given kind which are reachable from the root item.
+	 * This traverses each SyntacticItem in the reachable syntax tree looking for
+	 * such matches.
+	 *
+	 *
+	 * @param kind
+	 * @return
+	 */
+	public <T extends SyntacticItem> List<T> findAll(Class<T> kind);
+
+
+	/**
+	 * Replace all references to a given syntactic item with references to another
+	 * syntactic item. Observe that all reachable items are traversed, except for
+	 * those within the item being replaced. The original item remains until the
+	 * next garbage collection phase.
+	 *
+	 * @param from
+	 * @param to
+	 */
+	public <T extends SyntacticItem> void replace(T from, T to);
+
+	/**
+	 * Trigger garbage collection for this heap. This may result in the indices of
+	 * all items being changed and, hence, is a relatively destructive operation.
+	 */
+	public boolean gc();
+
+	/**
 	 * Abstracts the mechanism for allocating items into this heap.
 	 *
 	 * @author David J. Pearce

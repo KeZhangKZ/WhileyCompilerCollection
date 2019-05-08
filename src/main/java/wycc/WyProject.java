@@ -14,29 +14,26 @@
 package wycc;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.Future;
 
 import wybs.lang.Build;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
-import wybs.util.StdBuildRule;
-import wybs.util.StdProject;
+import wybs.util.SequentialBuildProject;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.util.ArrayUtils;
-import wycc.util.CommandParser;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.Root;
 import wyfs.util.ZipFileRoot;
 import wyfs.util.Trie;
@@ -116,12 +113,7 @@ public class WyProject implements Command {
 	/**
 	 * Contains project information.
 	 */
-	protected final StdProject project;
-
-	/**
-	 * Generic logger
-	 */
-	private Logger logger;
+	protected final SequentialBuildProject project;
 
 	/**
 	 * Provides a generic place to which normal output should be directed. This
@@ -142,7 +134,7 @@ public class WyProject implements Command {
 	public WyProject(WyMain environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.configuration = configuration;
 		this.environment = environment;
-		this.project = new StdProject(environment.getLocalRoot());
+		this.project = new SequentialBuildProject(environment.getLocalRoot());
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}
@@ -212,8 +204,10 @@ public class WyProject implements Command {
 			// Find and resolve package dependencies
 			resolvePackageDependencies();
 			// Configure package directory structure
-			configurePlatforms();
+			initialisePlatforms();
 			// Find dependencies
+			// Refresh the project
+			project.refresh();
 		} catch (IOException e) {
 			// FIXME
 			throw new RuntimeException(e);
@@ -228,7 +222,6 @@ public class WyProject implements Command {
 		try {
 			project.flush();
 		} catch (IOException e) {
-			// FIXME
 			throw new RuntimeException(e);
 		}
 	}
@@ -238,7 +231,7 @@ public class WyProject implements Command {
 		// Extract options
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
 		try {
-			project.setLogger(verbose ? new Logger.Default(System.err) : Logger.NULL);
+			project.setLogger(verbose ? environment.getLogger() : Logger.NULL);
 			//
 			if(template.getChild() != null) {
 				// Execute a subcommand
@@ -282,8 +275,14 @@ public class WyProject implements Command {
 		return environment.getContentRegistry();
 	}
 
-	public void build(Collection<Path.Entry<?>> delta, Build.Graph graph) throws Exception {
-		project.build(delta,graph);
+	/**
+	 * Force the project to build.
+	 *
+	 * @return
+	 * @throws Exception
+	 */
+	public boolean build() throws Exception {
+		return project.build(environment.executor).get();
 	}
 
 	// ==================================================================
@@ -344,23 +343,13 @@ public class WyProject implements Command {
 	 *
 	 * @throws IOException
 	 */
-	private void configurePlatforms() throws IOException {
-		Path.Root root = environment.getLocalRoot();
+	private void initialisePlatforms() throws IOException {
 		List<Build.Platform> platforms = getTargetPlatforms();
 		//
 		for (int i = 0; i != platforms.size(); ++i) {
 			Build.Platform platform = platforms.get(i);
 			// Apply current configuration
-			platform.apply(configuration);
-			// Configure Source root
-			Path.Root srcRoot = platform.getSourceRoot(root);
-			// Configure Binary root
-			Path.Root binRoot = platform.getTargetRoot(root);
-			// Initialise build task
-			Build.Task task = platform.initialise(project);
-			// Add the appropriate build rule(s)
-			project.add(
-					new StdBuildRule(task, srcRoot, platform.getSourceFilter(), platform.getTargetFilter(), binRoot));
+			platform.initialise(configuration, project);
 		}
 	}
 

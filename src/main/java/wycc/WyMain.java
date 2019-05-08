@@ -18,9 +18,10 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.regex.Pattern;
 
 import wybs.lang.SyntacticException;
@@ -28,7 +29,6 @@ import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
-import wycc.cfg.Configuration.KeyValueDescriptor;
 import wycc.cfg.ConfigurationCombinator;
 import wycc.cfg.HashMapConfiguration;
 import wycc.commands.Build;
@@ -39,11 +39,9 @@ import wycc.commands.Inspect;
 import wycc.commands.Install;
 import wycc.commands.Run;
 import wycc.lang.Command;
-import wycc.lang.Feature.ConfigurationError;
 import wycc.lang.Module;
 import wycc.util.CommandParser;
 import wycc.util.Logger;
-import wycc.util.Pair;
 import wycc.util.StdModuleContext;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -104,9 +102,9 @@ public class WyMain implements Command {
 	 */
 	public static Configuration.Schema LOCAL_CONFIG_SCHEMA = Configuration.fromArray(
 			// Required items
-			Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package", true),
-			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("package/authors"), "Author(s) of this package", true),
-			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package", true),
+			Configuration.UNBOUND_STRING(Trie.fromString("package/name"), "Name of this package", new Value.UTF8("main")),
+			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("package/authors"), "Author(s) of this package", false),
+			Configuration.UNBOUND_STRING(Trie.fromString("package/version"), "Semantic version of this package", false),
 			// Build items
 			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("build/platforms"),
 					"Target platforms for this package (default just \"whiley\")",
@@ -190,6 +188,16 @@ public class WyMain implements Command {
 	 */
 	protected Path.Root localRoot;
 
+	/**
+	 * Standard log output
+	 */
+	protected Logger logger;
+
+	/**
+	 * Top-level executor used for compiling all projects within this environment.
+	 */
+	protected ExecutorService executor;
+
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
@@ -216,11 +224,14 @@ public class WyMain implements Command {
 		// Read the global configuration file
 		Configuration global = readConfigFile("wy", globalDir, GLOBAL_CONFIG_SCHEMA);
 		// Read the local configuration file
-		Configuration local = readConfigFile("wy", localDir, constructLocalSchema());
+		Configuration local = readConfigFile("wy", localDir, getBuildSchema());
 		// Create the dynamic configuration
 		Configuration runtime = new HashMapConfiguration(SYSTEM_RUNTIME_SCHEMA);
 		// Construct the merged configuration
 		this.configuration = new ConfigurationCombinator(runtime, local, global, system);
+		this.logger = new Logger.Default(System.err);
+		// Construct the underlying executor
+		this.executor = ForkJoinPool.commonPool();
 
 	}
 
@@ -258,6 +269,10 @@ public class WyMain implements Command {
 		return localRoot;
 	}
 
+	public Logger getLogger() {
+		return logger;
+	}
+
 	/**
 	 * Get the appropriate configuration schema for a project. This defines what
 	 * keys are permitted.
@@ -265,11 +280,16 @@ public class WyMain implements Command {
 	 * @return
 	 */
 	public Configuration.Schema getBuildSchema() {
-		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size() + 1];
-		schemas[0] = LOCAL_CONFIG_SCHEMA;
+		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size() + commandDescriptors.size() + 1];
+		int index = 0;
+		schemas[index++] = LOCAL_CONFIG_SCHEMA;
 		for (int i = 0; i != buildPlatforms.size(); ++i) {
 			wybs.lang.Build.Platform platform = buildPlatforms.get(i);
-			schemas[i + 1] = platform.getConfigurationSchema();
+			schemas[index++] = platform.getConfigurationSchema();
+		}
+		for (int i = 0; i != commandDescriptors.size(); ++i) {
+			Command.Descriptor cmd = commandDescriptors.get(i);
+			schemas[index++] = cmd.getConfigurationSchema();
 		}
 		return Configuration.toCombinedSchema(schemas);
 	}
@@ -387,23 +407,6 @@ public class WyMain implements Command {
 		}
 	}
 
-	private Configuration.Schema[] constructLocalSchema() {
-		Configuration.Schema[] schemas = new Configuration.Schema[buildPlatforms.size()  + commandDescriptors.size() + 1];
-		schemas[0] = LOCAL_CONFIG_SCHEMA;
-		// Add build platforms
-		int index = 1;
-		for(int i=0;i!=buildPlatforms.size();++i) {
-			wybs.lang.Build.Platform platform = buildPlatforms.get(i);
-			schemas[index++] = platform.getConfigurationSchema();
-		}
-		// Add command descriptors
-		for(int i=0;i!=commandDescriptors.size();++i) {
-			Command.Descriptor descriptor = commandDescriptors.get(i);
-			schemas[index++] = descriptor.getConfigurationSchema();
-		}
-		return schemas;
-	}
-
 	// ==================================================================
 	// Main Method
 	// ==================================================================
@@ -510,23 +513,23 @@ public class WyMain implements Command {
 	 * @throws IOException
 	 */
 	private static Configuration readConfigFile(String name, String dir, Configuration.Schema... schemas) throws IOException {
+		Configuration.Schema schema = Configuration.toCombinedSchema(schemas);
 		DirectoryRoot root = new DirectoryRoot(dir, BOOT_REGISTRY);
 		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
 		if (config == null) {
-			return Configuration.EMPTY;
+			return Configuration.EMPTY(schema);
 		}
 		try {
 			// Read the configuration file
 			ConfigFile cf = config.read();
 			// Construct configuration according to given schema
-			return cf.toConfiguration(Configuration.toCombinedSchema(schemas));
+			return cf.toConfiguration(schema);
 		} catch (SyntacticException e) {
 			e.outputSourceError(System.out, false);
 			System.exit(-1);
 			return null;
 		}
 	}
-
 
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()

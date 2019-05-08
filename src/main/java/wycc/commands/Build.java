@@ -25,17 +25,16 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import wybs.lang.Build.Graph;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
-import wybs.util.StdBuildGraph;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
+import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 public class Build implements Command {
@@ -122,56 +121,23 @@ public class Build implements Command {
 
 	@Override
 	public boolean execute(Template template) throws Exception {
-		// Extract options
-		boolean verbose = template.getOptions().get("verbose", Boolean.class);
-		// Identify the project root
-		Path.Root root = project.getParent().getLocalRoot();
-		// Create our build graph
-		Graph graph = new StdBuildGraph();
-		// Extract all registered platforms
-		List<wybs.lang.Build.Platform> platforms = project.getTargetPlatforms();
-		// Refresh the build graph
-		for (int i = 0; i != platforms.size(); ++i) {
-			wybs.lang.Build.Platform platform = platforms.get(i);
-			Path.Root srcRoot = platform.getSourceRoot(root);
-			Path.Root binRoot = platform.getTargetRoot(root);
-			// Determine the list of modified source files.
-			platform.refresh(graph, srcRoot, binRoot);
-		}
-		// Determine modified files
-		ArrayList<Path.Entry<?>> sources = new ArrayList<>();
-		//
-		for (Path.Entry<?> source : graph.getEntries()) {
-			// Get all children derived from this entry
-			List<Path.Entry<?>> children = graph.getChildren(source);
-			// Check for any which are out-of-date
-			for (Path.Entry<?> binary : children) {
-				if (binary.lastModified() < source.lastModified()) {
-					// Binary modified before source.
-					sources.add(source);
-				}
-			}
-		}
-		// Now rebuild everything!
-		project.build(sources, graph);
+		// Build the project
+		boolean r = project.build();
+		// Extract all build tasks
+		List<wybs.lang.Build.Task> tasks = project.getBuildProject().getTasks();
 		// Look for error messages
-		for (int i = 0; i != platforms.size(); ++i) {
-			wybs.lang.Build.Platform platform = platforms.get(i);
-			Path.Root srcRoot = platform.getSourceRoot(root);
-			Path.Root binRoot = platform.getTargetRoot(root);
-			for (Path.Entry<?> binary : binRoot.get(platform.getTargetFilter())) {
-				printSyntacticMarkers(syserr,graph.getParents(binary), binary);
-			}
+		for (wybs.lang.Build.Task task : tasks) {
+			printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
 		}
 		//
-		return true;
+		return r;
 	}
 
 	/**
 	 * Print out syntactic markers for all entries in the build graph. This requires
 	 * going through all entries, extracting the markers and then printing them.
 	 *
-	 * @param graph
+	 * @param executor
 	 * @throws IOException
 	 */
 	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, Path.Entry<?> target) throws IOException {
@@ -224,28 +190,12 @@ public class Build implements Command {
 			// for syntactic messages.
 			if (o instanceof SyntacticHeap) {
 				SyntacticHeap h = (SyntacticHeap) o;
-				extractSyntacticMarkers(h.getRootItem(), annotated, new BitSet());
+				// FIXME: this just reports all syntactic markers.
+				annotated.addAll(h.findAll(SyntacticItem.Marker.class));
 			}
 		}
 		//
 		return annotated;
-	}
-
-	private static void extractSyntacticMarkers(SyntacticItem item, List<SyntacticItem.Marker> items, BitSet visited) {
-		int index = item.getIndex();
-		// Check whether already visited this item
-		if(!visited.get(index)) {
-			visited.set(index);
-			// Check whether this item has a marker associated with it.
-			if (item instanceof SyntacticItem.Marker) {
-				// At least one marked assocaited with item.
-				items.add((SyntacticItem.Marker) item);
-			}
-			// Recursive children looking for other syntactic markers
-			for (int i = 0; i != item.size(); ++i) {
-				extractSyntacticMarkers(item.get(i), items, visited);
-			}
-		}
 	}
 
 	private static Path.Entry<?> getSourceEntry(Collection<Path.Entry<?>> sources, Path.ID id) {

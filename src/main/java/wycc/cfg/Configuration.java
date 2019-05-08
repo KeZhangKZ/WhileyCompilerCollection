@@ -127,34 +127,47 @@ public interface Configuration {
 	 * Represents a simple empty configuration. This is useful for handling cases
 	 * where e.g. a configuration file cannot be located.
 	 */
-	public static final Configuration EMPTY = new Configuration() {
+	public static Configuration EMPTY(Schema schema) {
+		return new Configuration() {
 
-		@Override
-		public Schema getConfigurationSchema() {
-			return EMPTY_SCHEMA;
-		}
+			@Override
+			public Schema getConfigurationSchema() {
+				return schema;
+			}
 
-		@Override
-		public <T> T get(Class<T> kind, ID key) {
-			throw new IllegalArgumentException("invalid key access: " + key);
-		}
+			@Override
+			public <T> T get(Class<T> kind, ID key) {
+				Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);
+				if(descriptor != null && descriptor.hasDefault()) {
+					Object value = descriptor.getDefault();
+					if (!kind.isInstance(value)) {
+						throw new IllegalArgumentException("incompatible key access: expected " + kind.getSimpleName()
+								+ " got " + descriptor.getType().getSimpleName());
+					}
+					return (T) value;
+				}
+				throw new IllegalArgumentException("invalid key access: " + key);
+			}
 
-		@Override
-		public <T> void write(ID key, T value) {
-			throw new IllegalArgumentException("invalid key access: " + key);
-		}
+			@Override
+			public <T> void write(ID key, T value) {
+				throw new IllegalArgumentException("invalid key access: " + key);
+			}
 
-		@Override
-		public List<ID> matchAll(Filter filter) {
-			return Collections.EMPTY_LIST;
-		}
+			@Override
+			public List<ID> matchAll(Filter filter) {
+				// FIXME: need really to implement this method somehow!
 
-		@Override
-		public <T> boolean hasKey(ID key) {
-			return false;
-		}
+				return Collections.EMPTY_LIST;
+			}
 
-	};
+			@Override
+			public <T> boolean hasKey(ID key) {
+				Configuration.KeyValueDescriptor<?> descriptor = schema.getDescriptor(key);
+				return descriptor != null && descriptor.hasDefault();
+			}
+		};
+	}
 
 	/**
 	 * A simple schema which contains no keys.
@@ -190,8 +203,8 @@ public interface Configuration {
 
 			@Override
 			public boolean isKey(ID key) {
-				for(int i=0;i!=schemas.length;++i) {
-					if(schemas[i].isKey(key)) {
+				for (int i = 0; i != schemas.length; ++i) {
+					if (schemas[i].isKey(key)) {
 						return true;
 					}
 				}
@@ -237,9 +250,9 @@ public interface Configuration {
 
 			@Override
 			public KeyValueDescriptor<?> getDescriptor(Path.ID key) {
-				for(int i=0;i!=descriptors.length;++i) {
+				for (int i = 0; i != descriptors.length; ++i) {
 					KeyValueDescriptor<?> descriptor = descriptors[i];
-					if(descriptor.getFilter().matches(key)) {
+					if (descriptor.getFilter().matches(key)) {
 						return descriptor;
 					}
 				}
@@ -248,9 +261,9 @@ public interface Configuration {
 
 			@Override
 			public boolean isKey(ID key) {
-				for(int i=0;i!=descriptors.length;++i) {
+				for (int i = 0; i != descriptors.length; ++i) {
 					KeyValueDescriptor<?> descriptor = descriptors[i];
-					if(descriptor.getFilter().matches(key)) {
+					if (descriptor.getFilter().matches(key)) {
 						return true;
 					}
 				}
@@ -314,6 +327,7 @@ public interface Configuration {
 
 		/**
 		 * Get the default value for this field (if applicable).
+		 *
 		 * @return
 		 */
 		public T getDefault();
@@ -394,16 +408,23 @@ public interface Configuration {
 			return true;
 		}
 
+		@Override
+		public String toString() {
+			return key + ":\"" + description + "\": " + type.getSimpleName() + ":" + defaulT + ":" + required;
+		}
 	}
 
 	/**
 	 * Represents an unbound string key-value pair. That is, any string is
 	 * permitted.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param required    Indicates whether at least one match is required for this
-	 *                    descriptor for a given schema
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param required
+	 *            Indicates whether at least one match is required for this
+	 *            descriptor for a given schema
 	 * @return
 	 */
 	public static KeyValueDescriptor<Value.UTF8> UNBOUND_STRING(Path.Filter key, String description, boolean required) {
@@ -412,17 +433,20 @@ public interface Configuration {
 		};
 	}
 
-
 	/**
 	 * Represents an unbound string key-value pair with a default value. That is,
 	 * any string is permitted.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param defaulT     Default to return in case this attribute is not specified.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param defaulT
+	 *            Default to return in case this attribute is not specified.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.UTF8> UNBOUND_STRING(Path.Filter key, String description, Value.UTF8 defaulT) {
+	public static KeyValueDescriptor<Value.UTF8> UNBOUND_STRING(Path.Filter key, String description,
+			Value.UTF8 defaulT) {
 		return new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class, defaulT) {
 
 		};
@@ -432,15 +456,20 @@ public interface Configuration {
 	 * Represents a key-value pair where the value is a string conforming to a given
 	 * regex.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param required    Indicates whether at least one match is required for this
-	 *                    descriptor for a given schema
-	 * @param regex       The regular expression to which instances of this kvp must
-	 *                    conform.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param required
+	 *            Indicates whether at least one match is required for this
+	 *            descriptor for a given schema
+	 * @param regex
+	 *            The regular expression to which instances of this kvp must
+	 *            conform.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.UTF8> REGEX_STRING(Path.Filter key, String description, boolean required, Pattern regex) {
+	public static KeyValueDescriptor<Value.UTF8> REGEX_STRING(Path.Filter key, String description, boolean required,
+			Pattern regex) {
 		return new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class, required) {
 			@Override
 			public boolean isValid(Value.UTF8 str) {
@@ -453,15 +482,21 @@ public interface Configuration {
 	 * Represents a key-value pair where the value is a string conforming to a given
 	 * regex, and a default value is providfed.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param defaulT     Default to return in case this attribute is not specified.
-	 * @param regex       The regular expression to which instances of this kvp must
-	 *                    conform.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param defaulT
+	 *            Default to return in case this attribute is not specified.
+	 * @param regex
+	 *            The regular expression to which instances of this kvp must
+	 *            conform.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.UTF8> REGEX_STRING(Path.Filter key, String description, Value.UTF8 defaulT, Pattern regex) {
-		KeyValueDescriptor<Value.UTF8> desc = new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class, defaulT) {
+	public static KeyValueDescriptor<Value.UTF8> REGEX_STRING(Path.Filter key, String description, Value.UTF8 defaulT,
+			Pattern regex) {
+		KeyValueDescriptor<Value.UTF8> desc = new AbstractDescriptor<Value.UTF8>(key, description, Value.UTF8.class,
+				defaulT) {
 			@Override
 			public boolean isValid(Value.UTF8 str) {
 				return regex.matcher(str.toString()).matches();
@@ -477,10 +512,13 @@ public interface Configuration {
 	 * Represents an unbound integer key-valid pair. That is, any integer is
 	 * permitted.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param required    Indicates whether at least one match is required for this
-	 *                    descriptor for a given schema
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param required
+	 *            Indicates whether at least one match is required for this
+	 *            descriptor for a given schema
 	 * @return
 	 */
 	public static KeyValueDescriptor<Value.Int> UNBOUND_INTEGER(Path.Filter key, String description, boolean required) {
@@ -493,12 +531,16 @@ public interface Configuration {
 	 * Represents an unbound integer key-valid pair with a default value. That is,
 	 * any integer is permitted.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param defaulT     Default to return in case this attribute is not specified.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param defaulT
+	 *            Default to return in case this attribute is not specified.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Int> UNBOUND_INTEGER(Path.Filter key, String description, Value.Int defaulT) {
+	public static KeyValueDescriptor<Value.Int> UNBOUND_INTEGER(Path.Filter key, String description,
+			Value.Int defaulT) {
 		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, defaulT) {
 
 		};
@@ -508,32 +550,40 @@ public interface Configuration {
 	 * Returns an integer key-value descriptor which ensures the given value is
 	 * greater or equal to a given lower bound.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param required    Indicates whether at least one match is required for this
-	 *                    descriptor for a given schema
-	 * @param low         No valid value is below this bound.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param required
+	 *            Indicates whether at least one match is required for this
+	 *            descriptor for a given schema
+	 * @param low
+	 *            No valid value is below this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, boolean required, final int low) {
-		 return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, required) {
-				@Override
-				public boolean isValid(Value.Int value) {
-					int v = value.get().intValue();
-					return v >= low;
-				}
-		 };
+	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, boolean required,
+			final int low) {
+		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, required) {
+			@Override
+			public boolean isValid(Value.Int value) {
+				int v = value.get().intValue();
+				return v >= low;
+			}
+		};
 	}
-
 
 	/**
 	 * Returns an integer key-value descriptor which ensures the given value is
 	 * greater or equal to a given lower bound.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param defaulT     Default to return in case this attribute is not specified.
-	 * @param low         No valid value is below this bound.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param defaulT
+	 *            Default to return in case this attribute is not specified.
+	 * @param low
+	 *            No valid value is below this bound.
 	 * @return
 	 */
 	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, Value.Int defaulT,
@@ -552,22 +602,26 @@ public interface Configuration {
 		return desc;
 	}
 
-
 	/**
 	 * Returns an integer key-value descriptor which ensures the given value is
 	 * greater-or-equal to a given lower bound and less-or-equal to a given upper
 	 * bound.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param required    Indicates whether at least one match is required for this
-	 *                    descriptor for a given schema
-	 * @param low         No valid value is below this bound.
-	 * @param high        No valid value is above this bound.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param required
+	 *            Indicates whether at least one match is required for this
+	 *            descriptor for a given schema
+	 * @param low
+	 *            No valid value is below this bound.
+	 * @param high
+	 *            No valid value is above this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, boolean required, final int low,
-			final int high) {
+	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, boolean required,
+			final int low, final int high) {
 		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, required) {
 			@Override
 			public boolean isValid(Value.Int value) {
@@ -581,14 +635,18 @@ public interface Configuration {
 	 * Represents an unbound boolean key-valid pair. That is, any boolean is
 	 * permitted.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param required    Indicates whether at least one match is required for this
-	 *                    descriptor for a given schema
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param required
+	 *            Indicates whether at least one match is required for this
+	 *            descriptor for a given schema
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description, boolean required) {
-		return new AbstractDescriptor<Value.Bool>(key,description,Value.Bool.class, required) {
+	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description,
+			boolean required) {
+		return new AbstractDescriptor<Value.Bool>(key, description, Value.Bool.class, required) {
 
 		};
 	}
@@ -597,13 +655,17 @@ public interface Configuration {
 	 * Represents an unbound boolean key-valid pair. That is, any boolean is
 	 * permitted.
 	 *
-	 * @param key         Identifies keys associated with this descriptor.
-	 * @param description Description to use for this descriptor.
-	 * @param defaulT     Default to return in case this attribute is not specified.
+	 * @param key
+	 *            Identifies keys associated with this descriptor.
+	 * @param description
+	 *            Description to use for this descriptor.
+	 * @param defaulT
+	 *            Default to return in case this attribute is not specified.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description, Value.Bool defaulT) {
-		return new AbstractDescriptor<Value.Bool>(key,description,Value.Bool.class, defaulT) {
+	public static KeyValueDescriptor<Value.Bool> UNBOUND_BOOLEAN(Path.Filter key, String description,
+			Value.Bool defaulT) {
+		return new AbstractDescriptor<Value.Bool>(key, description, Value.Bool.class, defaulT) {
 
 		};
 	}
@@ -617,12 +679,13 @@ public interface Configuration {
 	 * @param required
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Array> UNBOUND_STRING_ARRAY(Path.Filter key, String description, boolean required) {
+	public static KeyValueDescriptor<Value.Array> UNBOUND_STRING_ARRAY(Path.Filter key, String description,
+			boolean required) {
 		return new AbstractDescriptor<Value.Array>(key, description, Value.Array.class, required) {
 			@Override
 			public boolean isValid(Value.Array value) {
-				for(int i=0;i!=value.size();++i) {
-					if(!(value.get(i) instanceof Value.UTF8)) {
+				for (int i = 0; i != value.size(); ++i) {
+					if (!(value.get(i) instanceof Value.UTF8)) {
 						return false;
 					}
 				}
@@ -640,12 +703,14 @@ public interface Configuration {
 	 * @param required
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Array> UNBOUND_STRING_ARRAY(Path.Filter key, String description, Value.Array defaulT) {
-		AbstractDescriptor<Value.Array> desc = new AbstractDescriptor<Value.Array>(key, description, Value.Array.class, defaulT) {
+	public static KeyValueDescriptor<Value.Array> UNBOUND_STRING_ARRAY(Path.Filter key, String description,
+			Value.Array defaulT) {
+		AbstractDescriptor<Value.Array> desc = new AbstractDescriptor<Value.Array>(key, description, Value.Array.class,
+				defaulT) {
 			@Override
 			public boolean isValid(Value.Array value) {
-				for(int i=0;i!=value.size();++i) {
-					if(!(value.get(i) instanceof Value.UTF8)) {
+				for (int i = 0; i != value.size(); ++i) {
+					if (!(value.get(i) instanceof Value.UTF8)) {
 						return false;
 					}
 				}
@@ -653,13 +718,13 @@ public interface Configuration {
 			}
 		};
 		// Sanity check default value
-		checkDefaultValue(desc,defaulT);
+		checkDefaultValue(desc, defaulT);
 		// Done
 		return desc;
 	}
 
 	public static <T extends Value> void checkDefaultValue(KeyValueDescriptor<T> desc, T defaulT) {
-		if(!desc.isValid(defaulT)) {
+		if (!desc.isValid(defaulT)) {
 			throw new IllegalArgumentException("Invalid default value");
 		}
 	}
