@@ -122,6 +122,13 @@ public interface Command {
 	 */
 	public interface Options {
 		/**
+		 * Check whether a given option is given.
+		 *
+		 * @param name
+		 * @return
+		 */
+		public boolean has(String name);
+		/**
 		 * Get the value associate with a given named option.
 		 *
 		 * @param kind
@@ -365,6 +372,21 @@ public interface Command {
 		};
 	}
 
+	public static Option.Descriptor OPTION_FLAG(String name, String description) {
+		return new AbstractOptionDescriptor(name, null, description, null) {
+			@Override
+			public Option Initialise(String arg) {
+				if(arg.equals("false") || arg.equals("true")) {
+					// If specified then should be true
+					return new OptionValue(this, Boolean.parseBoolean(arg));
+				} else {
+					throw new IllegalArgumentException("invalid argument for " + name + " (expected nothing, \"true\" or \"false\")");
+				}
+			}
+		};
+	}
+
+
 	public static Option.Descriptor OPTION_FLAG(String name, String description,
 			boolean defaultValue) {
 		return new AbstractOptionDescriptor(name, null, description, defaultValue) {
@@ -379,6 +401,7 @@ public interface Command {
 			}
 		};
 	}
+
 
 	/**
 	 * An string option
