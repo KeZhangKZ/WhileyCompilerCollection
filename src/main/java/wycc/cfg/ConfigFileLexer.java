@@ -62,7 +62,7 @@ public class ConfigFileLexer {
 		while (pos < input.length()) {
 			char c = input.charAt(pos);
 
-			if (Character.isDigit(c)) {
+			if (Character.isDigit(c) || c == '-') {
 				tokens.add(scanNumericConstant());
 			} else if (c == '"') {
 				tokens.add(scanStringConstant());
@@ -91,9 +91,15 @@ public class ConfigFileLexer {
 	 */
 	public Token scanNumericConstant() {
 		int start = pos;
+		// Check for negative values
+		if(input.charAt(pos) == '-') {
+			pos = pos + 1;
+		}
+		// Parse the remainder
 		while (pos < input.length() && Character.isDigit(input.charAt(pos))) {
 			pos = pos + 1;
 		}
+		// Done
 		return new Token(Token.Kind.IntValue, input.substring(start, pos),
 				start);
 	}

@@ -19,7 +19,6 @@ import java.util.List;
 import wycc.lang.Command;
 import wycc.lang.Command.Option;
 import wycc.lang.Command.Template;
-import wyfs.lang.Content;
 
 /**
  * <p>
@@ -219,6 +218,17 @@ public class CommandParser {
 		public OptionsMap(List<Option> options, List<Option.Descriptor> descriptors) {
 			this.options = options.toArray(new Option[options.size()]);
 			this.descriptors = descriptors.toArray(new Option.Descriptor[descriptors.size()]);
+		}
+
+		@Override
+		public boolean has(String name) {
+			for (int i = 0; i != options.length; ++i) {
+				Option option = options[i];
+				if (option.getDescriptor().getName().equals(name)) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		@Override
