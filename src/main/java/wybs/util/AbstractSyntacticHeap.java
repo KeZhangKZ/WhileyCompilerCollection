@@ -282,9 +282,13 @@ public abstract class AbstractSyntacticHeap implements SyntacticHeap {
 			// Attempt the replacement
 			SyntacticItem[] children = item.getAll();
 			for (int i = 0; i != children.length; ++i) {
+				// Apply the replacement.
 				if (children[i] == from) {
 					// Time for replacement!
 					item.setOperand(i, to);
+				} else {
+					// Recursively traverse children.
+					replaceAll(children[i],from,to,visited);
 				}
 			}
 		}
