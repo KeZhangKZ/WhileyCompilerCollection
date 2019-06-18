@@ -16,17 +16,10 @@ package wycc.cfg;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.cfg.ConfigFile.KeyValuePair;
-import wycc.cfg.Configuration.KeyValueDescriptor;
-import wycc.cfg.Configuration.Schema;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
@@ -620,9 +613,9 @@ public interface Configuration {
 	 *            No valid value is above this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, boolean required,
+	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, Value.Int defaulT,
 			final int low, final int high) {
-		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, required) {
+		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, defaulT) {
 			@Override
 			public boolean isValid(Value.Int value) {
 				int v = value.get().intValue();
