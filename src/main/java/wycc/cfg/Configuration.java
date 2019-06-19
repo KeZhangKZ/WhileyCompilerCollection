@@ -625,6 +625,30 @@ public interface Configuration {
 	}
 
 	/**
+	 * Returns a decimal key-value descriptor which ensures the given value is
+	 * greater-or-equal to a given lower bound and less-or-equal to a given upper
+	 * bound.
+	 *
+	 * @param key         Identifies keys associated with this descriptor.
+	 * @param description Description to use for this descriptor.
+	 * @param required    Indicates whether at least one match is required for this
+	 *                    descriptor for a given schema
+	 * @param low         No valid value is below this bound.
+	 * @param high        No valid value is above this bound.
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.Decimal> BOUND_DECIMAL(Path.Filter key, String description, Value.Decimal defaulT,
+			final double low, final double high) {
+		return new AbstractDescriptor<Value.Decimal>(key, description, Value.Decimal.class, defaulT) {
+			@Override
+			public boolean isValid(Value.Decimal value) {
+				int v = value.get().intValue();
+				return v >= low && v <= high;
+			}
+		};
+	}
+
+	/**
 	 * Represents an unbound boolean key-valid pair. That is, any boolean is
 	 * permitted.
 	 *

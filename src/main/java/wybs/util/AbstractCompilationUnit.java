@@ -14,6 +14,7 @@
 package wybs.util;
 
 import java.lang.reflect.Array;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -47,6 +48,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 	public static final int ITEM_array = 6;
 	public static final int ITEM_ident = 7;
 	public static final int ITEM_name = 8;
+	public static final int ITEM_decimal = 9;
 	public static final int ITEM_ref = 10;
 	public static final int ATTR_span = 14;
 	public static final int ITEM_byte = 15; // deprecated
@@ -500,6 +502,59 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			}
 		}
 
+		public static class Decimal extends Value {
+
+			public Decimal(double value) {
+				super(ITEM_decimal, toBytes(BigDecimal.valueOf(value)));
+			}
+
+			public Decimal(BigDecimal value) {
+				super(ITEM_decimal, toBytes(value));
+			}
+
+			public Decimal(byte[] bytes) {
+				super(ITEM_decimal, bytes);
+			}
+
+			public BigDecimal get() {
+				return fromBytes(data);
+			}
+
+			@Override
+			public BigDecimal unwrap() {
+				return get();
+			}
+
+			@Override
+			public Decimal clone(SyntacticItem[] operands) {
+				return new Decimal(get());
+			}
+
+			@Override
+			public String toString() {
+				return get().toString();
+			}
+
+			private static byte[] toBytes(BigDecimal d) {
+				int scale = d.scale();
+				byte[] m = d.unscaledValue().toByteArray();
+				byte[] bytes = new byte[m.length+4];
+				bytes[0] = (byte) ((scale >> 24) & 0xFF);
+				bytes[1] = (byte) ((scale >> 16) & 0xFF);
+				bytes[2] = (byte) ((scale >> 8) & 0xFF);
+				bytes[3] = (byte) (scale & 0xFF);
+				System.arraycopy(m, 0, bytes, 4, m.length);
+				return bytes;
+			}
+
+			private static BigDecimal fromBytes(byte[] data) {
+				int scale = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+				BigInteger m = new BigInteger(Arrays.copyOfRange(data, 4, data.length));
+				return new BigDecimal(m,scale);
+			}
+		}
+
+
 		public static class UTF8 extends Value {
 			public UTF8(String str) {
 				super(ITEM_utf8, str.getBytes());
@@ -678,6 +733,13 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Value.Int(data);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_decimal] = new Schema(Operands.ZERO,Data.MANY, "ITEM_decimal") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Decimal(data);
 			}
 		};
 		// ==========================================================================

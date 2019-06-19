@@ -372,6 +372,42 @@ public interface Command {
 		};
 	}
 
+	/**
+	 * An integer option which cannot be negative.
+	 *
+	 * @param name
+	 * @param argument
+	 * @param description
+
+	 * @return
+	 */
+	public static Option.Descriptor OPTION_BOUNDED_DOUBLE(String name, String description, double low, double high) {
+		return OPTION_DOUBLE(name, "<n>", description + " (between " + low + ".." + high + ")",
+				(n) -> (n >= low && n <= high), low, high, null);
+	}
+
+	/**
+	 * A decimal option with a constraint
+	 *
+	 * @param name
+	 * @param description
+	 * @return
+	 */
+	public static Option.Descriptor OPTION_DOUBLE(String name, String argument, String description,
+			Predicate<Double> constraint, double low, double high, Double defaultValue) {
+		return new AbstractOptionDescriptor(name, argument, description, defaultValue) {
+			@Override
+			public Option Initialise(String arg) {
+				double value = Double.parseDouble(arg);
+				if (constraint.test(value)) {
+					return new OptionValue(this, value);
+				} else {
+					throw new IllegalArgumentException("invalid double value");
+				}
+			}
+		};
+	}
+
 	public static Option.Descriptor OPTION_FLAG(String name, String description) {
 		return new AbstractOptionDescriptor(name, null, description, null) {
 			@Override
