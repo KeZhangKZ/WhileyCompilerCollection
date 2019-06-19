@@ -20,7 +20,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -28,13 +27,12 @@ import java.util.List;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
-import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wybs.util.AbstractCompilationUnit.Attribute;
+import wybs.util.AbstractCompilationUnit.Attribute.Span;
 import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
-import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 public class Build implements Command {
@@ -155,7 +153,7 @@ public class Build implements Command {
 	 *
 	 * @param marker
 	 */
-	private static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, SyntacticItem.Marker marker) {
+	public static void printSyntacticMarkers(PrintStream output, Collection<Path.Entry<?>> sources, SyntacticItem.Marker marker) {
 		//
 		Path.Entry<?> source = getSourceEntry(sources,marker.getSource());
 		//
@@ -181,7 +179,7 @@ public class Build implements Command {
 	 * @return
 	 * @throws IOException
 	 */
-	private static List<SyntacticItem.Marker> extractSyntacticMarkers(Path.Entry<?>... binaries) throws IOException {
+	public static List<SyntacticItem.Marker> extractSyntacticMarkers(Path.Entry<?>... binaries) throws IOException {
 		List<SyntacticItem.Marker> annotated = new ArrayList<>();
 		//
 		for (Path.Entry<?> binary : binaries) {
