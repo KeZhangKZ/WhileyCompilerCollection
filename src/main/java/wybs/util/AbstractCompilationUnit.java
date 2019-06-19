@@ -13,15 +13,13 @@
 // limitations under the License.
 package wybs.util;
 
-import java.lang.reflect.Array;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
@@ -33,7 +31,6 @@ import wybs.lang.SyntacticItem.Schema;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
-import wyfs.util.Trie;
 
 public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
 		implements CompilationUnit {
@@ -50,6 +47,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 	public static final int ITEM_name = 8;
 	public static final int ITEM_decimal = 9;
 	public static final int ITEM_ref = 10;
+	public static final int ITEM_dictionary = 11;
 	public static final int ATTR_span = 14;
 	public static final int ITEM_byte = 15; // deprecated
 
@@ -584,7 +582,6 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			}
 		}
 
-
 		public static class Array extends Value {
 
 			public Array(Value... stmts) {
@@ -629,6 +626,45 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 					}
 				}
 				return r;
+			}
+		}
+
+		public static class Dictionary extends Value {
+			public Dictionary(Pair<Identifier,Value>... entries) {
+				super(ITEM_dictionary,entries);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Dictionary(ArrayUtils.toArray(Pair.class, operands));
+			}
+
+			@Override
+			public Pair<Identifier,Value> get(int i) {
+				return (Pair<Identifier,Value>) super.get(i);
+			}
+
+			@Override
+			public Object unwrap() {
+				HashMap<String, Object> map = new HashMap<>();
+				for (int i = 0; i != size(); ++i) {
+					Pair<Identifier, Value> entry = get(i);
+					map.put(entry.get(0).toString(), entry.getSecond().unwrap());
+				}
+				return map;
+			}
+
+			@Override
+			public String toString() {
+				String r = "";
+				for(int i=0;i!=size();++i) {
+					Pair<Identifier,Value> entry = get(i);
+					if(i != 0) {
+						r += ",";
+					}
+					r += entry.getFirst() + ": " + entry.getSecond();
+				}
+				return "{" + r + "}";
 			}
 		}
 	}
