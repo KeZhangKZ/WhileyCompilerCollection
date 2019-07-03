@@ -660,9 +660,9 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				for(int i=0;i!=size();++i) {
 					Pair<Identifier,Value> entry = get(i);
 					if(i != 0) {
-						r += ",";
+						r += ", ";
 					}
-					r += entry.getFirst() + ": " + entry.getSecond();
+					r += entry.getFirst() + "=" + entry.getSecond();
 				}
 				return "{" + r + "}";
 			}
@@ -797,6 +797,20 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Tuple<>(operands);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_array] = new Schema(Operands.MANY,Data.ZERO, "ITEM_array") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Array(ArrayUtils.toArray(Value.class, operands));
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_dictionary] = new Schema(Operands.MANY,Data.ZERO, "ITEM_dictionary") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Dictionary(ArrayUtils.toArray(Pair.class, operands));
 			}
 		};
 		// ==========================================================================

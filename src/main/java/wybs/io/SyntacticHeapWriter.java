@@ -13,9 +13,8 @@
 // limitations under the License.
 package wybs.io;
 
-import java.io.*;
-import java.math.BigInteger;
-import java.util.Arrays;
+import java.io.IOException;
+import java.io.OutputStream;
 
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
