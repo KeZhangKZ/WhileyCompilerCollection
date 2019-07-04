@@ -16,17 +16,10 @@ package wycc.cfg;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.cfg.ConfigFile.KeyValuePair;
-import wycc.cfg.Configuration.KeyValueDescriptor;
-import wycc.cfg.Configuration.Schema;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
@@ -620,11 +613,35 @@ public interface Configuration {
 	 *            No valid value is above this bound.
 	 * @return
 	 */
-	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, boolean required,
+	public static KeyValueDescriptor<Value.Int> BOUND_INTEGER(Path.Filter key, String description, Value.Int defaulT,
 			final int low, final int high) {
-		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, required) {
+		return new AbstractDescriptor<Value.Int>(key, description, Value.Int.class, defaulT) {
 			@Override
 			public boolean isValid(Value.Int value) {
+				int v = value.get().intValue();
+				return v >= low && v <= high;
+			}
+		};
+	}
+
+	/**
+	 * Returns a decimal key-value descriptor which ensures the given value is
+	 * greater-or-equal to a given lower bound and less-or-equal to a given upper
+	 * bound.
+	 *
+	 * @param key         Identifies keys associated with this descriptor.
+	 * @param description Description to use for this descriptor.
+	 * @param required    Indicates whether at least one match is required for this
+	 *                    descriptor for a given schema
+	 * @param low         No valid value is below this bound.
+	 * @param high        No valid value is above this bound.
+	 * @return
+	 */
+	public static KeyValueDescriptor<Value.Decimal> BOUND_DECIMAL(Path.Filter key, String description, Value.Decimal defaulT,
+			final double low, final double high) {
+		return new AbstractDescriptor<Value.Decimal>(key, description, Value.Decimal.class, defaulT) {
+			@Override
+			public boolean isValid(Value.Decimal value) {
 				int v = value.get().intValue();
 				return v >= low && v <= high;
 			}

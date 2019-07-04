@@ -13,14 +13,13 @@
 // limitations under the License.
 package wybs.util;
 
-import java.lang.reflect.Array;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.function.Function;
 
 import wybs.lang.CompilationUnit;
@@ -32,7 +31,6 @@ import wybs.lang.SyntacticItem.Schema;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
-import wyfs.util.Trie;
 
 public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
 		implements CompilationUnit {
@@ -47,7 +45,9 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 	public static final int ITEM_array = 6;
 	public static final int ITEM_ident = 7;
 	public static final int ITEM_name = 8;
+	public static final int ITEM_decimal = 9;
 	public static final int ITEM_ref = 10;
+	public static final int ITEM_dictionary = 11;
 	public static final int ATTR_span = 14;
 	public static final int ITEM_byte = 15; // deprecated
 
@@ -500,6 +500,59 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			}
 		}
 
+		public static class Decimal extends Value {
+
+			public Decimal(double value) {
+				super(ITEM_decimal, toBytes(BigDecimal.valueOf(value)));
+			}
+
+			public Decimal(BigDecimal value) {
+				super(ITEM_decimal, toBytes(value));
+			}
+
+			public Decimal(byte[] bytes) {
+				super(ITEM_decimal, bytes);
+			}
+
+			public BigDecimal get() {
+				return fromBytes(data);
+			}
+
+			@Override
+			public BigDecimal unwrap() {
+				return get();
+			}
+
+			@Override
+			public Decimal clone(SyntacticItem[] operands) {
+				return new Decimal(get());
+			}
+
+			@Override
+			public String toString() {
+				return get().toString();
+			}
+
+			private static byte[] toBytes(BigDecimal d) {
+				int scale = d.scale();
+				byte[] m = d.unscaledValue().toByteArray();
+				byte[] bytes = new byte[m.length+4];
+				bytes[0] = (byte) ((scale >> 24) & 0xFF);
+				bytes[1] = (byte) ((scale >> 16) & 0xFF);
+				bytes[2] = (byte) ((scale >> 8) & 0xFF);
+				bytes[3] = (byte) (scale & 0xFF);
+				System.arraycopy(m, 0, bytes, 4, m.length);
+				return bytes;
+			}
+
+			private static BigDecimal fromBytes(byte[] data) {
+				int scale = (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+				BigInteger m = new BigInteger(Arrays.copyOfRange(data, 4, data.length));
+				return new BigDecimal(m,scale);
+			}
+		}
+
+
 		public static class UTF8 extends Value {
 			public UTF8(String str) {
 				super(ITEM_utf8, str.getBytes());
@@ -528,7 +581,6 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				return new String(get());
 			}
 		}
-
 
 		public static class Array extends Value {
 
@@ -574,6 +626,45 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 					}
 				}
 				return r;
+			}
+		}
+
+		public static class Dictionary extends Value {
+			public Dictionary(Pair<Identifier,Value>... entries) {
+				super(ITEM_dictionary,entries);
+			}
+
+			@Override
+			public SyntacticItem clone(SyntacticItem[] operands) {
+				return new Dictionary(ArrayUtils.toArray(Pair.class, operands));
+			}
+
+			@Override
+			public Pair<Identifier,Value> get(int i) {
+				return (Pair<Identifier,Value>) super.get(i);
+			}
+
+			@Override
+			public Object unwrap() {
+				HashMap<String, Object> map = new HashMap<>();
+				for (int i = 0; i != size(); ++i) {
+					Pair<Identifier, Value> entry = get(i);
+					map.put(entry.get(0).toString(), entry.getSecond().unwrap());
+				}
+				return map;
+			}
+
+			@Override
+			public String toString() {
+				String r = "";
+				for(int i=0;i!=size();++i) {
+					Pair<Identifier,Value> entry = get(i);
+					if(i != 0) {
+						r += ", ";
+					}
+					r += entry.getFirst() + "=" + entry.getSecond();
+				}
+				return "{" + r + "}";
 			}
 		}
 	}
@@ -681,6 +772,13 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			}
 		};
 		// ==========================================================================
+		schema[ITEM_decimal] = new Schema(Operands.ZERO,Data.MANY, "ITEM_decimal") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Decimal(data);
+			}
+		};
+		// ==========================================================================
 		schema[ITEM_utf8] = new Schema(Operands.ZERO,Data.MANY, "ITEM_utf8") {
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
@@ -699,6 +797,20 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			@Override
 			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
 				return new Tuple<>(operands);
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_array] = new Schema(Operands.MANY,Data.ZERO, "ITEM_array") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Array(ArrayUtils.toArray(Value.class, operands));
+			}
+		};
+		// ==========================================================================
+		schema[ITEM_dictionary] = new Schema(Operands.MANY,Data.ZERO, "ITEM_dictionary") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Value.Dictionary(ArrayUtils.toArray(Pair.class, operands));
 			}
 		};
 		// ==========================================================================
