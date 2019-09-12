@@ -20,6 +20,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -40,6 +41,7 @@ import wybs.lang.Build;
 
 public class Install implements Command {
 	public static final Trie BUILD_INCLUDES = Trie.fromString("build/includes");
+	public static final Trie BUILD_PLATFORM_INCLUDES = Trie.fromString("build/*/includes");
 
 	/**
 	 * The descriptor for this command.
@@ -72,7 +74,7 @@ public class Install implements Command {
 
 		@Override
 		public Command initialise(Command environment, Configuration configuration) {
-			return new Install((WyProject) environment, configuration);
+			return new Install((WyProject) environment, configuration, System.out, System.err);
 		}
 
 	};
@@ -89,6 +91,12 @@ public class Install implements Command {
 	private final WyProject project;
 
 	/**
+	 * Provides a generic place to which normal output should be directed. This
+	 * should eventually be replaced.
+	 */
+	private final PrintStream sysout;
+
+	/**
 	 * Access to configuration attributes
 	 */
 	private final Configuration configuration;
@@ -96,13 +104,22 @@ public class Install implements Command {
 	/**
 	 * List of include filters
 	 */
-	private final Value.UTF8[] includes;
+	private final ArrayList<Value.UTF8> includes;
 
-	public Install(WyProject project, Configuration configuration) {
+	public Install(WyProject project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.project = project;
 		this.logger = project.getBuildProject().getLogger();
 		this.configuration = configuration;
-		this.includes = configuration.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
+		this.sysout = new PrintStream(sysout);
+		this.includes = new ArrayList<>();
+		// Determine default included files
+		Value.UTF8[] items = configuration.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
+		this.includes.addAll(Arrays.asList(items));
+		// Determine platform-specific included files
+		for(Path.ID id : configuration.matchAll(BUILD_PLATFORM_INCLUDES)) {
+			items = configuration.get(Value.Array.class, id).toArray(Value.UTF8.class);
+			includes.addAll(Arrays.asList(items));
+		}
 	}
 
 	@Override
@@ -134,7 +151,7 @@ public class Install implements Command {
 			// Flush it to disk
 			target.flush();
 			// Done
-			logger.logTimedMessage("installed " + target.id() + " ... " + files + " file(s)", 0, 0);
+			sysout.println("installed " + target.location() + " ... " + files.size() + " file(s)");
 			return true;
 		} catch (IOException e) {
 			return false;
@@ -154,9 +171,9 @@ public class Install implements Command {
 		// Determine local root of project
 		Path.Root root = project.getParent().getLocalRoot();
 		// Add all files from the includes filter
-		for(int i=0;i!=includes.length;++i) {
+		for(int i=0;i!=includes.size();++i) {
 			// Construct a filter from the attribute itself
-			Content.Filter filter = createFilter(includes[i].toString());
+			Content.Filter filter = createFilter(includes.get(i).toString());
 			// Add all files matching the attribute
 			files.addAll(root.get(filter));
 		}
@@ -178,14 +195,17 @@ public class Install implements Command {
 		ZipFile zf = new ZipFile();
 		// Add each file to zip file
 		for (int i = 0; i != files.size(); ++i) {
+			long start = System.currentTimeMillis();
 			Path.Entry<?> file = files.get(i);
 			// Extract path
-			addPaths(file.id().parent(),paths,zf);
+			addPaths(file.id().parent(), paths, zf);
 			// Construct filename for given entry
 			String filename = file.id().toString() + "." + file.contentType().getSuffix();
 			// Extract bytes representing entry
 			byte[] contents = readFileContents(file);
 			zf.add(new ZipEntry(filename), contents);
+			long time = System.currentTimeMillis() - start;
+			logger.logTimedMessage("Packaging " + file.id() + "." + file.contentType().getSuffix(), time, 0);
 		}
 		//
 		return zf;
@@ -206,7 +226,6 @@ public class Install implements Command {
 			addPaths(path.parent(),paths,zf);
 			// A new path encountered
 			String directory = path.toString() + "/";
-			System.out.println("ADDING DIRECTORY: " + directory);
 			zf.add(new ZipEntry(directory), new byte[0]);
 			paths.add(path);
 		}
