@@ -172,7 +172,7 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		public Tuple<T> get(int start, int end) {
 			SyntacticItem[] items = new SyntacticItem[end - start];
 			for (int i = start; i < end; ++i) {
-				items[i] = super.get(i);
+				items[i-start] = super.get(i);
 			}
 			return new Tuple(items);
 		}
