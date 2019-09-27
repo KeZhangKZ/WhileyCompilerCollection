@@ -62,8 +62,8 @@ public class Run implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Run((WyProject) environment, configuration, System.out, System.err);
+		public Command initialise(Command.Environment environment) {
+			return new Run(environment, System.out, System.err);
 		}
 
 	};
@@ -81,23 +81,19 @@ public class Run implements Command {
 	private final PrintStream syserr;
 
 	/**
-	 * The enclosing project for this build
+	 * The enclosing environment for this command.
 	 */
-	private final WyProject project;
-
-	/**
-	 * Access to configuration attributes
-	 */
-	private final Configuration configuration;
+	private final Command.Environment environment;
 
 	private final Value.UTF8 method;
 
-	public Run(WyProject project, Configuration configuration, OutputStream sysout,
+	public Run(Command.Environment environment, OutputStream sysout,
 			OutputStream syserr) {
-		this.project = project;
+		this.environment = environment;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
-		this.configuration = configuration;
+		Configuration configuration = environment.getConfiguration();
+		//
 		if(configuration.hasKey(BUILD_MAIN)) {
 			this.method = configuration.get(Value.UTF8.class, BUILD_MAIN);
 		} else {
@@ -122,31 +118,6 @@ public class Run implements Command {
 
 	@Override
 	public boolean execute(Template template) {
-		try {
-			if (method == null) {
-				sysout.println("Must specific method signature via build/main attribute or command-line option");
-				return false;
-			} else {
-				Path.ID target = Trie.fromString(method.toString().replace("::", "/"));
-				// FIXME: should have command-line option for build platform
-				Build.Platform platform = getBuildPlatform("whiley");
-				// Execute the given function
-				platform.execute(project.getBuildProject(), target.parent(), target.last());
-				// Done
-				return true;
-			}
-		} catch (IOException e) {
-			return false;
-		}
+		throw new IllegalArgumentException("implement me");
 	}
-
-	private Build.Platform getBuildPlatform(String name) {
-		for (Build.Platform platform : project.getTargetPlatforms()) {
-			if (platform.getName().equals(name)) {
-				return platform;
-			}
-		}
-		throw new IllegalArgumentException("unknown build platform: " + name);
-	}
-
 }

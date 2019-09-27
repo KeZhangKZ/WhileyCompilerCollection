@@ -16,6 +16,7 @@ package wycc.lang;
 import java.util.List;
 import java.util.function.Predicate;
 
+import wybs.lang.Build;
 import wycc.cfg.Configuration;
 
 /**
@@ -51,6 +52,28 @@ public interface Command {
 	 * command may be executed multiple times.
 	 */
 	public boolean execute(Template template) throws Exception;
+
+	/**
+	 * Defines an environment in which commands can be executed.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Environment extends Build.Environment {
+		/**
+		 * Get the command descriptors available in this environment.
+		 *
+		 * @return
+		 */
+		List<Command.Descriptor> getCommandDescriptors();
+
+		/**
+		 * Get the current configuration of this environment.
+		 *
+		 * @return
+		 */
+		Configuration getConfiguration();
+	}
 
 	/**
 	 * Provides a descriptive information about this command. This includes
@@ -100,18 +123,14 @@ public interface Command {
 		/**
 		 * Initialise the corresponding command in a given environment.
 		 *
-		 * @param environment
-		 *            Provides access to the various runtime features provided by the
-		 *            environment.
-		 * @param options
-		 *            List of option modifiers for this command.
-		 * @param configuration
-		 *            Provides access to the various important details gleaned from the
-		 *            configuration, such as the set of available build platforms and
-		 *            content types.
+		 * @param environment   Provides access to the various runtime features provided
+		 *                      by the environment. This includes various important
+		 *                      details gleaned from the configuration, such as the set
+		 *                      of available build platforms and content types.
+		 * @param options       List of option modifiers for this command.
 		 * @return
 		 */
-		public Command initialise(Command parent, Configuration configuration);
+		public Command initialise(Command.Environment parent);
 	}
 
 	/**

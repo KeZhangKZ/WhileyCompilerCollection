@@ -30,12 +30,14 @@ import wyfs.lang.Path;
 public class DefaultContentRegistry implements Content.Registry {
 	private HashMap<String, Content.Type> contentTypes = new HashMap<>();
 
-	public void register(Content.Type contentType, String suffix) {
+	public Content.Registry register(Content.Type contentType, String suffix) {
 		contentTypes.put(suffix, contentType);
+		return this;
 	}
 
-	public void unregister(Content.Type contentType, String suffix) {
+	public Content.Registry unregister(Content.Type contentType, String suffix) {
 		contentTypes.remove(suffix);
+		return this;
 	}
 
 	@Override
@@ -56,5 +58,10 @@ public class DefaultContentRegistry implements Content.Registry {
 		}
 		// Couldn't find it!
 		return null;
+	}
+
+	@Override
+	public Content.Type<?> contentType(String suffix) {
+		return contentTypes.get(suffix);
 	}
 }

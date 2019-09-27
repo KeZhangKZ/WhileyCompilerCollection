@@ -24,6 +24,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.regex.Pattern;
 
+import wybs.lang.Build.Project;
 import wybs.lang.SyntacticException;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
@@ -42,12 +43,15 @@ import wycc.lang.Command;
 import wycc.lang.Module;
 import wycc.util.CommandParser;
 import wycc.util.Logger;
+import wycc.util.LocalPackageResolver;
 import wycc.util.StdModuleContext;
+import wycc.lang.Package;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Content.Registry;
 import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
+import wyfs.util.DefaultContentRegistry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyfs.util.ZipFile;
@@ -61,7 +65,7 @@ import wyfs.util.ZipFile;
  * @author David J. Pearce
  *
  */
-public class WyMain implements Command {
+public class WyMain implements Command, Command.Environment {
 	/**
 	 * This determines what files are included in a package be default (i.e. when
 	 * the build/includes attribute is not specified).
@@ -117,6 +121,11 @@ public class WyMain implements Command {
 					Pattern.compile("\\d+.\\d+.\\d+"))
 	);
 
+	/**
+	 * Path to the dependency repository within the global root.
+	 */
+	private static Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
+
 	// ========================================================================
 	// Instance Fields
 	// ========================================================================
@@ -157,6 +166,17 @@ public class WyMain implements Command {
 			}
 			e.associate((Content.Type) Content.BinaryFile, null);
 		}
+
+
+		@Override
+		public Content.Type<?> contentType(String suffix) {
+			for (Content.Type<?> ct : contentTypes) {
+				if (ct.getSuffix().equals(suffix)) {
+					return ct;
+				}
+			}
+			return null;
+		}
 	};
 
 	/**
@@ -169,6 +189,13 @@ public class WyMain implements Command {
 	 * everything configurable about the system.
 	 */
 	private final Configuration configuration;
+
+	/**
+	 * The package resolver provides a mechanism for accessing packages that a given
+	 * project may depend upon. This may require, for example, downloading them from
+	 * an external package repository.
+	 */
+	protected final Package.Resolver resolver;
 
 	/**
 	 * The system root identifies the location of all files and configuration data
@@ -199,6 +226,8 @@ public class WyMain implements Command {
 	protected ExecutorService executor;
 
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
+		// Construct logger
+		this.logger = new Logger.Default(System.err);
 		// Add default content types
 		this.contentTypes.add(ConfigFile.ContentType);
 		this.contentTypes.add(ZipFile.ContentType);
@@ -214,6 +243,8 @@ public class WyMain implements Command {
 		this.systemRoot = new DirectoryRoot(systemDir, registry);
 		this.globalRoot = new DirectoryRoot(globalDir, registry);
 		this.localRoot = new DirectoryRoot(localDir, registry);
+		// Configure package resolver
+		this.resolver = new LocalPackageResolver(logger,globalRoot.createRelativeRoot(DEFAULT_REPOSITORY_PATH));
 		// Read the system configuration file
 		Configuration system = readConfigFile("wy", systemDir, SYSTEM_CONFIG_SCHEMA);
 		// Activate plugins
@@ -229,12 +260,12 @@ public class WyMain implements Command {
 		Configuration runtime = new HashMapConfiguration(SYSTEM_RUNTIME_SCHEMA);
 		// Construct the merged configuration
 		this.configuration = new ConfigurationCombinator(runtime, local, global, system);
-		this.logger = new Logger.Default(System.err);
 		// Construct the underlying executor
 		this.executor = ForkJoinPool.commonPool();
 
 	}
 
+	@Override
 	public Registry getContentRegistry() {
 		return registry;
 	}
@@ -243,8 +274,25 @@ public class WyMain implements Command {
 		return contentTypes;
 	}
 
+	@Override
 	public List<Command.Descriptor> getCommandDescriptors() {
 		return commandDescriptors;
+	}
+
+	@Override
+	public List<Project> getProjects() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public ExecutorService getExecutor() {
+		return executor;
+	}
+
+	@Override
+	public Configuration getConfiguration() {
+		return configuration;
 	}
 
 	/**
@@ -253,6 +301,7 @@ public class WyMain implements Command {
 	 *
 	 * @return
 	 */
+	@Override
 	public List<wybs.lang.Build.Platform> getBuildPlatforms() {
 		return buildPlatforms;
 	}
@@ -265,10 +314,12 @@ public class WyMain implements Command {
 		return globalRoot;
 	}
 
-	public Path.Root getLocalRoot() {
+	@Override
+	public Path.Root getRoot() {
 		return localRoot;
 	}
 
+	@Override
 	public Logger getLogger() {
 		return logger;
 	}
@@ -489,20 +540,8 @@ public class WyMain implements Command {
 	 * Used for reading the various configuration files prior to instantiating the
 	 * main tool itself.
 	 */
-	private static Content.Registry BOOT_REGISTRY = new Content.Registry() {
-
-		@Override
-		public String suffix(Type<?> t) {
-			return t.getSuffix();
-		}
-
-		@Override
-		public void associate(Entry<?> e) {
-			if(e.suffix().equals("toml")) {
-				e.associate((Content.Type) ConfigFile.ContentType, null);
-			}
-		}
-	};
+	private static Content.Registry BOOT_REGISTRY = new DefaultContentRegistry().register(ConfigFile.ContentType,
+			"toml");
 
 	/**
 	 * Attempt to read a configuration file from a given root.
@@ -548,5 +587,4 @@ public class WyMain implements Command {
 			printStackTrace(out, err.getCause());
 		}
 	}
-
 }

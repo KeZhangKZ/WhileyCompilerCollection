@@ -15,7 +15,7 @@ import wyfs.util.Trie;
  * @author David J. Pearce
  *
  */
-public abstract class LocalPackageResolver implements Package.Resolver {
+public class LocalPackageResolver implements Package.Resolver {
 	public static final Path.ID BUILD_FILE_NAME = Trie.fromString("wy.toml");
 	protected final Logger logger;
 	protected final Path.Root root;

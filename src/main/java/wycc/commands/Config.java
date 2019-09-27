@@ -71,17 +71,17 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Config(System.out, configuration);
+		public Command initialise(Command.Environment environment) {
+			return new Config(environment, System.out);
 		}
 	};
 	//
 	private final PrintStream out;
-	private final Configuration configuration;
+	private final Command.Environment environment;
 
-	public Config(PrintStream out, Configuration configuration) {
+	public Config(Command.Environment environment, PrintStream out) {
 		this.out = out;
-		this.configuration = configuration;
+		this.environment = environment;
 	}
 
 	@Override
@@ -105,7 +105,7 @@ public class Config implements Command {
 			// Access the descriptor
 			Command.Descriptor descriptor = template.getCommandDescriptor();
 			// Construct an instance of the command
-			Command command = descriptor.initialise(this, configuration);
+			Command command = descriptor.initialise(environment);
 			//
 			return command.execute(template);
 		} else {
@@ -149,8 +149,8 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new ListCmd(System.out,configuration);
+		public Command initialise(Command.Environment environment) {
+			return new ListCmd(System.out, environment.getConfiguration());
 		}
 
 	};

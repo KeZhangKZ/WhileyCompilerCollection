@@ -32,6 +32,7 @@ import wycc.commands.Help;
 import wycc.lang.Command;
 import wycc.util.ArrayUtils;
 import wycc.util.Logger;
+import wycc.lang.Package;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Root;
@@ -91,11 +92,6 @@ public class WyProject implements Command {
 	 */
 	public static Configuration.Schema SCHEMA = Configuration.fromArray();
 
-	/**
-	 * Path to the dependency repository within the global root.
-	 */
-	private static Path.ID REPOSITORY_PATH = Trie.fromString("repository");
-
 	// ==================================================================
 	// Instance Fields
 	// ==================================================================
@@ -103,10 +99,10 @@ public class WyProject implements Command {
 	/**
 	 * The outermost environment.
 	 */
-	protected final WyMain environment;
+	protected final Build.Environment environment;
 
 	/**
-	 * The combined configuration
+	 * The combined configuration.
 	 */
 	protected final Configuration configuration;
 
@@ -131,10 +127,11 @@ public class WyProject implements Command {
 	// Constructors
 	// ==================================================================
 
-	public WyProject(WyMain environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
+	public WyProject(Build.Environment environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
 		this.configuration = configuration;
 		this.environment = environment;
-		this.project = new SequentialBuildProject(environment.getLocalRoot());
+		// FIXME: this won't work when we have multiple projects.
+		this.project = new SequentialBuildProject(environment, environment.getRoot());
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}
@@ -143,7 +140,7 @@ public class WyProject implements Command {
 	// Command stuff
 	// ==================================================================
 
-	public WyMain getParent() {
+	public Build.Environment getParent() {
 		return environment;
 	}
 
@@ -185,19 +182,6 @@ public class WyProject implements Command {
 		return project;
 	}
 
-	/**
-	 * Get the root of the package repository. This is the global directory in which
-	 * all installed packages are found.
-	 *
-	 * @return
-	 * @throws IOException
-	 */
-	public Path.Root getRepositoryRoot() throws IOException {
-		Path.Root root = environment.getGlobalRoot().createRelativeRoot(REPOSITORY_PATH);
-		// TODO: create repository if it doesn't exist.
-		return root;
-	}
-
 	@Override
 	public void initialise() {
 		try {
@@ -216,8 +200,6 @@ public class WyProject implements Command {
 
 	@Override
 	public void finalise() {
-		// Flush any roots
-		// Deactivate plugins
 		// Write back configuration files?
 		try {
 			project.flush();
@@ -231,7 +213,6 @@ public class WyProject implements Command {
 		// Extract options
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
 		try {
-			project.setLogger(verbose ? environment.getLogger() : Logger.NULL);
 			//
 			if(template.getChild() != null) {
 				// Execute a subcommand
@@ -273,16 +254,6 @@ public class WyProject implements Command {
 	 */
 	public Content.Registry getRegistry() {
 		return environment.getContentRegistry();
-	}
-
-	/**
-	 * Force the project to build.
-	 *
-	 * @return
-	 * @throws Exception
-	 */
-	public boolean build() throws Exception {
-		return project.build(environment.executor).get();
 	}
 
 	// ==================================================================

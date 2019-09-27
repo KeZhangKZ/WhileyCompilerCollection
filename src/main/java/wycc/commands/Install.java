@@ -73,8 +73,8 @@ public class Install implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Install((WyProject) environment, configuration, System.out, System.err);
+		public Command initialise(Command.Environment environment, Configuration configuration) {
+			return new Install(environment, configuration, System.out, System.err);
 		}
 
 	};
@@ -86,9 +86,9 @@ public class Install implements Command {
 	private Logger logger;
 
 	/**
-	 * The enclosing project for this build
+	 * The enclosing environment for this command
 	 */
-	private final WyProject project;
+	private final Command.Environment environment;
 
 	/**
 	 * Provides a generic place to which normal output should be directed. This
@@ -106,9 +106,9 @@ public class Install implements Command {
 	 */
 	private final ArrayList<Value.UTF8> includes;
 
-	public Install(WyProject project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
-		this.project = project;
-		this.logger = project.getBuildProject().getLogger();
+	public Install(Command.Environment environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
+		this.environment = environment;
+		this.logger = environment.getLogger();
 		this.configuration = configuration;
 		this.sysout = new PrintStream(sysout);
 		this.includes = new ArrayList<>();
@@ -168,14 +168,17 @@ public class Install implements Command {
 	private List<Path.Entry<?>> determinePackageContents() throws IOException {
 		// Determine includes filter
 		ArrayList<Path.Entry<?>> files = new ArrayList<>();
-		// Determine local root of project
-		Path.Root root = project.getParent().getLocalRoot();
-		// Add all files from the includes filter
-		for(int i=0;i!=includes.size();++i) {
-			// Construct a filter from the attribute itself
-			Content.Filter filter = createFilter(includes.get(i).toString());
-			// Add all files matching the attribute
-			files.addAll(root.get(filter));
+		// Iterator all active projects
+		for(Build.Project project : environment.getProjects()) {
+			// Extract root of this project
+			Path.Root root = project.getRoot();
+			// Add all files from the includes filter
+			for(int i=0;i!=includes.size();++i) {
+				// Construct a filter from the attribute itself
+				Content.Filter filter = createFilter(includes.get(i).toString());
+				// Add all files matching the attribute
+				files.addAll(root.get(filter));
+			}
 		}
 		// Done
 		return files;
@@ -267,7 +270,7 @@ public class Install implements Command {
 		// Determine fully qualified package name
 		Trie pkg = Trie.fromString(name + "-v" + version);
 		// Dig out the file!
-		return project.getRepositoryRoot().create(pkg, ZipFile.ContentType);
+		return environment.getRepositoryRoot().create(pkg, ZipFile.ContentType);
 	}
 
 	/**
@@ -292,16 +295,13 @@ public class Install implements Command {
 	 * @return
 	 */
 	private Content.Type getContentType(String suffix) {
-		List<Content.Type<?>> cts = project.getParent().getContentTypes();
+		Content.Type<?> ct = environment.getContentRegistry().contentType(suffix);
 		//
-		for (int i = 0; i != cts.size(); ++i) {
-			Content.Type<?> ct = cts.get(i);
-			if (ct.getSuffix().equals(suffix)) {
-				// hit
-				return ct;
-			}
+		if(ct != null) {
+			return ct;
+		} else {
+			// miss
+			throw new IllegalArgumentException("unknown content-type: " + suffix);
 		}
-		// miss
-		throw new IllegalArgumentException("unknown content-type: " + suffix);
 	}
 }

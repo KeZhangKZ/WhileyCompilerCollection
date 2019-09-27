@@ -99,9 +99,9 @@ public interface Build {
 		public List<Package> getPackages();
 
 		/**
-		 * Get the default logger associated with this project
+		 * Get the environment in which this project is running.
 		 */
-		public Logger getLogger();
+		public Environment getEnvironment();
 
 		/**
 		 * Get the build rules associated with this project.
@@ -296,5 +296,55 @@ public interface Build {
 		 * @return
 		 */
 		public Path.Root getRoot();
+	}
+
+	/**
+	 * Represents the enclosing environment in which one or more projects are built.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Environment {
+
+		/**
+		 * Get the top-level root for this environment which includes all active
+		 * projects in this environment.
+		 *
+		 * @return
+		 */
+		public Path.Root getRoot();
+
+		/**
+		 * Get the registry used for resolving content types in this environment.
+		 *
+		 * @return
+		 */
+		public Content.Registry getContentRegistry();
+
+		/**
+		 * Get the set of build platforms which are active in this environment.
+		 *
+		 * @return
+		 */
+		public List<Platform> getBuildPlatforms();
+
+		/**
+		 * Get the list of all projects active within this environment.
+		 *
+		 * @return
+		 */
+		public List<Build.Project> getProjects();
+
+		/**
+		 * Get the executor service available in this environment
+		 *
+		 * @return
+		 */
+		public ExecutorService getExecutor();
+
+		/**
+		 * Get the default logger used in this environment.
+		 */
+		public Logger getLogger();
 	}
 }

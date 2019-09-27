@@ -62,20 +62,18 @@ public class Help implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
+		public Command initialise(Command.Environment environment) {
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
-			return new Help(System.out, (WyProject) environment, configuration);
+			return new Help(System.out, environment);
 		}
 	};
 	//
 	private final PrintStream out;
-	private final WyProject project;
-	private final Configuration configuration;
+	private final Command.Environment environment;
 
-	public Help(PrintStream out, WyProject environment, Configuration configuration) {
-		this.project = environment;
-		this.configuration = configuration;
+	public Help(PrintStream out, Command.Environment environment) {
+		this.environment = environment;
 		this.out = out;
 	}
 
@@ -101,7 +99,7 @@ public class Help implements Command {
 			printUsage();
 		} else {
 			// Search for the command
-			List<Command.Descriptor> descriptors = project.getParent().getCommandDescriptors();
+			List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
 			Command.Descriptor command = null;
 			for (Command.Descriptor c : descriptors) {
 				if (c.getName().equals(args.get(0))) {
@@ -162,7 +160,7 @@ public class Help implements Command {
 	 * Print usage information to the console.
 	 */
 	protected void printUsage() {
-		List<Command.Descriptor> descriptors = project.getParent().getCommandDescriptors();
+		List<Command.Descriptor> descriptors = environment.getCommandDescriptors();
 		//
 		out.println("usage: wy [--verbose] command [<options>] [<args>]");
 		out.println();

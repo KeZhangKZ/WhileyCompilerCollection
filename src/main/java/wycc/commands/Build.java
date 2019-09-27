@@ -67,8 +67,8 @@ public class Build implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Build((WyProject) environment, configuration, System.out, System.err);
+		public Command initialise(Command.Environment environment) {
+			return new Build(environment, System.out, System.err);
 		}
 
 	};
@@ -95,10 +95,10 @@ public class Build implements Command {
 	/**
 	 * The enclosing project for this build
 	 */
-	private final WyProject project;
+	private final Command.Environment environment;
 
-	public Build(WyProject project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
-		this.project = project;
+	public Build(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
+		this.environment = environment;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}
@@ -119,13 +119,15 @@ public class Build implements Command {
 
 	@Override
 	public boolean execute(Template template) throws Exception {
-		// Build the project
-		boolean r = project.build();
-		// Extract all build tasks
-		List<wybs.lang.Build.Task> tasks = project.getBuildProject().getTasks();
-		// Look for error messages
-		for (wybs.lang.Build.Task task : tasks) {
-			printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
+		boolean r = true;
+		// Iterator all build projects
+		for(wybs.lang.Build.Project project : environment.getProjects()) {
+			// Build the project
+			r &= project.build(environment.getExecutor()).get();
+			// Look for error messages
+			for (wybs.lang.Build.Task task : project.getTasks()) {
+				printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
+			}
 		}
 		//
 		return r;

@@ -275,5 +275,13 @@ public class Content {
 		 * @return
 		 */
 		public String suffix(Type<?> t);
+
+		/**
+		 * Determine the content type appropriate for a given suffix (if any).
+		 *
+		 * @param suffix
+		 * @return <code>null</code> if none found.
+		 */
+		public Type<?> contentType(String suffix);
 	}
 }

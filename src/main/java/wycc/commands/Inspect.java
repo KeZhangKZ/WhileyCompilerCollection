@@ -79,23 +79,23 @@ public class Inspect implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
+		public Command initialise(Command.Environment environment) {
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
-			return new Inspect(System.out, (WyProject) environment, configuration);
+			return new Inspect(System.out, environment);
 		}
 	};
 
 	private final PrintStream out;
-	private final WyProject project;
-	private final Configuration configuration;
+	private final Command.Environment environment;
 	private final int indent;
 	private final int width;
 
-	public Inspect(PrintStream out, WyProject project, Configuration configuration) {
-		this.project = project;
-		this.configuration = configuration;
+	public Inspect(PrintStream out, Command.Environment environment) {
+		this.environment = environment;
 		this.out = out;
+		Configuration configuration = environment.getConfiguration();
+		//
 		this.width = configuration.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
 		this.indent = configuration.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
 	}
@@ -141,16 +141,11 @@ public class Inspect implements Command {
 	 * @return
 	 */
 	private Content.Type<?> getContentType(String file) {
-		List<Content.Type<?>> cts = project.getParent().getContentTypes();
-		for (int i = 0; i != cts.size(); ++i) {
-			Content.Type<?> ct = cts.get(i);
-			String suffix = "." + ct.getSuffix();
-			if (file.endsWith(suffix)) {
-				return ct;
-			}
-		}
+		String[] parts = file.split(".");
+		// Attempt to identify content type
+		Content.Type<?> ct = environment.getContentRegistry().contentType(parts[parts.length - 1]);
 		// Default is just a binary file
-		return Content.BinaryFile;
+		return ct != null ? ct : Content.BinaryFile;
 	}
 
 	/**
@@ -167,7 +162,7 @@ public class Inspect implements Command {
 		// Determine path id
 		Path.ID id = Trie.fromString(file);
 		// Get the file from the repository root
-		return project.getParent().getLocalRoot().get(id, ct);
+		return environment.getRoot().get(id, ct);
 	}
 
 	/**
