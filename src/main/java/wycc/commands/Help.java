@@ -18,7 +18,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
 import wycc.util.Logger;

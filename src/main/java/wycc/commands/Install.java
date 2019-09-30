@@ -28,7 +28,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
@@ -73,8 +72,8 @@ public class Install implements Command {
 		}
 
 		@Override
-		public Command initialise(Command.Environment environment, Configuration configuration) {
-			return new Install(environment, configuration, System.out, System.err);
+		public Command initialise(Command.Environment environment) {
+			return new Install(environment, System.out, System.err);
 		}
 
 	};
@@ -97,27 +96,21 @@ public class Install implements Command {
 	private final PrintStream sysout;
 
 	/**
-	 * Access to configuration attributes
-	 */
-	private final Configuration configuration;
-
-	/**
 	 * List of include filters
 	 */
 	private final ArrayList<Value.UTF8> includes;
 
-	public Install(Command.Environment environment, Configuration configuration, OutputStream sysout, OutputStream syserr) {
+	public Install(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
 		this.environment = environment;
 		this.logger = environment.getLogger();
-		this.configuration = configuration;
 		this.sysout = new PrintStream(sysout);
 		this.includes = new ArrayList<>();
 		// Determine default included files
-		Value.UTF8[] items = configuration.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
+		Value.UTF8[] items = environment.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
 		this.includes.addAll(Arrays.asList(items));
 		// Determine platform-specific included files
-		for(Path.ID id : configuration.matchAll(BUILD_PLATFORM_INCLUDES)) {
-			items = configuration.get(Value.Array.class, id).toArray(Value.UTF8.class);
+		for(Path.ID id : environment.matchAll(BUILD_PLATFORM_INCLUDES)) {
+			items = environment.get(Value.Array.class, id).toArray(Value.UTF8.class);
 			includes.addAll(Arrays.asList(items));
 		}
 	}
@@ -264,9 +257,9 @@ public class Install implements Command {
 	 */
 	private Path.Entry<ZipFile> getPackageFile() throws IOException {
 		// Extract package name from configuration
-		Value.UTF8 name = configuration.get(Value.UTF8.class, Trie.fromString("package/name"));
+		Value.UTF8 name = environment.get(Value.UTF8.class, Trie.fromString("package/name"));
 		// Extract package version from
-		Value.UTF8 version = configuration.get(Value.UTF8.class, Trie.fromString("package/version"));
+		Value.UTF8 version = environment.get(Value.UTF8.class, Trie.fromString("package/version"));
 		// Determine fully qualified package name
 		Trie pkg = Trie.fromString(name + "-v" + version);
 		// Dig out the file!

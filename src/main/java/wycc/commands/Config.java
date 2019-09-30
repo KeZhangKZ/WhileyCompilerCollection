@@ -150,7 +150,7 @@ public class Config implements Command {
 
 		@Override
 		public Command initialise(Command.Environment environment) {
-			return new ListCmd(System.out, environment.getConfiguration());
+			return new ListCmd(System.out, environment);
 		}
 
 	};

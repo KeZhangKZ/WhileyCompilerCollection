@@ -26,6 +26,8 @@ import java.util.regex.Pattern;
 
 import wybs.lang.Build.Project;
 import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
+import wybs.util.SequentialBuildProject;
 import wybs.util.AbstractCompilationUnit.Value;
 import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wycc.cfg.ConfigFile;
@@ -41,20 +43,26 @@ import wycc.commands.Install;
 import wycc.commands.Run;
 import wycc.lang.Command;
 import wycc.lang.Module;
+import wycc.lang.Command.Option;
+import wycc.lang.Command.Template;
+import wycc.util.AbstractCommandEnvironment;
+import wycc.util.ArrayUtils;
 import wycc.util.CommandParser;
 import wycc.util.Logger;
-import wycc.util.LocalPackageResolver;
 import wycc.util.StdModuleContext;
-import wycc.lang.Package;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Content.Registry;
 import wyfs.lang.Content.Type;
 import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.Filter;
+import wyfs.lang.Path.ID;
+import wyfs.lang.Path.Root;
 import wyfs.util.DefaultContentRegistry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyfs.util.ZipFile;
+import wyfs.util.ZipFileRoot;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is
@@ -65,7 +73,9 @@ import wyfs.util.ZipFile;
  * @author David J. Pearce
  *
  */
-public class WyMain implements Command, Command.Environment {
+public class WyMain extends AbstractCommandEnvironment {
+	private static final Trie BUILD_PLATFORMS = Trie.fromString("build/platforms");
+
 	/**
 	 * This determines what files are included in a package be default (i.e. when
 	 * the build/includes attribute is not specified).
@@ -122,6 +132,66 @@ public class WyMain implements Command, Command.Environment {
 	);
 
 	/**
+	 * The descriptor for the outermost command.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public static Command.Descriptor DESCRIPTOR(List<Command.Descriptor> descriptors) {
+		return new Command.Descriptor() {
+
+			@Override
+			public Schema getConfigurationSchema() {
+				// TODO Auto-generated method stub
+				return null;
+			}
+
+			@Override
+			public List<Option.Descriptor> getOptionDescriptors() {
+				return Arrays.asList(
+						Command.OPTION_FLAG("verbose", "generate verbose information about the build", false),
+						Command.OPTION_FLAG("brief", "generate brief output for syntax errors", false));
+			}
+
+			@Override
+			public Command initialise(Command.Environment environment) {
+				return new WyProject(environment, System.out, System.err);
+			}
+
+			@Override
+			public String getName() {
+				return "wy";
+			}
+
+			@Override
+			public String getDescription() {
+				return "Command-line interface for the Whiley Compiler Collection";
+			}
+
+			@Override
+			public List<Command.Descriptor> getCommands() {
+				return descriptors;
+			}
+		};
+	}
+
+	/**
+	 * Set of default command descriptors.
+	 */
+	public static final Command.Descriptor[] DESCRIPTORS = {
+			Build.DESCRIPTOR, Clean.DESCRIPTOR, Config.DESCRIPTOR, Help.DESCRIPTOR, Install.DESCRIPTOR,
+			Inspect.DESCRIPTOR, Run.DESCRIPTOR
+	};
+
+	/**
+	 * Set of default content types.
+	 */
+	public static final Content.Type[] CONTENT_TYPES = {
+			ConfigFile.ContentType,
+			ZipFile.ContentType
+	};
+
+	/**
 	 * Path to the dependency repository within the global root.
 	 */
 	private static Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
@@ -129,73 +199,6 @@ public class WyMain implements Command, Command.Environment {
 	// ========================================================================
 	// Instance Fields
 	// ========================================================================
-
-	/**
-	 * List of all known content types to the system.
-	 */
-	private ArrayList<Content.Type<?>> contentTypes = new ArrayList<>();
-
-	/**
-	 * List of all known commands registered by plugins.
-	 */
-	private ArrayList<Command.Descriptor> commandDescriptors = new ArrayList<>();
-
-	/**
-	 * List of all known build platforms registered by plugins.
-	 */
-	private ArrayList<wybs.lang.Build.Platform> buildPlatforms = new ArrayList<>();
-
-	/**
-	 * The master registry which provides knowledge of all file types used within
-	 * the system.
-	 */
-	private Content.Registry registry = new Content.Registry() {
-
-		@Override
-		public String suffix(Type<?> t) {
-			return t.getSuffix();
-		}
-
-		@Override
-		public void associate(Entry<?> e) {
-			for (Content.Type<?> ct : contentTypes) {
-				if (ct.getSuffix().equals(e.suffix())) {
-					e.associate((Content.Type) ct, null);
-					return;
-				}
-			}
-			e.associate((Content.Type) Content.BinaryFile, null);
-		}
-
-
-		@Override
-		public Content.Type<?> contentType(String suffix) {
-			for (Content.Type<?> ct : contentTypes) {
-				if (ct.getSuffix().equals(suffix)) {
-					return ct;
-				}
-			}
-			return null;
-		}
-	};
-
-	/**
-	 * Provides the default plugin context.
-	 */
-	private final StdModuleContext context = new StdModuleContext();
-
-	/**
-	 * The complete configuration for this execution. This basically contains
-	 * everything configurable about the system.
-	 */
-	private final Configuration configuration;
-
-	/**
-	 * The package resolver provides a mechanism for accessing packages that a given
-	 * project may depend upon. This may require, for example, downloading them from
-	 * an external package repository.
-	 */
-	protected final Package.Resolver resolver;
 
 	/**
 	 * The system root identifies the location of all files and configuration data
@@ -216,42 +219,21 @@ public class WyMain implements Command, Command.Environment {
 	protected Path.Root localRoot;
 
 	/**
-	 * Standard log output
+	 * The root of the package repository. This is used to resolve all external
+	 * dependencies.
 	 */
-	protected Logger logger;
-
-	/**
-	 * Top-level executor used for compiling all projects within this environment.
-	 */
-	protected ExecutorService executor;
+	protected Path.Root repositoryRoot;
 
 	public WyMain(String systemDir, String globalDir, String localDir) throws IOException {
-		// Construct logger
-		this.logger = new Logger.Default(System.err);
+		super(null, new Logger.Default(System.err), ForkJoinPool.commonPool(), DESCRIPTORS,CONTENT_TYPES);
 		// Add default content types
-		this.contentTypes.add(ConfigFile.ContentType);
-		this.contentTypes.add(ZipFile.ContentType);
-		// Add default commands
-		this.commandDescriptors.add(Build.DESCRIPTOR);
-		this.commandDescriptors.add(Clean.DESCRIPTOR);
-		this.commandDescriptors.add(Config.DESCRIPTOR);
-		this.commandDescriptors.add(Help.DESCRIPTOR);
-		this.commandDescriptors.add(Install.DESCRIPTOR);
-		this.commandDescriptors.add(Inspect.DESCRIPTOR);
-		this.commandDescriptors.add(Run.DESCRIPTOR);
 		// Setup project roots
 		this.systemRoot = new DirectoryRoot(systemDir, registry);
 		this.globalRoot = new DirectoryRoot(globalDir, registry);
 		this.localRoot = new DirectoryRoot(localDir, registry);
-		// Configure package resolver
-		this.resolver = new LocalPackageResolver(logger,globalRoot.createRelativeRoot(DEFAULT_REPOSITORY_PATH));
+		this.repositoryRoot = globalRoot.createRelativeRoot(DEFAULT_REPOSITORY_PATH);
 		// Read the system configuration file
 		Configuration system = readConfigFile("wy", systemDir, SYSTEM_CONFIG_SCHEMA);
-		// Activate plugins
-		createTemplateExtensionPoint();
-		createContentTypeExtensionPoint();
-		createBuildPlatformExtensionPoint();
-		activateDefaultPlugins(system);
 		// Read the global configuration file
 		Configuration global = readConfigFile("wy", globalDir, GLOBAL_CONFIG_SCHEMA);
 		// Read the local configuration file
@@ -260,50 +242,6 @@ public class WyMain implements Command, Command.Environment {
 		Configuration runtime = new HashMapConfiguration(SYSTEM_RUNTIME_SCHEMA);
 		// Construct the merged configuration
 		this.configuration = new ConfigurationCombinator(runtime, local, global, system);
-		// Construct the underlying executor
-		this.executor = ForkJoinPool.commonPool();
-
-	}
-
-	@Override
-	public Registry getContentRegistry() {
-		return registry;
-	}
-
-	public List<Type<?>> getContentTypes() {
-		return contentTypes;
-	}
-
-	@Override
-	public List<Command.Descriptor> getCommandDescriptors() {
-		return commandDescriptors;
-	}
-
-	@Override
-	public List<Project> getProjects() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public ExecutorService getExecutor() {
-		return executor;
-	}
-
-	@Override
-	public Configuration getConfiguration() {
-		return configuration;
-	}
-
-	/**
-	 * Get the list of available build platforms. These help determine what the
-	 * valid build targets are.
-	 *
-	 * @return
-	 */
-	@Override
-	public List<wybs.lang.Build.Platform> getBuildPlatforms() {
-		return buildPlatforms;
 	}
 
 	public Path.Root getSystemRoot() {
@@ -312,16 +250,6 @@ public class WyMain implements Command, Command.Environment {
 
 	public Path.Root getGlobalRoot() {
 		return globalRoot;
-	}
-
-	@Override
-	public Path.Root getRoot() {
-		return localRoot;
-	}
-
-	@Override
-	public Logger getLogger() {
-		return logger;
 	}
 
 	/**
@@ -345,118 +273,171 @@ public class WyMain implements Command, Command.Environment {
 		return Configuration.toCombinedSchema(schemas);
 	}
 
-	@Override
-	public Descriptor getDescriptor() {
-		return null;
-	}
-
-	@Override
-	public void initialise() {
-	}
-
-	@Override
-	public void finalise() {
-	}
-
-	@Override
-	public boolean execute(Command.Template template) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
 	public void execute(String[] args) throws Exception {
 		try {
+			// Construct new project
+			Project project = new SequentialBuildProject(this, getRoot());
+			// Find and resolve package dependencies
+			resolvePackageDependencies(project);
+			// Configure package directory structure
+			initialisePlatforms(project);
 			// Construct the root descriptor
-			Command.Descriptor descriptor = WyProject.DESCRIPTOR(commandDescriptors);
+			Command.Descriptor descriptor = DESCRIPTOR(commandDescriptors);
 			// Parse the given comand-line
-			Command.Template pipeline = new CommandParser(descriptor).parse(args);
-			// Create command instance
-			Command instance = descriptor.initialise(this, configuration);
-			// Initialise command
-			instance.initialise();
-			// Execute the command (if applicable)
-			instance.execute(pipeline);
-			// Finalise command
-			instance.finalise();
+			Command.Template template = new CommandParser(descriptor).parse(args);
+			// Create command template
+			execute(template);
 		} catch(IllegalArgumentException e) {
 			System.out.println(e.getMessage());
 		}
 	}
 
-	/**
-	 * Create the Build.Template extension point. This is where plugins register
-	 * their primary functionality for constructing a specific build project.
-	 *
-	 * @param context
-	 * @param templates
-	 */
-	private void createTemplateExtensionPoint() {
-		context.create(Command.Descriptor.class, new Module.ExtensionPoint<Command.Descriptor>() {
-			@Override
-			public void register(Command.Descriptor command) {
-				commandDescriptors.add(command);
+	public boolean execute(Template template) {
+		// Extract options
+		boolean verbose = template.getOptions().get("verbose", Boolean.class);
+		try {
+			//
+			if(template.getChild() != null) {
+				// Execute a subcommand
+				template = template.getChild();
+				// Access the descriptor
+				Command.Descriptor descriptor = template.getCommandDescriptor();
+				// Construct an instance of the command
+				Command command = descriptor.initialise(this);
+				//
+				return command.execute(template);
+			} else {
+				// Initialise command
+				Command cmd = Help.DESCRIPTOR.initialise(this);
+				// Execute command
+				return cmd.execute(template);
 			}
-		});
+		} catch (SyntacticException e) {
+			SyntacticItem element = e.getElement();
+			e.outputSourceError(System.err, false);
+			if (verbose) {
+				printStackTrace(System.err, e);
+			}
+			return false;
+		} catch (Exception e) {
+			// FIXME: do something here??
+			e.printStackTrace();
+			return false;
+		}
 	}
 
 	/**
-	 * Create the Content.Type extension point.
+	 * Add any declared dependencies to the set of project roots. The challenge here
+	 * is that we may need to download, install and compile these dependencies if
+	 * they are not currently installed.
 	 *
-	 * @param context
-	 * @param templates
+	 * @throws IOException
 	 */
-	private void createContentTypeExtensionPoint() {
-		context.create(Content.Type.class, new Module.ExtensionPoint<Content.Type>() {
-			@Override
-			public void register(Content.Type contentType) {
-				contentTypes.add(contentType);
-			}
-		});
-	}
-
-
-	/**
-	 * Create the Content.Type extension point.
-	 *
-	 * @param context
-	 * @param templates
-	 */
-	private void createBuildPlatformExtensionPoint() {
-		context.create(wybs.lang.Build.Platform.class, new Module.ExtensionPoint<wybs.lang.Build.Platform>() {
-			@Override
-			public void register(wybs.lang.Build.Platform platform) {
-				buildPlatforms.add(platform);
-			}
-		});
-	}
-	/**
-	 * Activate the default set of plugins which the tool uses. Currently this list
-	 * is statically determined, but eventually it will be possible to dynamically
-	 * add plugins to the system.
-	 *
-	 * @param verbose
-	 * @param locations
-	 * @return
-	 */
-	private void activateDefaultPlugins(Configuration global) {
-		// Determine the set of install plugins
-		List<Path.ID> plugins = global.matchAll(Trie.fromString("plugins/*"));
-		// start modules
-		for (Path.ID id : plugins) {
-			UTF8 activator = global.get(UTF8.class, id);
-			try {
-				Class<?> c = Class.forName(activator.toString());
-				Module.Activator instance = (Module.Activator) c.newInstance();
-				instance.start(context);
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (InstantiationException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
+	private void resolvePackageDependencies(Project project) throws IOException {
+		// FIXME: should produce a wy.lock file?
+		Configuration.Schema buildSchema = getBuildSchema();
+		// Dig out all the defined dependencies
+		List<Path.ID> deps = matchAll(Trie.fromString("dependencies/**"));
+		// Resolve each dependencies and add to project roots
+		for (int i = 0; i != deps.size(); ++i) {
+			Path.ID dep = deps.get(i);
+			// Get dependency name
+			String name = dep.get(1);
+			// Get version string
+			UTF8 version = get(UTF8.class, dep);
+			// Construct path to the config file
+			Trie root = Trie.fromString(name + "-v" + version);
+			// Attempt to resolve it.
+			if (!repositoryRoot.exists(root, ZipFile.ContentType)) {
+				// TODO: employ a package resolver here
+				// FIXME: handle better error handling.
+				throw new RuntimeException("missing dependency \"" + name + "-" + version + "\"");
+			} else {
+				// Extract entry for ZipFile
+				Path.Entry<ZipFile> zipfile = repositoryRoot.get(root, ZipFile.ContentType);
+				// Construct root repesenting this ZipFile
+				Path.Root pkgRoot = new ZipFileRoot(zipfile, getContentRegistry());
+				// Extract configuration from package
+				Path.Entry<ConfigFile> entry = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType);
+				if(entry == null) {
+					throw new RuntimeException("corrupt package (missing wy.toml) \"" + name + "-" + version + "\"");
+				} else {
+					ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"),ConfigFile.ContentType).read();
+					// Construct a package representation of this root.
+					wybs.lang.Build.Package pkg = new Package(pkgRoot,pkgcfg.toConfiguration(buildSchema));
+					// Add a relative ZipFile root
+					project.getPackages().add(pkg);
+				}
 			}
 		}
 	}
+
+	private static class Package implements wybs.lang.Build.Package {
+		private final Path.Root root;
+		private final Configuration configuration;
+
+		public Package(Path.Root root, Configuration configuration) {
+			this.root = root;
+			this.configuration = configuration;
+		}
+
+		@Override
+		public Configuration getConfiguration() {
+			return configuration;
+		}
+
+		@Override
+		public Root getRoot() {
+			return root;
+		}
+	}
+
+	/**
+	 * Setup the various roots based on the target platform(s). This requires going
+	 * through and adding roots for all source and intermediate files.
+	 *
+	 * @throws IOException
+	 */
+	private void initialisePlatforms(Project project) throws IOException {
+		List<wybs.lang.Build.Platform> platforms = getTargetPlatforms();
+		//
+		for (int i = 0; i != platforms.size(); ++i) {
+			wybs.lang.Build.Platform platform = platforms.get(i);
+			// Apply current configuration
+			platform.initialise(this, project);
+		}
+	}
+
+
+	/**
+	 * Get the list of declared target platforms for this project. This is
+	 * determined by the attribute "build.platforms" in the project (wy.toml) build
+	 * file.
+	 *
+	 * @return
+	 */
+	public List<wybs.lang.Build.Platform> getTargetPlatforms() {
+		ArrayList<wybs.lang.Build.Platform> targetPlatforms = new ArrayList<>();
+		// Ensure target platforms are specified
+		if(hasKey(BUILD_PLATFORMS)) {
+			Value.UTF8[] targetPlatformNames = get(Value.Array.class, BUILD_PLATFORMS).toArray(Value.UTF8.class);
+			// Get list of all build platforms.
+			List<wybs.lang.Build.Platform> platforms = getBuildPlatforms();
+			// Check each platform for inclusion
+			for (int i = 0; i != platforms.size(); ++i) {
+				wybs.lang.Build.Platform platform = platforms.get(i);
+				// Convert name to UTF8 value (ugh)
+				Value.UTF8 name = new Value.UTF8(platform.getName().getBytes());
+				// Determine whether is a target platform or not
+				if (ArrayUtils.firstIndexOf(targetPlatformNames, name) >= 0) {
+					targetPlatforms.add(platform);
+				}
+			}
+		}
+		// Done
+		return targetPlatforms;
+	}
+
 
 	// ==================================================================
 	// Main Method

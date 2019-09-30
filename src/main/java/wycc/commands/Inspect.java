@@ -25,7 +25,6 @@ import java.util.List;
 import wybs.io.SyntacticHeapPrinter;
 import wybs.lang.SyntacticHeap;
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
 import wycc.lang.Command.Descriptor;
@@ -94,10 +93,9 @@ public class Inspect implements Command {
 	public Inspect(PrintStream out, Command.Environment environment) {
 		this.environment = environment;
 		this.out = out;
-		Configuration configuration = environment.getConfiguration();
 		//
-		this.width = configuration.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
-		this.indent = configuration.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
+		this.width = environment.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
+		this.indent = environment.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
 	}
 
 	@Override

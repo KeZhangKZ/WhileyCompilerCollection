@@ -17,7 +17,10 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import wybs.lang.Build;
+import wybs.lang.Build.Package;
+import wybs.util.ResolveError;
 import wycc.cfg.Configuration;
+import wyfs.lang.Path;
 
 /**
  * A command which can be executed (e.g. from the command-line)
@@ -59,7 +62,7 @@ public interface Command {
 	 * @author David J. Pearce
 	 *
 	 */
-	public interface Environment extends Build.Environment {
+	public interface Environment extends Build.Environment, Configuration {
 		/**
 		 * Get the command descriptors available in this environment.
 		 *
@@ -67,12 +70,7 @@ public interface Command {
 		 */
 		List<Command.Descriptor> getCommandDescriptors();
 
-		/**
-		 * Get the current configuration of this environment.
-		 *
-		 * @return
-		 */
-		Configuration getConfiguration();
+
 	}
 
 	/**

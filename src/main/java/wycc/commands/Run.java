@@ -21,7 +21,6 @@ import java.util.List;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
@@ -92,10 +91,9 @@ public class Run implements Command {
 		this.environment = environment;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
-		Configuration configuration = environment.getConfiguration();
 		//
-		if(configuration.hasKey(BUILD_MAIN)) {
-			this.method = configuration.get(Value.UTF8.class, BUILD_MAIN);
+		if(environment.hasKey(BUILD_MAIN)) {
+			this.method = environment.get(Value.UTF8.class, BUILD_MAIN);
 		} else {
 			this.method = null;
 		}

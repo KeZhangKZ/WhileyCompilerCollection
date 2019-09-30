@@ -22,6 +22,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Predicate;
 
+import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.Configuration;
 import wycc.lang.Feature;
@@ -296,6 +297,7 @@ public interface Build {
 		 * @return
 		 */
 		public Path.Root getRoot();
+
 	}
 
 	/**
@@ -313,6 +315,14 @@ public interface Build {
 		 * @return
 		 */
 		public Path.Root getRoot();
+
+		/**
+		 * Get the top-level root for the package repository associated with this
+		 * environment.
+		 *
+		 * @return
+		 */
+		public Path.Root getRepositoryRoot();
 
 		/**
 		 * Get the registry used for resolving content types in this environment.

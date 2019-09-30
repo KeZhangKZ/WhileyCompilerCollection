@@ -29,7 +29,6 @@ import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
