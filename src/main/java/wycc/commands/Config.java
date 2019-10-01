@@ -98,7 +98,7 @@ public class Config implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) throws Exception {
+	public boolean execute(Command.Project project, Template template) throws Exception {
 		if(template.getChild() != null) {
 			// Execute a subcommand
 			template = template.getChild();
@@ -107,7 +107,7 @@ public class Config implements Command {
 			// Construct an instance of the command
 			Command command = descriptor.initialise(environment);
 			//
-			return command.execute(template);
+			return command.execute(project, template);
 		} else {
 			Help.print(System.out,DESCRIPTOR);
 			return false;
@@ -177,12 +177,20 @@ public class Config implements Command {
 		@Override
 		public void finalise() {
 		}
+
 		@Override
-		public boolean execute(Template template) {
+		public boolean execute(Command.Project project, Template template) {
 			for (Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
 				out.print(key);
 				out.print("=");
 				out.println(configuration.get(Object.class, key));
+			}
+			if (project != null) {
+				for (Path.ID key : project.matchAll(Trie.fromString("**"))) {
+					out.print(key);
+					out.print("=");
+					out.println(configuration.get(Object.class, key));
+				}
 			}
 			return false;
 		}

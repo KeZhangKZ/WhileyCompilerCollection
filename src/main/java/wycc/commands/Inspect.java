@@ -87,15 +87,10 @@ public class Inspect implements Command {
 
 	private final PrintStream out;
 	private final Command.Environment environment;
-	private final int indent;
-	private final int width;
 
 	public Inspect(PrintStream out, Command.Environment environment) {
 		this.environment = environment;
 		this.out = out;
-		//
-		this.width = environment.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
-		this.indent = environment.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
 	}
 
 	@Override
@@ -112,9 +107,12 @@ public class Inspect implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) throws Exception {
+	public boolean execute(Command.Project project, Template template) throws Exception {
 		boolean garbage = template.getOptions().get("full", Boolean.class);
 		boolean raw = template.getOptions().get("raw", Boolean.class);
+		//
+		int width = project.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
+		int indent = project.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
 
 		List<String> files = template.getArguments();
 		for (String file : files) {
@@ -126,7 +124,7 @@ public class Inspect implements Command {
 				Content.Printable cp = (Content.Printable<?>) ct;
 				cp.print(out, entry.read());
 			} else {
-				inspect(entry, ct, garbage);
+				inspect(entry, ct, garbage, width);
 			}
 		}
 		return true;
@@ -139,7 +137,7 @@ public class Inspect implements Command {
 	 * @return
 	 */
 	private Content.Type<?> getContentType(String file) {
-		String[] parts = file.split(".");
+		String[] parts = file.split("\\.");
 		// Attempt to identify content type
 		Content.Type<?> ct = environment.getContentRegistry().contentType(parts[parts.length - 1]);
 		// Default is just a binary file
@@ -170,12 +168,12 @@ public class Inspect implements Command {
 	 * @param ct
 	 * @throws IOException
 	 */
-	private void inspect(Path.Entry<?> entry, Content.Type<?> ct, boolean garbage) throws IOException {
+	private void inspect(Path.Entry<?> entry, Content.Type<?> ct, boolean garbage, int width) throws IOException {
 		Object o = entry.read();
 		if (o instanceof SyntacticHeap) {
 			new SyntacticHeapPrinter(new PrintWriter(out), garbage).print((SyntacticHeap) o);
 		} else {
-			inspectBinaryFile(readAllBytes(entry.inputStream()));
+			inspectBinaryFile(readAllBytes(entry.inputStream()),width);
 		}
 	}
 
@@ -185,7 +183,7 @@ public class Inspect implements Command {
 	 *
 	 * @param bytes
 	 */
-	private void inspectBinaryFile(byte[] bytes) {
+	private void inspectBinaryFile(byte[] bytes, int width) {
 		for (int i = 0; i < bytes.length; i += width) {
 			out.print(String.format("0x%04X ", i));
 			// Print out databytes

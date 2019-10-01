@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
@@ -117,16 +118,27 @@ public class Build implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) throws Exception {
+	public boolean execute(Command.Project project, Template template) throws Exception {
 		boolean r = true;
-		// Iterator all build projects
-		for(wybs.lang.Build.Project project : environment.getProjects()) {
-			// Build the project
-			r &= project.build(environment.getExecutor()).get();
-			// Look for error messages
-			for (wybs.lang.Build.Task task : project.getTasks()) {
-				printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
+		if(project == null) {
+			// Build all projects
+			for(wybs.lang.Build.Project p : environment.getProjects()) {
+				r &= execute(p);
 			}
+		} else {
+			// Build target project (and dependencies)
+			r = execute(project);
+		}
+		//
+		return r;
+	}
+
+	private boolean execute(wybs.lang.Build.Project project) throws Exception {
+		// Build the project
+		boolean r = project.build(environment.getExecutor()).get();
+		// Look for error messages
+		for (wybs.lang.Build.Task task : project.getTasks()) {
+			printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
 		}
 		//
 		return r;

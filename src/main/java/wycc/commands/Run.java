@@ -115,7 +115,7 @@ public class Run implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) {
+	public boolean execute(Command.Project project, Template template) {
 		throw new IllegalArgumentException("implement me");
 	}
 }

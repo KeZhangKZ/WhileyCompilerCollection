@@ -131,7 +131,7 @@ public class Install implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) {
+	public boolean execute(Command.Project project, Template template) {
 		try {
 			// Determine list of files to go in package
 			List<Path.Entry<?>> files = determinePackageContents();

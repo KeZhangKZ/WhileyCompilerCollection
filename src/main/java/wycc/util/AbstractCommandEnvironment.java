@@ -30,8 +30,11 @@ import wyfs.lang.Path.Filter;
 import wyfs.lang.Path.ID;
 import wyfs.lang.Path.Root;
 
-public class AbstractCommandEnvironment implements Command.Environment {
-	private final Configuration configuration;
+public abstract class AbstractCommandEnvironment implements Command.Environment {
+	/**
+	 * Complete configuration
+	 */
+	protected Configuration configuration;
 
 	/**
 	 * List of all known content types to the system.
@@ -69,7 +72,7 @@ public class AbstractCommandEnvironment implements Command.Environment {
 	 * The master registry which provides knowledge of all file types used within
 	 * the system.
 	 */
-	protected Content.Registry registry = new Content.Registry() {
+	protected final Content.Registry registry = new Content.Registry() {
 
 		@Override
 		public String suffix(Type<?> t) {
@@ -114,18 +117,6 @@ public class AbstractCommandEnvironment implements Command.Environment {
 		return commandDescriptors;
 	}
 
-	@Override
-	public Root getRoot() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public Root getRepositoryRoot() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	/**
 	 * Get the list of available build platforms. These help determine what the
 	 * valid build targets are.
@@ -135,12 +126,6 @@ public class AbstractCommandEnvironment implements Command.Environment {
 	@Override
 	public List<wybs.lang.Build.Platform> getBuildPlatforms() {
 		return buildPlatforms;
-	}
-
-	@Override
-	public List<Project> getProjects() {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 	@Override

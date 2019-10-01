@@ -17,10 +17,8 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import wybs.lang.Build;
-import wybs.lang.Build.Package;
-import wybs.util.ResolveError;
 import wycc.cfg.Configuration;
-import wyfs.lang.Path;
+import wycc.lang.Package;
 
 /**
  * A command which can be executed (e.g. from the command-line)
@@ -54,7 +52,7 @@ public interface Command {
 	 * any calls are made to <code>finalise()</code>. Observer, however, that this
 	 * command may be executed multiple times.
 	 */
-	public boolean execute(Template template) throws Exception;
+	public boolean execute(Project target, Template template) throws Exception;
 
 	/**
 	 * Defines an environment in which commands can be executed.
@@ -70,7 +68,17 @@ public interface Command {
 		 */
 		List<Command.Descriptor> getCommandDescriptors();
 
+		/**
+		 * Get the package resolver associated with this environment.
+		 *
+		 * @return
+		 */
+		Package.Resolver getPackageResolver();
+	}
 
+	public interface Project extends Build.Project, Configuration {
+		@Override
+		Environment getEnvironment();
 	}
 
 	/**

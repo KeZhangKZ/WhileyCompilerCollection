@@ -317,14 +317,6 @@ public interface Build {
 		public Path.Root getRoot();
 
 		/**
-		 * Get the top-level root for the package repository associated with this
-		 * environment.
-		 *
-		 * @return
-		 */
-		public Path.Root getRepositoryRoot();
-
-		/**
 		 * Get the registry used for resolving content types in this environment.
 		 *
 		 * @return

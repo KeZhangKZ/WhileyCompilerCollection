@@ -24,7 +24,7 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 
-public class AbstractPluginEnvironment extends AbstractCommandEnvironment {
+public abstract class AbstractPluginEnvironment extends AbstractCommandEnvironment {
 
 	/**
 	 * Provides the default plugin context.

@@ -13,6 +13,7 @@
 // limitations under the License.
 package wycc.commands;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -91,30 +92,18 @@ public class Clean implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) {
+	public boolean execute(Command.Project project, Template template) {
 		try {
 			// Extract options
 			boolean verbose = template.getOptions().get("verbose", Boolean.class);
-			// Iterator all active projects
-			for(Build.Project project : environment.getProjects()) {
-				// Identify the project root
-				Path.Root root = project.getRoot();
-				// Extract all registered platforms
-				List<Build.Task> targets = project.getTasks();
-				// Remove all intermediate files
-				for (int i = 0; i != targets.size(); ++i) {
-					Path.Entry<?> target = targets.get(i).getTarget();
-					boolean ok = root.remove(target.id(),target.contentType());
-					if (verbose && ok) {
-						logger.logTimedMessage("removing  " + target.id(), 0, 0);
-					} else if(verbose) {
-						logger.logTimedMessage("failed removing  " + target.id(), 0, 0);
-						return false;
-					} else if(!ok) {
-						return false;
-					}
+			if(project == null) {
+				// Clean all projects
+				for(Build.Project p : environment.getProjects()) {
+					execute(p,verbose);
 				}
-				logger.logTimedMessage("cleaned " + targets.size() + " file(s)", 0, 0);
+			} else {
+				// Clean selected project
+				execute(project,verbose);
 			}
 			//
 			return true;
@@ -123,6 +112,28 @@ public class Clean implements Command {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	private boolean execute(Build.Project project, boolean verbose) throws IOException {
+		// Identify the project root
+		Path.Root root = project.getRoot();
+		// Extract all registered platforms
+		List<Build.Task> targets = project.getTasks();
+		// Remove all intermediate files
+		for (int i = 0; i != targets.size(); ++i) {
+			Path.Entry<?> target = targets.get(i).getTarget();
+			boolean ok = root.remove(target.id(), target.contentType());
+			if (verbose && ok) {
+				logger.logTimedMessage("removing  " + target.id(), 0, 0);
+			} else if (verbose) {
+				logger.logTimedMessage("failed removing  " + target.id(), 0, 0);
+				return false;
+			} else if (!ok) {
+				return false;
+			}
+		}
+		logger.logTimedMessage("cleaned " + targets.size() + " file(s)", 0, 0);
+		return true;
 	}
 
 }

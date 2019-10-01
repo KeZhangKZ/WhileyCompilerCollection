@@ -90,7 +90,7 @@ public class Help implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) {
+	public boolean execute(Command.Project project, Template template) {
 		// Extract arguments
 		List<String> args = template.getArguments();
 		//
@@ -110,7 +110,7 @@ public class Help implements Command {
 			if (command == null) {
 				out.println("No entry for " + args.get(0));
 			} else {
-				print(out,command);
+				print(out, command);
 			}
 		}
 		//
