@@ -32,6 +32,7 @@ import wycc.lang.Command;
 import wycc.util.Logger;
 import wycc.lang.Package;
 import wycc.lang.SemanticVersion;
+import wycc.lang.Command.Option;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -58,7 +59,8 @@ public class Install implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Collections.EMPTY_LIST;
+			return Arrays
+					.asList(Command.OPTION_FLAG("deploy", "deploy package to remote repository"));
 		}
 
 		@Override
@@ -118,6 +120,7 @@ public class Install implements Command {
 
 	@Override
 	public boolean execute(Command.Project project, Template template) {
+		boolean deploy = template.getOptions().has("deploy");
 		try {
 			List<Value.UTF8> includes = determineIncludes(project);
 			// Determine list of files to go in package
@@ -131,7 +134,7 @@ public class Install implements Command {
 			// Extract package version from
 			String version = project.get(Value.UTF8.class, Trie.fromString("package/version")).toString();
 			//
-			repo.put(zf, name, new SemanticVersion(version));
+			install(deploy ? 1 : 0, repo, zf, name, new SemanticVersion(version));
 			// Done
 			return true;
 		} catch (IOException e) {
@@ -214,6 +217,28 @@ public class Install implements Command {
 		}
 		//
 		return zf;
+	}
+
+	/**
+	 * Recursively install a given package into the first <code>n</code>
+	 * repositories in the chain of all repositories.
+	 *
+	 * @param count
+	 * @param repository
+	 * @param pkg
+	 * @param name
+	 * @param version
+	 * @throws IOException
+	 */
+	private void install(int count, Package.Repository repository, ZipFile pkg, String name, SemanticVersion version)
+			throws IOException {
+		repository.put(pkg, name, version);
+		//
+		repository = repository.getParent();
+		//
+		if (count > 0 && repository != null) {
+			install(count - 1, repository, pkg, name, version);
+		}
 	}
 
 	/**
