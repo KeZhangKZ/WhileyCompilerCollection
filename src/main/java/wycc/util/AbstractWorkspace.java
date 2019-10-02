@@ -204,10 +204,11 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 			project = new AbstractProject(this, root);
 			// Configure package directory structure
 			project.initialise();
+			System.out.println("<<<<<<<<<<<<<<<<<<< REFRESH PROJECT");
+			// Refresh project to initialise build instances
+			project.refresh();
 			// Resolve all package dependencies
 			project.resolve();
-			// Sync contents
-			project.refresh();
 			// Retain project record
 			projects.put(id, project);
 		}

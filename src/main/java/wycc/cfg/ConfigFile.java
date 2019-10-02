@@ -58,7 +58,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 
 		@Override
 		public String toString() {
-			return "Content-Type: wyml";
+			return "Content-Type: toml";
 		}
 
 		@Override

@@ -176,7 +176,10 @@ public class WyMain extends AbstractWorkspace {
 		// Execute command
 		instance.execute(project,template);
 		// FIXME: this doesn't make sense
+		System.out.println("<<<<<<<<<<<<<<<<<<<< CLOSE ALL ROOT");
 		workspace.closeAll();
+		System.out.println("<<<<<<<<<<<<<<<<<<<< FLUSH LOCAL ROOT");
+		localRoot.flush();
 		// Done
 		System.exit(0);
 	}
