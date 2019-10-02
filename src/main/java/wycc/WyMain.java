@@ -124,8 +124,6 @@ public class WyMain extends AbstractWorkspace {
 		super(configuration);
 		// Setup workspace root
 		this.localRoot = new DirectoryRoot(dir, registry);
-		//
-		this.localRoot.refresh();
 		// Setup package resolver
 		this.resolver = new StdPackageResolver(new LocalPackageRepository(registry, repository));
 	}
@@ -175,10 +173,7 @@ public class WyMain extends AbstractWorkspace {
 		Command instance = descriptor.initialise(workspace);
 		// Execute command
 		instance.execute(project,template);
-		// FIXME: this doesn't make sense
-		System.out.println("<<<<<<<<<<<<<<<<<<<< CLOSE ALL ROOT");
-		workspace.closeAll();
-		System.out.println("<<<<<<<<<<<<<<<<<<<< FLUSH LOCAL ROOT");
+		// Flush all modified files to disk
 		localRoot.flush();
 		// Done
 		System.exit(0);

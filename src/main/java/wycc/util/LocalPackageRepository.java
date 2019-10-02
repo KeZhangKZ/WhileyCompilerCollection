@@ -67,7 +67,6 @@ public class LocalPackageRepository implements Package.Repository {
 			throw new IllegalArgumentException("missing dependency \"" + id + "\"");
 		} else {
 			// Extract entry for ZipFile
-			System.out.println("LOOKING IN: " + root);
 			Path.Entry<ZipFile> zipfile = root.get(id, ZipFile.ContentType);
 			// Construct root representing this ZipFile
 			Path.Root pkgRoot = new ZipFileRoot(zipfile, registry);

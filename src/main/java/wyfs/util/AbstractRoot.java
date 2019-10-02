@@ -190,7 +190,7 @@ public abstract class AbstractRoot<T extends Folder> implements Root {
 
 		@Override
 		public void refresh() throws IOException {
-			parent.flush();
+			parent.refresh();
 		}
 
 		@Override

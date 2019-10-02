@@ -67,9 +67,7 @@ public abstract class AbstractEntry<T> implements Path.Entry<T> {
 
 	@Override
 	public void flush() throws IOException {
-		System.out.println("FLUSHING: " + id + " : " + contentType + " ... ");
 		if(modified && contents != null) {
-			System.out.println("FLUSHED: " + id + " : " + contentType);
 			contentType.write(outputStream(), contents);
 			this.modified = false;
 		}
