@@ -125,7 +125,7 @@ public class WyMain extends AbstractWorkspace {
 		// Setup workspace root
 		this.localRoot = new DirectoryRoot(dir, registry);
 		// Setup package resolver
-		this.resolver = new StdPackageResolver(new LocalPackageRepository(registry, repository));
+		this.resolver = new StdPackageResolver(new LocalPackageRepository(this, registry, repository));
 	}
 
 	@Override
@@ -174,7 +174,7 @@ public class WyMain extends AbstractWorkspace {
 		// Execute command
 		instance.execute(project,template);
 		// Flush all modified files to disk
-		localRoot.flush();
+		workspace.closeAll();
 		// Done
 		System.exit(0);
 	}

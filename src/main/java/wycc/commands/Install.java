@@ -14,7 +14,6 @@
 package wycc.commands;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,13 +24,14 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
 import wycc.util.Logger;
+import wycc.lang.Package;
+import wycc.lang.SemanticVersion;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -95,24 +95,10 @@ public class Install implements Command {
 	 */
 	private final PrintStream sysout;
 
-	/**
-	 * List of include filters
-	 */
-	private final ArrayList<Value.UTF8> includes;
-
 	public Install(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
 		this.environment = environment;
 		this.logger = environment.getLogger();
 		this.sysout = new PrintStream(sysout);
-		this.includes = new ArrayList<>();
-		// Determine default included files
-		Value.UTF8[] items = environment.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
-		this.includes.addAll(Arrays.asList(items));
-		// Determine platform-specific included files
-		for(Path.ID id : environment.matchAll(BUILD_PLATFORM_INCLUDES)) {
-			items = environment.get(Value.Array.class, id).toArray(Value.UTF8.class);
-			includes.addAll(Arrays.asList(items));
-		}
 	}
 
 	@Override
@@ -133,22 +119,47 @@ public class Install implements Command {
 	@Override
 	public boolean execute(Command.Project project, Template template) {
 		try {
+			List<Value.UTF8> includes = determineIncludes(project);
 			// Determine list of files to go in package
-			List<Path.Entry<?>> files = determinePackageContents();
+			List<Path.Entry<?>> files = determinePackageContents(project,includes);
 			// Construct zip file context representing package
 			ZipFile zf = createZipFile(files);
-			// Determine the target location for the package file
-			Path.Entry<ZipFile> target = getPackageFile();
-			// Physically write out the zip file
-			target.write(zf);
-			// Flush it to disk
-			target.flush();
+			// Get top-level repository
+			Package.Repository repo = environment.getPackageResolver().getRepository();
+			// Extract package name from configuration
+			String name = project.get(Value.UTF8.class, Trie.fromString("package/name")).toString();
+			// Extract package version from
+			String version = project.get(Value.UTF8.class, Trie.fromString("package/version")).toString();
+			//
+			repo.put(zf, name, new SemanticVersion(version));
 			// Done
-			sysout.println("installed " + target.location() + " ... " + files.size() + " file(s)");
 			return true;
 		} catch (IOException e) {
+			logger.logTimedMessage(e.getMessage(), 0, 0);
 			return false;
 		}
+	}
+
+	/**
+	 * Determine the set of included files for this package. This is determined in
+	 * two ways. Firstly, there is a a default set of top-level includes. Secondly,
+	 * there is a set of platform specific includes.
+	 *
+	 * @param project
+	 * @return
+	 */
+	private List<Value.UTF8> determineIncludes(Command.Project project) {
+		ArrayList<Value.UTF8> includes = new ArrayList<>();
+		// Determine default included files
+		Value.UTF8[] items = project.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
+		includes.addAll(Arrays.asList(items));
+		// Determine platform-specific included files
+		for (Path.ID id : project.matchAll(BUILD_PLATFORM_INCLUDES)) {
+			items = project.get(Value.Array.class, id).toArray(Value.UTF8.class);
+			includes.addAll(Arrays.asList(items));
+		}
+		// Done
+		return includes;
 	}
 
 	/**
@@ -158,20 +169,18 @@ public class Install implements Command {
 	 * @return
 	 * @throws IOException
 	 */
-	private List<Path.Entry<?>> determinePackageContents() throws IOException {
+	private List<Path.Entry<?>> determinePackageContents(Build.Project project, List<Value.UTF8> includes)
+			throws IOException {
 		// Determine includes filter
 		ArrayList<Path.Entry<?>> files = new ArrayList<>();
-		// Iterator all active projects
-		for(Build.Project project : environment.getProjects()) {
-			// Extract root of this project
-			Path.Root root = project.getRoot();
-			// Add all files from the includes filter
-			for(int i=0;i!=includes.size();++i) {
-				// Construct a filter from the attribute itself
-				Content.Filter filter = createFilter(includes.get(i).toString());
-				// Add all files matching the attribute
-				files.addAll(root.get(filter));
-			}
+		// Extract root of this project
+		Path.Root root = project.getRoot();
+		// Add all files from the includes filter
+		for(int i=0;i!=includes.size();++i) {
+			// Construct a filter from the attribute itself
+			Content.Filter<?> filter = createFilter(includes.get(i).toString());
+			// Add all files matching the attribute
+			files.addAll(root.get(filter));
 		}
 		// Done
 		return files;
@@ -250,29 +259,12 @@ public class Install implements Command {
 	}
 
 	/**
-	 * Construct an entry for the target package (zip) file.
-	 *
-	 * @return
-	 * @throws IOException
-	 */
-	private Path.Entry<ZipFile> getPackageFile() throws IOException {
-		// Extract package name from configuration
-		Value.UTF8 name = environment.get(Value.UTF8.class, Trie.fromString("package/name"));
-		// Extract package version from
-		Value.UTF8 version = environment.get(Value.UTF8.class, Trie.fromString("package/version"));
-		// Determine fully qualified package name
-		Trie pkg = Trie.fromString(name + "-v" + version);
-		// Dig out the file!
-		return environment.getRepositoryRoot().create(pkg, ZipFile.ContentType);
-	}
-
-	/**
 	 * Create a content filter from the string representation.
 	 *
 	 * @param filter
 	 * @return
 	 */
-	private Content.Filter createFilter(String filter) {
+	private Content.Filter<?> createFilter(String filter) {
 		String[] split = filter.split("\\.");
 		//
 		Content.Type contentType = getContentType(split[1]);

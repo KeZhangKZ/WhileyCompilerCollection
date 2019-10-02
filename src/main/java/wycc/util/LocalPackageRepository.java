@@ -18,6 +18,7 @@ import java.util.Set;
 
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
+import wycc.lang.Command;
 import wycc.lang.Package;
 import wycc.lang.SemanticVersion;
 import wyfs.lang.Content;
@@ -33,18 +34,20 @@ import wyfs.util.ZipFileRoot;
  *
  */
 public class LocalPackageRepository implements Package.Repository {
+	private final Command.Environment environment;
 	private final Package.Repository parent;
 	private final Content.Registry registry;
 	private final Path.Root root;
 
-	public LocalPackageRepository(Content.Registry registry, Path.Root root) {
-		this(null,registry,root);
+	public LocalPackageRepository(Command.Environment environment, Content.Registry registry, Path.Root root) {
+		this(environment,null,registry,root);
 	}
 
-	public LocalPackageRepository(Package.Repository parent, Content.Registry registry, Path.Root root) {
+	public LocalPackageRepository(Command.Environment environment, Package.Repository parent, Content.Registry registry, Path.Root root) {
 		this.parent = parent;
 		this.registry = registry;
 		this.root = root;
+		this.environment = environment;
 	}
 
 	@Override
@@ -84,8 +87,17 @@ public class LocalPackageRepository implements Package.Repository {
 	}
 
 	@Override
-	public void put(Path.Entry<ZipFile> pkg, SemanticVersion version) throws IOException {
-		throw new IllegalArgumentException("need to implement package write");
+	public void put(ZipFile pkg, String name, SemanticVersion version) throws IOException {
+		// Determine fully qualified package name
+		Trie qpn = Trie.fromString(name + "-v" + version);
+		// Dig out the file!
+		Path.Entry<ZipFile> entry = root.create(qpn, ZipFile.ContentType);
+		// Write the contents
+		entry.write(pkg);
+		// Flush
+		entry.flush();
+		//
+		environment.getLogger().logTimedMessage("Installed " + entry.location(), 0, 0);
 	}
 
 	private static class AbstractPackage implements wybs.lang.Build.Package {

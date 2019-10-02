@@ -115,17 +115,17 @@ public interface Package {
 		 * Get a given package in this repository. If no such package exists, an
 		 * <code>IllegalArgumentException</code> is thrown.
 		 *
-		 * @param pkg
+		 * @param name
 		 * @param version
 		 * @return
 		 */
-		public Build.Package get(String pkg, SemanticVersion version) throws IOException;
+		public Build.Package get(String name, SemanticVersion version) throws IOException;
 
 		/**
 		 * Put a given package into this repository.
 		 *
 		 * @param pkg
 		 */
-		public void put(Path.Entry<ZipFile> pkg, SemanticVersion version) throws IOException;
+		public void put(ZipFile pkg, String name, SemanticVersion version) throws IOException;
 	}
 }
