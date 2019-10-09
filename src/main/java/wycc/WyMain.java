@@ -15,60 +15,27 @@ package wycc;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
-import java.util.regex.Pattern;
-
-import wybs.lang.Build.Project;
 import wybs.lang.SyntacticException;
-import wybs.lang.SyntacticItem;
-import wybs.util.SequentialBuildProject;
 import wybs.util.AbstractCompilationUnit.Value;
-import wybs.util.AbstractCompilationUnit.Value.UTF8;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.cfg.ConfigurationCombinator;
-import wycc.cfg.HashMapConfiguration;
-import wycc.commands.Build;
-import wycc.commands.Clean;
-import wycc.commands.Config;
-import wycc.commands.Help;
-import wycc.commands.Inspect;
-import wycc.commands.Install;
-import wycc.commands.Run;
 import wycc.lang.Command;
-import wycc.lang.Module;
 import wycc.lang.Package;
-import wycc.lang.Command.Option;
-import wycc.lang.Command.Template;
-import wycc.util.AbstractCommandEnvironment;
-import wycc.util.AbstractPluginEnvironment;
 import wycc.util.AbstractWorkspace;
-import wycc.util.ArrayUtils;
 import wycc.util.CommandParser;
 import wycc.util.LocalPackageRepository;
-import wycc.util.Logger;
 import wycc.util.Pair;
-import wycc.util.StdModuleContext;
+import wycc.util.RemotePackageRepository;
 import wycc.util.StdPackageResolver;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Content.Registry;
-import wyfs.lang.Content.Type;
-import wyfs.lang.Path.Entry;
-import wyfs.lang.Path.Filter;
-import wyfs.lang.Path.ID;
 import wyfs.lang.Path.Root;
 import wyfs.util.DefaultContentRegistry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyfs.util.ZipFile;
-import wyfs.util.ZipFileRoot;
+import static wycc.util.RemotePackageRepository.*;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is
@@ -80,6 +47,11 @@ import wyfs.util.ZipFileRoot;
  *
  */
 public class WyMain extends AbstractWorkspace {
+
+	/**
+	 * Path to the dependency repository within the global root.
+	 */
+	private static final Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
 
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
@@ -100,10 +72,6 @@ public class WyMain extends AbstractWorkspace {
 	public static Configuration.Schema LOCAL_CONFIG_SCHEMA = Configuration.fromArray(
 			Configuration.UNBOUND_STRING_ARRAY(Trie.fromString("workspace/projects"), "list of projects", false));
 
-	/**
-	 * Path to the dependency repository within the global root.
-	 */
-	private static Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
 
 	// ========================================================================
 	// Instance Fields
@@ -125,7 +93,7 @@ public class WyMain extends AbstractWorkspace {
 		// Setup workspace root
 		this.localRoot = new DirectoryRoot(dir, registry);
 		// Setup package resolver
-		this.resolver = new StdPackageResolver(new LocalPackageRepository(this, registry, repository));
+		this.resolver = new StdPackageResolver(new RemotePackageRepository(this, registry, repository));
 	}
 
 	@Override
@@ -156,9 +124,9 @@ public class WyMain extends AbstractWorkspace {
 		// Read the system configuration file
 		Configuration system = readConfigFile("wy", systemRoot, SYSTEM_CONFIG_SCHEMA);
 		// Read the global configuration file
-		Configuration global = readConfigFile("wy", globalRoot, GLOBAL_CONFIG_SCHEMA);
+		Configuration global = readConfigFile("wy", globalRoot, GLOBAL_CONFIG_SCHEMA, REMOTE_REPOSITORY_SCHEMA);
 		// Read the global configuration file
-		Configuration local = readConfigFile("wy", localRoot, LOCAL_CONFIG_SCHEMA);
+		Configuration local = readConfigFile("wy", localRoot, LOCAL_CONFIG_SCHEMA, REMOTE_REPOSITORY_SCHEMA);
 		// Construct the merged configuration
 		Configuration config = new ConfigurationCombinator(local, global, system);
 		// Construct the workspace

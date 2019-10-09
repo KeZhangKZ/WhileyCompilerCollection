@@ -43,7 +43,10 @@ public class StdPackageResolver implements Package.Resolver {
 		for (Pair<String, String> dep : dependencies) {
 			String name = dep.first();
 			SemanticVersion version = new SemanticVersion(dep.second());
-			packages.add(repository.get(name, version));
+			Build.Package pkg = repository.get(name, version);
+			if(pkg != null) {
+				packages.add(pkg);
+			}
 		}
 		return packages;
 	}

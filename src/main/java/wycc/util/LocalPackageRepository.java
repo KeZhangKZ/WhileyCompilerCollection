@@ -34,10 +34,10 @@ import wyfs.util.ZipFileRoot;
  *
  */
 public class LocalPackageRepository implements Package.Repository {
-	private final Command.Environment environment;
-	private final Package.Repository parent;
-	private final Content.Registry registry;
-	private final Path.Root root;
+	protected final Command.Environment environment;
+	protected final Package.Repository parent;
+	protected final Content.Registry registry;
+	protected final Path.Root root;
 
 	public LocalPackageRepository(Command.Environment environment, Content.Registry registry, Path.Root root) {
 		this(environment,null,registry,root);
@@ -66,8 +66,8 @@ public class LocalPackageRepository implements Package.Repository {
 		Trie id = Trie.fromString(pkg + "-v" + version);
 		// Attempt to resolve it.
 		if (!root.exists(id, ZipFile.ContentType)) {
-			// FIXME: handle better error handling.
-			throw new IllegalArgumentException("missing dependency \"" + id + "\"");
+			environment.getLogger().logTimedMessage("Failed loading  " + pkg + "-v" + version, 0, 0);
+			return null;
 		} else {
 			// Extract entry for ZipFile
 			Path.Entry<ZipFile> zipfile = root.get(id, ZipFile.ContentType);
@@ -76,10 +76,13 @@ public class LocalPackageRepository implements Package.Repository {
 			// Extract configuration from package
 			Path.Entry<ConfigFile> entry = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType);
 			if (entry == null) {
-				throw new IllegalArgumentException("corrupt package (missing wy.toml) \"" + id + "-" + version + "\"");
+				environment.getLogger().logTimedMessage("Corrupt package " + pkg + "-v" + version + " (missing wy.toml)", 0, 0);
+				return null;
 			} else {
 				// Read package configuration
 				ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType).read();
+				// Log event
+				environment.getLogger().logTimedMessage("Loaded " + pkg + "-v" + version, 0, 0);
 				// Add package to this project
 				return new AbstractPackage(pkgRoot, pkgcfg.toConfiguration(Package.SCHEMA, false));
 			}
@@ -100,7 +103,7 @@ public class LocalPackageRepository implements Package.Repository {
 		environment.getLogger().logTimedMessage("Installed " + entry.location(), 0, 0);
 	}
 
-	private static class AbstractPackage implements wybs.lang.Build.Package {
+	protected static class AbstractPackage implements wybs.lang.Build.Package {
 		private final Path.Root root;
 		private final Configuration configuration;
 
