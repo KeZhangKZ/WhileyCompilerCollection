@@ -25,7 +25,6 @@ import java.util.List;
 import wybs.io.SyntacticHeapPrinter;
 import wybs.lang.SyntacticHeap;
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
 import wycc.lang.Command.Descriptor;
@@ -79,25 +78,19 @@ public class Inspect implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
+		public Command initialise(Command.Environment environment) {
 			// FIXME: should have some framework for output, rather than hard-coding
 			// System.out.
-			return new Inspect(System.out, (WyProject) environment, configuration);
+			return new Inspect(System.out, environment);
 		}
 	};
 
 	private final PrintStream out;
-	private final WyProject project;
-	private final Configuration configuration;
-	private final int indent;
-	private final int width;
+	private final Command.Environment environment;
 
-	public Inspect(PrintStream out, WyProject project, Configuration configuration) {
-		this.project = project;
-		this.configuration = configuration;
+	public Inspect(PrintStream out, Command.Environment environment) {
+		this.environment = environment;
 		this.out = out;
-		this.width = configuration.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
-		this.indent = configuration.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
 	}
 
 	@Override
@@ -114,9 +107,12 @@ public class Inspect implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) throws Exception {
+	public boolean execute(Command.Project project, Template template) throws Exception {
 		boolean garbage = template.getOptions().get("full", Boolean.class);
 		boolean raw = template.getOptions().get("raw", Boolean.class);
+		//
+		int width = project.get(Value.Int.class, INSPECT_WIDTH).unwrap().intValue();
+		int indent = project.get(Value.Int.class, INSPECT_INDENT).unwrap().intValue();
 
 		List<String> files = template.getArguments();
 		for (String file : files) {
@@ -128,7 +124,7 @@ public class Inspect implements Command {
 				Content.Printable cp = (Content.Printable<?>) ct;
 				cp.print(out, entry.read());
 			} else {
-				inspect(entry, ct, garbage);
+				inspect(entry, ct, garbage, width);
 			}
 		}
 		return true;
@@ -141,16 +137,11 @@ public class Inspect implements Command {
 	 * @return
 	 */
 	private Content.Type<?> getContentType(String file) {
-		List<Content.Type<?>> cts = project.getParent().getContentTypes();
-		for (int i = 0; i != cts.size(); ++i) {
-			Content.Type<?> ct = cts.get(i);
-			String suffix = "." + ct.getSuffix();
-			if (file.endsWith(suffix)) {
-				return ct;
-			}
-		}
+		String[] parts = file.split("\\.");
+		// Attempt to identify content type
+		Content.Type<?> ct = environment.getContentRegistry().contentType(parts[parts.length - 1]);
 		// Default is just a binary file
-		return Content.BinaryFile;
+		return ct != null ? ct : Content.BinaryFile;
 	}
 
 	/**
@@ -167,7 +158,7 @@ public class Inspect implements Command {
 		// Determine path id
 		Path.ID id = Trie.fromString(file);
 		// Get the file from the repository root
-		return project.getParent().getLocalRoot().get(id, ct);
+		return environment.getRoot().get(id, ct);
 	}
 
 	/**
@@ -177,12 +168,12 @@ public class Inspect implements Command {
 	 * @param ct
 	 * @throws IOException
 	 */
-	private void inspect(Path.Entry<?> entry, Content.Type<?> ct, boolean garbage) throws IOException {
+	private void inspect(Path.Entry<?> entry, Content.Type<?> ct, boolean garbage, int width) throws IOException {
 		Object o = entry.read();
 		if (o instanceof SyntacticHeap) {
 			new SyntacticHeapPrinter(new PrintWriter(out), garbage).print((SyntacticHeap) o);
 		} else {
-			inspectBinaryFile(readAllBytes(entry.inputStream()));
+			inspectBinaryFile(readAllBytes(entry.inputStream()),width);
 		}
 	}
 
@@ -192,7 +183,7 @@ public class Inspect implements Command {
 	 *
 	 * @param bytes
 	 */
-	private void inspectBinaryFile(byte[] bytes) {
+	private void inspectBinaryFile(byte[] bytes, int width) {
 		for (int i = 0; i < bytes.length; i += width) {
 			out.print(String.format("0x%04X ", i));
 			// Print out databytes

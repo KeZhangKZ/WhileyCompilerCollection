@@ -23,13 +23,13 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit;
 import wybs.util.AbstractCompilationUnit.Attribute;
 import wybs.util.AbstractCompilationUnit.Attribute.Span;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
@@ -67,8 +67,8 @@ public class Build implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Build((WyProject) environment, configuration, System.out, System.err);
+		public Command initialise(Command.Environment environment) {
+			return new Build(environment, System.out, System.err);
 		}
 
 	};
@@ -95,10 +95,10 @@ public class Build implements Command {
 	/**
 	 * The enclosing project for this build
 	 */
-	private final WyProject project;
+	private final Command.Environment environment;
 
-	public Build(WyProject project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
-		this.project = project;
+	public Build(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
+		this.environment = environment;
 		this.sysout = new PrintStream(sysout);
 		this.syserr = new PrintStream(syserr);
 	}
@@ -118,13 +118,26 @@ public class Build implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) throws Exception {
+	public boolean execute(Command.Project project, Template template) throws Exception {
+		boolean r = true;
+		if(project == null) {
+			// Build all projects
+			for(wybs.lang.Build.Project p : environment.getProjects()) {
+				r &= execute(p);
+			}
+		} else {
+			// Build target project (and dependencies)
+			r = execute(project);
+		}
+		//
+		return r;
+	}
+
+	private boolean execute(wybs.lang.Build.Project project) throws Exception {
 		// Build the project
-		boolean r = project.build();
-		// Extract all build tasks
-		List<wybs.lang.Build.Task> tasks = project.getBuildProject().getTasks();
+		boolean r = project.build(environment.getExecutor()).get();
 		// Look for error messages
-		for (wybs.lang.Build.Task task : tasks) {
+		for (wybs.lang.Build.Task task : project.getTasks()) {
 			printSyntacticMarkers(syserr, task.getSources(), task.getTarget());
 		}
 		//

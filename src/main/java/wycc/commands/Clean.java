@@ -13,22 +13,16 @@
 // limitations under the License.
 package wycc.commands;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import wybs.lang.Build;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
-import wycc.lang.Command.Descriptor;
-import wycc.lang.Command.Option;
 import wycc.util.Logger;
-import wyfs.lang.Content;
 import wyfs.lang.Path;
 
 public class Clean implements Command {
@@ -62,8 +56,8 @@ public class Clean implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Clean((WyProject) environment);
+		public Command initialise(Command.Environment environment) {
+			return new Clean(environment);
 		}
 
 	};
@@ -71,16 +65,16 @@ public class Clean implements Command {
 	/**
 	 * The enclosing project for this build
 	 */
-	private final WyProject project;
+	private final Command.Environment environment;
 
 	/**
 	 * Logger
 	 */
 	private Logger logger;
 
-	public Clean(WyProject project) {
-		this.project = project;
-		this.logger = project.getBuildProject().getLogger();
+	public Clean(Command.Environment environment) {
+		this.environment = environment;
+		this.logger = environment.getLogger();
 	}
 
 	@Override
@@ -98,28 +92,19 @@ public class Clean implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) {
+	public boolean execute(Command.Project project, Template template) {
 		try {
 			// Extract options
 			boolean verbose = template.getOptions().get("verbose", Boolean.class);
-			// Identify the project root
-			Path.Root root = project.getParent().getLocalRoot();
-			// Extract all registered platforms
-			List<Build.Task> targets = project.getBuildProject().getTasks();
-			// Remove all intermediate files
-			for (int i = 0; i != targets.size(); ++i) {
-				Path.Entry<?> target = targets.get(i).getTarget();
-				boolean ok = root.remove(target.id(),target.contentType());
-				if (verbose && ok) {
-					logger.logTimedMessage("removing  " + target.id(), 0, 0);
-				} else if(verbose) {
-					logger.logTimedMessage("failed removing  " + target.id(), 0, 0);
-					return false;
-				} else if(!ok) {
-					return false;
+			if(project == null) {
+				// Clean all projects
+				for(Build.Project p : environment.getProjects()) {
+					execute(p,verbose);
 				}
+			} else {
+				// Clean selected project
+				execute(project,verbose);
 			}
-			logger.logTimedMessage("cleaned " + targets.size() + " file(s)", 0, 0);
 			//
 			return true;
 		} catch (Exception e) {
@@ -127,6 +112,28 @@ public class Clean implements Command {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	private boolean execute(Build.Project project, boolean verbose) throws IOException {
+		// Identify the project root
+		Path.Root root = project.getRoot();
+		// Extract all registered platforms
+		List<Build.Task> targets = project.getTasks();
+		// Remove all intermediate files
+		for (int i = 0; i != targets.size(); ++i) {
+			Path.Entry<?> target = targets.get(i).getTarget();
+			boolean ok = root.remove(target.id(), target.contentType());
+			if (verbose && ok) {
+				logger.logTimedMessage("removing  " + target.id(), 0, 0);
+			} else if (verbose) {
+				logger.logTimedMessage("failed removing  " + target.id(), 0, 0);
+				return false;
+			} else if (!ok) {
+				return false;
+			}
+		}
+		logger.logTimedMessage("cleaned " + targets.size() + " file(s)", 0, 0);
+		return true;
 	}
 
 }

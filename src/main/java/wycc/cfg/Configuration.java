@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Value;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Filter;
@@ -728,6 +729,36 @@ public interface Configuration {
 			public boolean isValid(Value.Array value) {
 				for (int i = 0; i != value.size(); ++i) {
 					if (!(value.get(i) instanceof Value.UTF8)) {
+						return false;
+					}
+				}
+				return true;
+			}
+		};
+		// Sanity check default value
+		checkDefaultValue(desc, defaulT);
+		// Done
+		return desc;
+	}
+
+
+	/**
+	 * Represents an unbound array with a default value. That is any number
+	 * of elements are permitted.
+	 *
+	 * @param key
+	 * @param description
+	 * @param required
+	 * @return
+	 */
+	public static <T extends Value> KeyValueDescriptor<Value.Array> UNBOUND_ARRAY(Path.Filter key, String description,
+			Class<T> kind, Value.Array defaulT) {
+		AbstractDescriptor<Value.Array> desc = new AbstractDescriptor<Value.Array>(key, description, Value.Array.class,
+				defaulT) {
+			@Override
+			public boolean isValid(Value.Array value) {
+				for (int i = 0; i != value.size(); ++i) {
+					if (!(kind.isInstance(value.get(i)))) {
 						return false;
 					}
 				}

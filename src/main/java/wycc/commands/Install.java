@@ -14,7 +14,6 @@
 package wycc.commands;
 
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,14 +24,15 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.WyProject;
 import wycc.cfg.Configuration;
 import wycc.cfg.Configuration.Schema;
 import wycc.lang.Command;
 import wycc.util.Logger;
+import wycc.lang.Package;
+import wycc.lang.SemanticVersion;
+import wycc.lang.Command.Option;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
@@ -59,7 +59,8 @@ public class Install implements Command {
 
 		@Override
 		public List<Option.Descriptor> getOptionDescriptors() {
-			return Collections.EMPTY_LIST;
+			return Arrays
+					.asList(Command.OPTION_FLAG("deploy", "deploy package to remote repository"));
 		}
 
 		@Override
@@ -73,8 +74,8 @@ public class Install implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Install((WyProject) environment, configuration, System.out, System.err);
+		public Command initialise(Command.Environment environment) {
+			return new Install(environment, System.out, System.err);
 		}
 
 	};
@@ -86,9 +87,9 @@ public class Install implements Command {
 	private Logger logger;
 
 	/**
-	 * The enclosing project for this build
+	 * The enclosing environment for this command
 	 */
-	private final WyProject project;
+	private final Command.Environment environment;
 
 	/**
 	 * Provides a generic place to which normal output should be directed. This
@@ -96,30 +97,10 @@ public class Install implements Command {
 	 */
 	private final PrintStream sysout;
 
-	/**
-	 * Access to configuration attributes
-	 */
-	private final Configuration configuration;
-
-	/**
-	 * List of include filters
-	 */
-	private final ArrayList<Value.UTF8> includes;
-
-	public Install(WyProject project, Configuration configuration, OutputStream sysout, OutputStream syserr) {
-		this.project = project;
-		this.logger = project.getBuildProject().getLogger();
-		this.configuration = configuration;
+	public Install(Command.Environment environment, OutputStream sysout, OutputStream syserr) {
+		this.environment = environment;
+		this.logger = environment.getLogger();
 		this.sysout = new PrintStream(sysout);
-		this.includes = new ArrayList<>();
-		// Determine default included files
-		Value.UTF8[] items = configuration.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
-		this.includes.addAll(Arrays.asList(items));
-		// Determine platform-specific included files
-		for(Path.ID id : configuration.matchAll(BUILD_PLATFORM_INCLUDES)) {
-			items = configuration.get(Value.Array.class, id).toArray(Value.UTF8.class);
-			includes.addAll(Arrays.asList(items));
-		}
 	}
 
 	@Override
@@ -138,24 +119,50 @@ public class Install implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) {
+	public boolean execute(Command.Project project, Template template) {
+		boolean deploy = template.getOptions().has("deploy");
 		try {
+			List<Value.UTF8> includes = determineIncludes(project);
 			// Determine list of files to go in package
-			List<Path.Entry<?>> files = determinePackageContents();
+			List<Path.Entry<?>> files = determinePackageContents(project,includes);
 			// Construct zip file context representing package
 			ZipFile zf = createZipFile(files);
-			// Determine the target location for the package file
-			Path.Entry<ZipFile> target = getPackageFile();
-			// Physically write out the zip file
-			target.write(zf);
-			// Flush it to disk
-			target.flush();
+			// Get top-level repository
+			Package.Repository repo = environment.getPackageResolver().getRepository();
+			// Extract package name from configuration
+			String name = project.get(Value.UTF8.class, Trie.fromString("package/name")).toString();
+			// Extract package version from
+			String version = project.get(Value.UTF8.class, Trie.fromString("package/version")).toString();
+			//
+			install(deploy ? 1 : 0, repo, zf, name, new SemanticVersion(version));
 			// Done
-			sysout.println("installed " + target.location() + " ... " + files.size() + " file(s)");
 			return true;
 		} catch (IOException e) {
+			logger.logTimedMessage(e.getMessage(), 0, 0);
 			return false;
 		}
+	}
+
+	/**
+	 * Determine the set of included files for this package. This is determined in
+	 * two ways. Firstly, there is a a default set of top-level includes. Secondly,
+	 * there is a set of platform specific includes.
+	 *
+	 * @param project
+	 * @return
+	 */
+	private List<Value.UTF8> determineIncludes(Command.Project project) {
+		ArrayList<Value.UTF8> includes = new ArrayList<>();
+		// Determine default included files
+		Value.UTF8[] items = project.get(Value.Array.class, BUILD_INCLUDES).toArray(Value.UTF8.class);
+		includes.addAll(Arrays.asList(items));
+		// Determine platform-specific included files
+		for (Path.ID id : project.matchAll(BUILD_PLATFORM_INCLUDES)) {
+			items = project.get(Value.Array.class, id).toArray(Value.UTF8.class);
+			includes.addAll(Arrays.asList(items));
+		}
+		// Done
+		return includes;
 	}
 
 	/**
@@ -165,15 +172,16 @@ public class Install implements Command {
 	 * @return
 	 * @throws IOException
 	 */
-	private List<Path.Entry<?>> determinePackageContents() throws IOException {
+	private List<Path.Entry<?>> determinePackageContents(Build.Project project, List<Value.UTF8> includes)
+			throws IOException {
 		// Determine includes filter
 		ArrayList<Path.Entry<?>> files = new ArrayList<>();
-		// Determine local root of project
-		Path.Root root = project.getParent().getLocalRoot();
+		// Extract root of this project
+		Path.Root root = project.getRoot();
 		// Add all files from the includes filter
 		for(int i=0;i!=includes.size();++i) {
 			// Construct a filter from the attribute itself
-			Content.Filter filter = createFilter(includes.get(i).toString());
+			Content.Filter<?> filter = createFilter(includes.get(i).toString());
 			// Add all files matching the attribute
 			files.addAll(root.get(filter));
 		}
@@ -209,6 +217,28 @@ public class Install implements Command {
 		}
 		//
 		return zf;
+	}
+
+	/**
+	 * Recursively install a given package into the first <code>n</code>
+	 * repositories in the chain of all repositories.
+	 *
+	 * @param count
+	 * @param repository
+	 * @param pkg
+	 * @param name
+	 * @param version
+	 * @throws IOException
+	 */
+	private void install(int count, Package.Repository repository, ZipFile pkg, String name, SemanticVersion version)
+			throws IOException {
+		repository.put(pkg, name, version);
+		//
+		repository = repository.getParent();
+		//
+		if (count > 0 && repository != null) {
+			install(count - 1, repository, pkg, name, version);
+		}
 	}
 
 	/**
@@ -254,29 +284,12 @@ public class Install implements Command {
 	}
 
 	/**
-	 * Construct an entry for the target package (zip) file.
-	 *
-	 * @return
-	 * @throws IOException
-	 */
-	private Path.Entry<ZipFile> getPackageFile() throws IOException {
-		// Extract package name from configuration
-		Value.UTF8 name = configuration.get(Value.UTF8.class, Trie.fromString("package/name"));
-		// Extract package version from
-		Value.UTF8 version = configuration.get(Value.UTF8.class, Trie.fromString("package/version"));
-		// Determine fully qualified package name
-		Trie pkg = Trie.fromString(name + "-v" + version);
-		// Dig out the file!
-		return project.getRepositoryRoot().create(pkg, ZipFile.ContentType);
-	}
-
-	/**
 	 * Create a content filter from the string representation.
 	 *
 	 * @param filter
 	 * @return
 	 */
-	private Content.Filter createFilter(String filter) {
+	private Content.Filter<?> createFilter(String filter) {
 		String[] split = filter.split("\\.");
 		//
 		Content.Type contentType = getContentType(split[1]);
@@ -292,16 +305,13 @@ public class Install implements Command {
 	 * @return
 	 */
 	private Content.Type getContentType(String suffix) {
-		List<Content.Type<?>> cts = project.getParent().getContentTypes();
+		Content.Type<?> ct = environment.getContentRegistry().contentType(suffix);
 		//
-		for (int i = 0; i != cts.size(); ++i) {
-			Content.Type<?> ct = cts.get(i);
-			if (ct.getSuffix().equals(suffix)) {
-				// hit
-				return ct;
-			}
+		if(ct != null) {
+			return ct;
+		} else {
+			// miss
+			throw new IllegalArgumentException("unknown content-type: " + suffix);
 		}
-		// miss
-		throw new IllegalArgumentException("unknown content-type: " + suffix);
 	}
 }
