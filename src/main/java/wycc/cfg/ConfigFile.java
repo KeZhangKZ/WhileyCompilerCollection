@@ -58,7 +58,7 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 
 		@Override
 		public String toString() {
-			return "Content-Type: wyml";
+			return "Content-Type: toml";
 		}
 
 		@Override
@@ -114,11 +114,13 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 	 * Construct a configuration wrapper for this file. This ensures that the
 	 * contents of the file meets a give configuration schema.
 	 *
-	 * @param schema
+	 * @param schema The schema to use for the resulting configuration
+	 * @param strict indicates whether or not to allow spurious entries in the
+	 *               configuration file.
 	 * @return
 	 */
-	public Configuration toConfiguration(Configuration.Schema schema) {
-		return new Wrapper(schema);
+	public Configuration toConfiguration(Configuration.Schema schema, boolean strict) {
+		return new Wrapper(schema, strict);
 	}
 
 	public static class Table extends AbstractSyntacticItem implements Declaration {
@@ -230,8 +232,14 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 		 */
 		private final Configuration.Schema schema;
 
-		public Wrapper(Configuration.Schema schema) {
+		/**
+		 * Indicate whether or not to allow spurios entries (which are then hidden)
+		 */
+		private final boolean strict;
+
+		public Wrapper(Configuration.Schema schema, boolean strict) {
 			this.schema = schema;
+			this.strict = strict;
 			validate();
 		}
 
@@ -271,8 +279,13 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 					throw new IllegalArgumentException("incompatible key access: expected " + kind.getSimpleName() + " got "
 							+ descriptor.getType().getSimpleName());
 				}
-				// Convert into value
-				return (T) value;
+				//
+				if(descriptor != null) {
+					// 	Convert into value
+					return (T) value;
+				} else {
+					throw new SyntacticException("hidden key access: " + key, getEntry(), null);
+				}
 			} else {
 				throw new SyntacticException("invalid key access: " + key, getEntry(), null);
 			}
@@ -356,14 +369,16 @@ public class ConfigFile extends AbstractCompilationUnit<ConfigFile> {
 				// Remember every matched attribute
 				matched.addAll(results);
 			}
-			// Check whether any unmatched key-valid pairs exist or not
-			List<Path.ID> all = matchAll(Trie.fromString("**/*"));
-			for(int i=0;i!=all.size();++i) {
-				Path.ID id = all.get(i);
-				if(!matched.contains(id)) {
-					// Found unmatched attribute
-					KeyValuePair kvp = getKeyValuePair(id, declarations);
-					throw new SyntacticException("invalid key: " + id, getEntry(), kvp.getKey());
+			if(strict) {
+				// Check whether any unmatched key-valid pairs exist or not
+				List<Path.ID> all = matchAll(Trie.fromString("**/*"));
+				for(int i=0;i!=all.size();++i) {
+					Path.ID id = all.get(i);
+					if(!matched.contains(id)) {
+						// Found unmatched attribute
+						KeyValuePair kvp = getKeyValuePair(id, declarations);
+						throw new SyntacticException("invalid key: " + id, getEntry(), kvp.getKey());
+					}
 				}
 			}
 			// Done

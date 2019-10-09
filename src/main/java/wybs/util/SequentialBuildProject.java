@@ -23,6 +23,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
 
 import wybs.lang.*;
+import wybs.lang.Build.Environment;
 import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
@@ -40,6 +41,10 @@ import wyfs.lang.Path;
  * @author David J. Pearce
  */
 public class SequentialBuildProject implements Build.Project {
+	/**
+	 * The environment in which this project is executing.
+	 */
+	protected final Build.Environment environment;
 	/**
 	 * The top-level root for the project. Everything is below this.
 	 */
@@ -69,16 +74,16 @@ public class SequentialBuildProject implements Build.Project {
 	 */
 	protected Callable<Boolean>[] instances;
 
-	/**
-	 * The standard logger associated with this project.
-	 */
-	protected Logger logger;
-
-	public SequentialBuildProject(Path.Root root) {
+	public SequentialBuildProject(Build.Environment environment, Path.Root root) {
 		this.root = root;
 		this.rules = new ArrayList<>();
 		this.packages = new ArrayList<>();
-		this.logger = Logger.NULL;
+		this.environment = environment;
+	}
+
+	@Override
+	public Environment getEnvironment() {
+		return environment;
 	}
 
 	// ======================================================================
@@ -129,15 +134,6 @@ public class SequentialBuildProject implements Build.Project {
 		return packages;
 	}
 
-	@Override
-	public Logger getLogger() {
-		return logger;
-	}
-
-	public void setLogger(Logger logger) {
-		this.logger = logger;
-	}
-
 	// ======================================================================
 	// Accessors
 	// ======================================================================
@@ -160,6 +156,7 @@ public class SequentialBuildProject implements Build.Project {
 	 * items which have been modified, this operation has no effect (i.e. the new
 	 * contents are retained).
 	 */
+	@Override
 	public void refresh() throws IOException {
 		// Refresh the root to ensure all filesystem changes are recognised.
 		root.refresh();

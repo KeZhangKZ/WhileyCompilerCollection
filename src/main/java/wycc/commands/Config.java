@@ -71,17 +71,17 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new Config(System.out, configuration);
+		public Command initialise(Command.Environment environment) {
+			return new Config(environment, System.out);
 		}
 	};
 	//
 	private final PrintStream out;
-	private final Configuration configuration;
+	private final Command.Environment environment;
 
-	public Config(PrintStream out, Configuration configuration) {
+	public Config(Command.Environment environment, PrintStream out) {
 		this.out = out;
-		this.configuration = configuration;
+		this.environment = environment;
 	}
 
 	@Override
@@ -98,16 +98,16 @@ public class Config implements Command {
 	}
 
 	@Override
-	public boolean execute(Template template) throws Exception {
+	public boolean execute(Command.Project project, Template template) throws Exception {
 		if(template.getChild() != null) {
 			// Execute a subcommand
 			template = template.getChild();
 			// Access the descriptor
 			Command.Descriptor descriptor = template.getCommandDescriptor();
 			// Construct an instance of the command
-			Command command = descriptor.initialise(this, configuration);
+			Command command = descriptor.initialise(environment);
 			//
-			return command.execute(template);
+			return command.execute(project, template);
 		} else {
 			Help.print(System.out,DESCRIPTOR);
 			return false;
@@ -149,8 +149,8 @@ public class Config implements Command {
 		}
 
 		@Override
-		public Command initialise(Command environment, Configuration configuration) {
-			return new ListCmd(System.out,configuration);
+		public Command initialise(Command.Environment environment) {
+			return new ListCmd(System.out, environment);
 		}
 
 	};
@@ -177,12 +177,20 @@ public class Config implements Command {
 		@Override
 		public void finalise() {
 		}
+
 		@Override
-		public boolean execute(Template template) {
+		public boolean execute(Command.Project project, Template template) {
 			for (Path.ID key : configuration.matchAll(Trie.fromString("**"))) {
 				out.print(key);
 				out.print("=");
 				out.println(configuration.get(Object.class, key));
+			}
+			if (project != null) {
+				for (Path.ID key : project.matchAll(Trie.fromString("**"))) {
+					out.print(key);
+					out.print("=");
+					out.println(configuration.get(Object.class, key));
+				}
 			}
 			return false;
 		}
