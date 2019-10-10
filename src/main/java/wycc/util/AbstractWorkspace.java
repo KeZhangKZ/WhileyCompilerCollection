@@ -206,8 +206,6 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 			project.initialise();
 			// Refresh project to initialise build instances
 			project.refresh();
-			// Resolve all package dependencies
-			project.resolve();
 			// Retain project record
 			projects.put(id, project);
 		}
@@ -241,33 +239,6 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 		}
 
 		/**
-		 * Add any declared dependencies to the set of project roots. The challenge here
-		 * is that we may need to download, install and compile these dependencies if
-		 * they are not currently installed.
-		 *
-		 * @throws IOException
-		 */
-		public void resolve() throws IOException {
-			// Dig out all the defined dependencies
-			List<Path.ID> deps = matchAll(Trie.fromString("dependencies/**"));
-			// Determine dependency roots
-			List<Pair<String,String>> pairs = new ArrayList<>();
-			for (int i = 0; i != deps.size(); ++i) {
-				Path.ID dep = deps.get(i);
-				// Get dependency name
-				String name = dep.get(1);
-				// Get version string
-				UTF8 version = get(UTF8.class, dep);
-				//
-				pairs.add(new Pair<>(name,version.toString()));
-			}
-			// Resolve all dependencies
-			List<wybs.lang.Build.Package> pkgs = getPackageResolver().resolve(pairs);
-			// Done
-			getPackages().addAll(pkgs);
-		}
-
-		/**
 		 * Setup the various roots based on the target platform(s). This requires going
 		 * through and adding roots for all source and intermediate files.
 		 *
@@ -286,14 +257,40 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 				Command.Descriptor cmd = commandDescriptors.get(i);
 				schemas[index++] = cmd.getConfigurationSchema();
 			}
+			// Construct combined schema
+			Configuration.Schema schema = Configuration.toCombinedSchema(schemas);
 			//
 			ConfigFile cfg = root.get(Trie.fromString("wy"), ConfigFile.ContentType).read();
 			// Parse configuration
-			this.configuration = cfg.toConfiguration(Configuration.toCombinedSchema(schemas), false);
+			this.configuration = cfg.toConfiguration(schema, false);
+			// Resolve package dependencies
+			resolve(schema);
 			// initialise platforms
 			for (wybs.lang.Build.Platform platform : getTargetPlatforms()) {
 				// Apply current configuration
 				platform.initialise(configuration, this);
+			}
+		}
+
+		/**
+		 * Add any declared dependencies to the set of project roots. The challenge here
+		 * is that we may need to download, install and compile these dependencies if
+		 * they are not currently installed.
+		 *
+		 * @throws IOException
+		 */
+		private void resolve(Configuration.Schema schema) throws IOException {
+			// Resolve all dependencies
+			List<Path.Root> pkgs = getPackageResolver().resolve(configuration);
+			// Construct abstract package objects
+			for(int i=0;i!=pkgs.size();++i) {
+				Path.Root pkgroot = pkgs.get(i);
+				// Read config file
+				Path.Entry<ConfigFile> entry = pkgroot.get(Trie.fromString("wy"), ConfigFile.ContentType);
+				// Convert into configuration using appropiate schema
+				Configuration pkgcfg = entry.read().toConfiguration(schema, false);
+				// Done
+				getPackages().add(new AbstractPackage(pkgroot, pkgcfg));
 			}
 		}
 
@@ -357,6 +354,25 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 		}
 	}
 
+	protected static class AbstractPackage implements wybs.lang.Build.Package {
+		private final Path.Root root;
+		private final Configuration configuration;
+
+		public AbstractPackage(Path.Root root, Configuration configuration) {
+			this.root = root;
+			this.configuration = configuration;
+		}
+
+		@Override
+		public Configuration getConfiguration() {
+			return configuration;
+		}
+
+		@Override
+		public Root getRoot() {
+			return root;
+		}
+	}
 	/**
 	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
 	 * in that it always prints all of the trace.

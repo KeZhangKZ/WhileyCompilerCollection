@@ -15,13 +15,20 @@ package wycc.util;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import wybs.lang.Build;
+import wybs.util.AbstractCompilationUnit.Value.UTF8;
+import wycc.cfg.ConfigFile;
+import wycc.cfg.Configuration;
+import wycc.lang.Command;
 import wycc.lang.Package;
 import wycc.lang.Package.Repository;
 import wycc.lang.SemanticVersion;
-import wyfs.lang.Path.Root;
+import wyfs.lang.Path;
+import wyfs.util.Trie;
 
 /**
  * Provides a default and relatively simplistic approach for resolving packages.
@@ -30,23 +37,26 @@ import wyfs.lang.Path.Root;
  *
  */
 public class StdPackageResolver implements Package.Resolver {
+	private final Command.Environment environment;
 	private final Package.Repository repository;
 
-	public StdPackageResolver(Package.Repository repository) {
+	public StdPackageResolver(Command.Environment environment, Package.Repository repository) {
 		this.repository = repository;
+		this.environment = environment;
 	}
 
 	@Override
-	public List<Build.Package> resolve(List<Pair<String, String>> dependencies) throws IOException {
-		// FIXME: this is really dumb
-		ArrayList<Build.Package> packages = new ArrayList<>();
-		for (Pair<String, String> dep : dependencies) {
-			String name = dep.first();
-			SemanticVersion version = new SemanticVersion(dep.second());
-			Build.Package pkg = repository.get(name, version);
-			if(pkg != null) {
-				packages.add(pkg);
-			}
+	public List<Path.Root> resolve(Configuration cf) throws IOException {
+		ArrayList<Path.Root> packages = new ArrayList<>();
+		// Extract all dependencies from target config file
+		List<Pair<String,String>> dependencies = extractDependencies(cf);
+		// Visited set stores all packages we have visited. This is used to ensure no
+		// package is visited more than once.
+		HashSet<Pair<String,String>> visited = new HashSet<>(dependencies);
+		// Iterate until no more dependencies to resolve
+		while(dependencies.size() > 0) {
+			// Iterate current batch of dependencies
+			dependencies = process(packages,dependencies,visited);
 		}
 		return packages;
 	}
@@ -56,4 +66,56 @@ public class StdPackageResolver implements Package.Resolver {
 		return repository;
 	}
 
+	private List<Pair<String, String>> process(List<Path.Root> packages, List<Pair<String, String>> batch, Set<Pair<String, String>> visited) throws IOException {
+		// Children will store all dependencies of those in batch
+		ArrayList<Pair<String,String>> children = new ArrayList<>();
+		// Process current batch of dependencies
+		for (Pair<String, String> dep : batch) {
+			String name = dep.first();
+			SemanticVersion version = new SemanticVersion(dep.second());
+			Path.Root pkg = repository.get(name, version);
+			if (pkg != null) {
+				// Read package configuration file.
+				Path.Entry<ConfigFile> entry = pkg.get(Trie.fromString("wy"), ConfigFile.ContentType);
+				if (entry == null) {
+					// Something is wrong
+					environment.getLogger()
+							.logTimedMessage("Corrupt package " + pkg + "-v" + version + " (missing wy.toml)", 0, 0);
+				} else {
+					// Convert file into configuration
+					Configuration cf = entry.read().toConfiguration(Package.SCHEMA, false);
+					// Add all (non-visited) child dependencies
+					for(Pair<String, String> d : extractDependencies(cf)) {
+						if(!visited.contains(d)) {
+							visited.add(d);
+							children.add(d);
+						}
+					}
+					// Done
+					packages.add(pkg);
+					// Log event
+					environment.getLogger().logTimedMessage("Loaded " + name + "-v" + version, 0, 0);
+				}
+			}
+		}
+		//
+		return children;
+	}
+
+	private List<Pair<String, String>> extractDependencies(Configuration cf) {
+		//
+		List<Path.ID> deps = cf.matchAll(Trie.fromString("dependencies/**"));
+		// Determine dependency roots
+		List<Pair<String, String>> pairs = new ArrayList<>();
+		for (int i = 0; i != deps.size(); ++i) {
+			Path.ID dep = deps.get(i);
+			// Get dependency name
+			String name = dep.get(1);
+			// Get version string
+			UTF8 version = cf.get(UTF8.class, dep);
+			//
+			pairs.add(new Pair<>(name, version.toString()));
+		}
+		return pairs;
+	}
 }

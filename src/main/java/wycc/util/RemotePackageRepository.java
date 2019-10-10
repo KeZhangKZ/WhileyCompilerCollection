@@ -3,6 +3,7 @@ package wycc.util;
 import java.io.IOException;
 import java.util.Set;
 
+import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
@@ -26,14 +27,16 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	public static final Trie REPOSITORY_URL = Trie.fromString("repository/url");
 	public static final Trie REPOSITORY_ROUTE = Trie.fromString("repository/route");
 	public static final Trie REPOSITORY_COOKIE = Trie.fromString("repository/cookie");
+	public static final Trie REPOSITORY_PROXY = Trie.fromString("repository/proxy");
 
 	/**
 	 * Schema for global configuration (i.e. which applies to all projects for a given user).
 	 */
-	public static Configuration.Schema REMOTE_REPOSITORY_SCHEMA = Configuration.fromArray(
+	public static Configuration.Schema SCHEMA = Configuration.fromArray(
 			Configuration.UNBOUND_STRING(REPOSITORY_URL, "remote url", false),
 			Configuration.UNBOUND_STRING(REPOSITORY_ROUTE, "remote route (template)", false),
-			Configuration.UNBOUND_STRING(REPOSITORY_COOKIE, "remote cookie (for authentication)", false));
+			Configuration.UNBOUND_STRING(REPOSITORY_COOKIE, "remote cookie (for authentication)", false),
+			Configuration.UNBOUND_STRING(REPOSITORY_PROXY, "proxy URL", false));
 
 	/**
 	 * The route defines a template from which to construct the complete url to the
@@ -50,12 +53,16 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	 * The Cookie (if given) will be added to all HTTP requests.
 	 */
 	private String cookie = null;
+	/**
+	 * The proxy (if given) will be configured.
+	 */
+	private String proxy = null;
 
-	public RemotePackageRepository(Command.Environment environment,Content.Registry registry, Path.Root root) {
+	public RemotePackageRepository(Command.Environment environment,Content.Registry registry, Path.Root root) throws IOException {
 		this(environment,null,registry,root);
 	}
 
-	public RemotePackageRepository(Command.Environment environment, Package.Repository parent, Content.Registry registry, Path.Root root) {
+	public RemotePackageRepository(Command.Environment environment, Package.Repository parent, Content.Registry registry, Path.Root root) throws IOException {
 		super(environment,parent,registry,root);
 		// Check whether URL configuration given
 		if(environment.hasKey(REPOSITORY_URL)) {
@@ -69,6 +76,10 @@ public class RemotePackageRepository extends LocalPackageRepository {
 		if(environment.hasKey(REPOSITORY_COOKIE)) {
 			this.cookie = environment.get(Value.UTF8.class, REPOSITORY_COOKIE).toString();
 		}
+		// Check whether proxy configuration given
+		if(environment.hasKey(REPOSITORY_PROXY)) {
+			this.proxy = environment.get(Value.UTF8.class, REPOSITORY_PROXY).toString();
+		}
 	}
 
 	@Override
@@ -78,9 +89,9 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	}
 
 	@Override
-	public AbstractPackage get(String name, SemanticVersion version) throws IOException {
+	public Path.Root get(String name, SemanticVersion version) throws IOException {
 		// Check for local version of this package
-		AbstractPackage pkg = super.get(name, version);
+		Path.Root pkg = super.get(name, version);
 		// Did we find it?
 		if (pkg == null) {
 			// Nope, so get from remote
@@ -99,8 +110,8 @@ public class RemotePackageRepository extends LocalPackageRepository {
 
 	@Override
 	public void put(ZipFile pkg, String name, SemanticVersion version) throws IOException {
-		// TODO Auto-generated method stub
-		throw new UnsupportedOperationException();
+		// FIXME: this is really a temporary hack.
+		super.put(pkg, name, version);
 	}
 
 	/**
@@ -115,8 +126,9 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	 */
 	private ZipFile getRemote(String name, SemanticVersion version) throws UnsupportedOperationException, IOException {
 		String url = uri + route.replace("${NAME}", name).replace("${VERSION}", version.toString());
+		//
+		CloseableHttpClient httpclient = getClient();
 		// NOTE: connection pooling might be a better idea for performance reasons.
-		CloseableHttpClient httpclient = HttpClients.createDefault();
 		HttpGet httpget = new HttpGet(url);
 		// Configure get request (if necessary)
 		if(cookie != null) {
@@ -134,6 +146,30 @@ public class RemotePackageRepository extends LocalPackageRepository {
 			}
 		} finally {
 			response.close();
+		}
+	}
+
+	/**
+	 * Create an appropriate client which takes into considerable any relevant
+	 * configuration parameters.
+	 *
+	 * @return
+	 */
+	private CloseableHttpClient getClient() {
+		// Configure proxy host (if applicable)
+		if (this.proxy != null) {
+			HttpHost proxyhost;
+			String[] parts = proxy.split(":");
+			// Decide whether port number given
+			if (parts.length > 1) {
+				proxyhost = new HttpHost(parts[0], Integer.parseInt(parts[1]));
+			} else {
+				proxyhost = new HttpHost(proxy);
+			}
+			// Done
+			return HttpClients.custom().setProxy(proxyhost).build();
+		} else {
+			return HttpClients.createDefault();
 		}
 	}
 }

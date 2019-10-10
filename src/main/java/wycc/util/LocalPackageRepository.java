@@ -16,6 +16,7 @@ package wycc.util;
 import java.io.IOException;
 import java.util.Set;
 
+import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
@@ -24,6 +25,7 @@ import wycc.lang.SemanticVersion;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Root;
+import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyfs.util.ZipFile;
 import wyfs.util.ZipFileRoot;
@@ -34,20 +36,36 @@ import wyfs.util.ZipFileRoot;
  *
  */
 public class LocalPackageRepository implements Package.Repository {
+
+	public static final Trie REPOSITORY_DIR = Trie.fromString("repository/dir");
+
+	/**
+	 * Schema for global configuration (i.e. which applies to all projects for a given user).
+	 */
+	public static Configuration.Schema SCHEMA = Configuration
+			.fromArray(Configuration.UNBOUND_STRING(REPOSITORY_DIR, "local directory", false));
+
 	protected final Command.Environment environment;
 	protected final Package.Repository parent;
 	protected final Content.Registry registry;
 	protected final Path.Root root;
 
-	public LocalPackageRepository(Command.Environment environment, Content.Registry registry, Path.Root root) {
+	public LocalPackageRepository(Command.Environment environment, Content.Registry registry, Path.Root root) throws IOException {
 		this(environment,null,registry,root);
 	}
 
-	public LocalPackageRepository(Command.Environment environment, Package.Repository parent, Content.Registry registry, Path.Root root) {
+	public LocalPackageRepository(Command.Environment environment, Package.Repository parent, Content.Registry registry, Path.Root root) throws IOException {
 		this.parent = parent;
 		this.registry = registry;
-		this.root = root;
 		this.environment = environment;
+		// Check whether URL configuration given
+		if(environment.hasKey(REPOSITORY_DIR)) {
+			// Yes, therefore override default location
+			String dir = environment.get(Value.UTF8.class, REPOSITORY_DIR).toString();
+			this.root = new DirectoryRoot(dir, registry);
+		} else {
+			this.root = root;
+		}
 	}
 
 	@Override
@@ -62,7 +80,7 @@ public class LocalPackageRepository implements Package.Repository {
 	}
 
 	@Override
-	public AbstractPackage get(String pkg, SemanticVersion version) throws IOException {
+	public Path.Root get(String pkg, SemanticVersion version) throws IOException {
 		Trie id = Trie.fromString(pkg + "-v" + version);
 		// Attempt to resolve it.
 		if (!root.exists(id, ZipFile.ContentType)) {
@@ -72,20 +90,7 @@ public class LocalPackageRepository implements Package.Repository {
 			// Extract entry for ZipFile
 			Path.Entry<ZipFile> zipfile = root.get(id, ZipFile.ContentType);
 			// Construct root representing this ZipFile
-			Path.Root pkgRoot = new ZipFileRoot(zipfile, registry);
-			// Extract configuration from package
-			Path.Entry<ConfigFile> entry = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType);
-			if (entry == null) {
-				environment.getLogger().logTimedMessage("Corrupt package " + pkg + "-v" + version + " (missing wy.toml)", 0, 0);
-				return null;
-			} else {
-				// Read package configuration
-				ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType).read();
-				// Log event
-				environment.getLogger().logTimedMessage("Loaded " + pkg + "-v" + version, 0, 0);
-				// Add package to this project
-				return new AbstractPackage(pkgRoot, pkgcfg.toConfiguration(Package.SCHEMA, false));
-			}
+			return new ZipFileRoot(zipfile, registry);
 		}
 	}
 
@@ -103,23 +108,4 @@ public class LocalPackageRepository implements Package.Repository {
 		environment.getLogger().logTimedMessage("Installed " + entry.location(), 0, 0);
 	}
 
-	protected static class AbstractPackage implements wybs.lang.Build.Package {
-		private final Path.Root root;
-		private final Configuration configuration;
-
-		public AbstractPackage(Path.Root root, Configuration configuration) {
-			this.root = root;
-			this.configuration = configuration;
-		}
-
-		@Override
-		public Configuration getConfiguration() {
-			return configuration;
-		}
-
-		@Override
-		public Root getRoot() {
-			return root;
-		}
-	}
 }
