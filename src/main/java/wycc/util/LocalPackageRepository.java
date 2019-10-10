@@ -16,6 +16,7 @@ package wycc.util;
 import java.io.IOException;
 import java.util.Set;
 
+import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.lang.Command;
@@ -24,6 +25,7 @@ import wycc.lang.SemanticVersion;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Root;
+import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyfs.util.ZipFile;
 import wyfs.util.ZipFileRoot;
@@ -34,20 +36,36 @@ import wyfs.util.ZipFileRoot;
  *
  */
 public class LocalPackageRepository implements Package.Repository {
+
+	public static final Trie REPOSITORY_DIR = Trie.fromString("repository/dir");
+
+	/**
+	 * Schema for global configuration (i.e. which applies to all projects for a given user).
+	 */
+	public static Configuration.Schema SCHEMA = Configuration
+			.fromArray(Configuration.UNBOUND_STRING(REPOSITORY_DIR, "local directory", false));
+
 	protected final Command.Environment environment;
 	protected final Package.Repository parent;
 	protected final Content.Registry registry;
 	protected final Path.Root root;
 
-	public LocalPackageRepository(Command.Environment environment, Content.Registry registry, Path.Root root) {
+	public LocalPackageRepository(Command.Environment environment, Content.Registry registry, Path.Root root) throws IOException {
 		this(environment,null,registry,root);
 	}
 
-	public LocalPackageRepository(Command.Environment environment, Package.Repository parent, Content.Registry registry, Path.Root root) {
+	public LocalPackageRepository(Command.Environment environment, Package.Repository parent, Content.Registry registry, Path.Root root) throws IOException {
 		this.parent = parent;
 		this.registry = registry;
-		this.root = root;
 		this.environment = environment;
+		// Check whether URL configuration given
+		if(environment.hasKey(REPOSITORY_DIR)) {
+			// Yes, therefore override default location
+			String dir = environment.get(Value.UTF8.class, REPOSITORY_DIR).toString();
+			this.root = new DirectoryRoot(dir, registry);
+		} else {
+			this.root = root;
+		}
 	}
 
 	@Override

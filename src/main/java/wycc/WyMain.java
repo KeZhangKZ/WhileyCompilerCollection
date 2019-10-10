@@ -35,7 +35,6 @@ import wyfs.util.DefaultContentRegistry;
 import wyfs.util.DirectoryRoot;
 import wyfs.util.Trie;
 import wyfs.util.ZipFile;
-import static wycc.util.RemotePackageRepository.*;
 
 /**
  * Provides a command-line interface to the Whiley Compiler Collection. This is
@@ -124,9 +123,9 @@ public class WyMain extends AbstractWorkspace {
 		// Read the system configuration file
 		Configuration system = readConfigFile("wy", systemRoot, SYSTEM_CONFIG_SCHEMA);
 		// Read the global configuration file
-		Configuration global = readConfigFile("wy", globalRoot, GLOBAL_CONFIG_SCHEMA, REMOTE_REPOSITORY_SCHEMA);
+		Configuration global = readConfigFile("wy", globalRoot, GLOBAL_CONFIG_SCHEMA, LocalPackageRepository.SCHEMA, RemotePackageRepository.SCHEMA);
 		// Read the global configuration file
-		Configuration local = readConfigFile("wy", localRoot, LOCAL_CONFIG_SCHEMA, REMOTE_REPOSITORY_SCHEMA);
+		Configuration local = readConfigFile("wy", localRoot, LOCAL_CONFIG_SCHEMA, LocalPackageRepository.SCHEMA, RemotePackageRepository.SCHEMA);
 		// Construct the merged configuration
 		Configuration config = new ConfigurationCombinator(local, global, system);
 		// Construct the workspace
