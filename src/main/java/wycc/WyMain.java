@@ -92,7 +92,7 @@ public class WyMain extends AbstractWorkspace {
 		// Setup workspace root
 		this.localRoot = new DirectoryRoot(dir, registry);
 		// Setup package resolver
-		this.resolver = new StdPackageResolver(new RemotePackageRepository(this, registry, repository));
+		this.resolver = new StdPackageResolver(this, new RemotePackageRepository(this, registry, repository));
 	}
 
 	@Override

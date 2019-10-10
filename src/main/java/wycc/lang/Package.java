@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 
 import wybs.lang.Build;
 import wybs.util.AbstractCompilationUnit.Value;
+import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
 import wycc.util.Pair;
 import wyfs.lang.Content;
@@ -77,7 +78,7 @@ public interface Package {
 		 * @param version
 		 * @return
 		 */
-		List<Build.Package> resolve(List<Pair<String,String>> dependencies) throws IOException;
+		List<Path.Root> resolve(Configuration cf) throws IOException;
 
 		/**
 		 * Get the root repository associated with this package resolver.
@@ -119,7 +120,7 @@ public interface Package {
 		 * @param version
 		 * @return
 		 */
-		public Build.Package get(String name, SemanticVersion version) throws IOException;
+		public Path.Root get(String name, SemanticVersion version) throws IOException;
 
 		/**
 		 * Put a given package into this repository.

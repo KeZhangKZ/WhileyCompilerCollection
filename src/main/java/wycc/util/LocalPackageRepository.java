@@ -80,7 +80,7 @@ public class LocalPackageRepository implements Package.Repository {
 	}
 
 	@Override
-	public AbstractPackage get(String pkg, SemanticVersion version) throws IOException {
+	public Path.Root get(String pkg, SemanticVersion version) throws IOException {
 		Trie id = Trie.fromString(pkg + "-v" + version);
 		// Attempt to resolve it.
 		if (!root.exists(id, ZipFile.ContentType)) {
@@ -90,20 +90,7 @@ public class LocalPackageRepository implements Package.Repository {
 			// Extract entry for ZipFile
 			Path.Entry<ZipFile> zipfile = root.get(id, ZipFile.ContentType);
 			// Construct root representing this ZipFile
-			Path.Root pkgRoot = new ZipFileRoot(zipfile, registry);
-			// Extract configuration from package
-			Path.Entry<ConfigFile> entry = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType);
-			if (entry == null) {
-				environment.getLogger().logTimedMessage("Corrupt package " + pkg + "-v" + version + " (missing wy.toml)", 0, 0);
-				return null;
-			} else {
-				// Read package configuration
-				ConfigFile pkgcfg = pkgRoot.get(Trie.fromString("wy"), ConfigFile.ContentType).read();
-				// Log event
-				environment.getLogger().logTimedMessage("Loaded " + pkg + "-v" + version, 0, 0);
-				// Add package to this project
-				return new AbstractPackage(pkgRoot, pkgcfg.toConfiguration(Package.SCHEMA, false));
-			}
+			return new ZipFileRoot(zipfile, registry);
 		}
 	}
 
@@ -121,23 +108,4 @@ public class LocalPackageRepository implements Package.Repository {
 		environment.getLogger().logTimedMessage("Installed " + entry.location(), 0, 0);
 	}
 
-	protected static class AbstractPackage implements wybs.lang.Build.Package {
-		private final Path.Root root;
-		private final Configuration configuration;
-
-		public AbstractPackage(Path.Root root, Configuration configuration) {
-			this.root = root;
-			this.configuration = configuration;
-		}
-
-		@Override
-		public Configuration getConfiguration() {
-			return configuration;
-		}
-
-		@Override
-		public Root getRoot() {
-			return root;
-		}
-	}
 }

@@ -89,9 +89,9 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	}
 
 	@Override
-	public AbstractPackage get(String name, SemanticVersion version) throws IOException {
+	public Path.Root get(String name, SemanticVersion version) throws IOException {
 		// Check for local version of this package
-		AbstractPackage pkg = super.get(name, version);
+		Path.Root pkg = super.get(name, version);
 		// Did we find it?
 		if (pkg == null) {
 			// Nope, so get from remote
