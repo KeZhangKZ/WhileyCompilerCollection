@@ -205,29 +205,16 @@ public class BinaryOutputStream extends OutputStream {
 			ByteArrayOutputStream bout = new ByteArrayOutputStream();
 			BinaryOutputStream binout = new BinaryOutputStream(bout);
 
-			binout.write_bit(true);
-			binout.write_bit(false);
-			binout.write_bit(true);
-			binout.pad_u8();
-			binout.write_bit(true);
-			binout.write_bit(false);
-			binout.write_bit(true);
-			binout.write_bit(true);
-
+			binout.write_uv(11);
+			binout.flush();
 			binout.close();
 			ByteArrayInputStream bin = new ByteArrayInputStream(bout.toByteArray());
 			BinaryInputStream binin = new BinaryInputStream(bin);
-
-			System.out.println(binin.read_bit());
-			System.out.println(binin.read_bit());
-			System.out.println(binin.read_bit());
-
-			binin.pad_u8();
-
-			System.out.println(binin.read_bit());
-			System.out.println(binin.read_bit());
-			System.out.println(binin.read_bit());
-			System.out.println(binin.read_bit());
+			while(true) {
+				boolean bit = binin.read_bit();
+				System.out.println(bit ? "1" : "0");
+			}
+			//binin.close();
 		} catch(IOException e) {
 
 		}

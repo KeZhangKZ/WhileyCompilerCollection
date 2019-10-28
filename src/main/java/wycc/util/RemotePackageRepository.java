@@ -1,10 +1,20 @@
 package wycc.util;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.http.HttpHost;
 import org.apache.http.HttpStatus;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -43,7 +53,11 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	 * given package. Specifically, the variables <code>${NAME}$</code> and
 	 * <code>${VERSION}</code> are replaced accordingly.
 	 */
-	private String route = "/${NAME}/${VERSION}/${NAME}-v${VERSION}.zip";
+	private String pkgRoute = "/${NAME}/${VERSION}/${NAME}-v${VERSION}.zip";
+	/**
+	 * The index route defines the route to the package index.
+	 */
+	private String indexRoute = "/index.txt";
 	/**
 	 * The URI defines the base location from which to construct the complete URL to
 	 * request the package from.
@@ -57,6 +71,10 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	 * The proxy (if given) will be configured.
 	 */
 	private String proxy = null;
+	/**
+	 * Master index of all known semantic versions
+	 */
+	private Map<String,Set<SemanticVersion>> index = null;
 
 	public RemotePackageRepository(Command.Environment environment,Content.Registry registry, Path.Root root) throws IOException {
 		this(environment,null,registry,root);
@@ -70,7 +88,7 @@ public class RemotePackageRepository extends LocalPackageRepository {
 		}
 		// Check whether route configuration given
 		if(environment.hasKey(REPOSITORY_ROUTE)) {
-			this.route = environment.get(Value.UTF8.class, REPOSITORY_ROUTE).toString();
+			this.pkgRoute = environment.get(Value.UTF8.class, REPOSITORY_ROUTE).toString();
 		}
 		// Check whether cookie configuration given
 		if(environment.hasKey(REPOSITORY_COOKIE)) {
@@ -84,8 +102,15 @@ public class RemotePackageRepository extends LocalPackageRepository {
 
 	@Override
 	public Set<SemanticVersion> list(String pkg) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		Set<SemanticVersion> results = super.list(pkg);
+		// Make sure index is upto date
+		loadIndex();
+		// Add any known versions from remote index
+		if(index.containsKey(pkg)) {
+			results.addAll(index.get(pkg));
+		}
+		// Done
+		return results;
 	}
 
 	@Override
@@ -125,7 +150,7 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	 * @throws IOException
 	 */
 	private ZipFile getRemote(String name, SemanticVersion version) throws UnsupportedOperationException, IOException {
-		String url = uri + route.replace("${NAME}", name).replace("${VERSION}", version.toString());
+		String url = uri + pkgRoute.replace("${NAME}", name).replace("${VERSION}", version.toString());
 		//
 		CloseableHttpClient httpclient = getClient();
 		// NOTE: connection pooling might be a better idea for performance reasons.
@@ -146,6 +171,40 @@ public class RemotePackageRepository extends LocalPackageRepository {
 			}
 		} finally {
 			response.close();
+		}
+	}
+
+	/**
+	 * Load the package repository index.  That is, the mapping of all known packages to their available versions.
+	 * @throws IOException
+	 * @throws ClientProtocolException
+	 */
+	private void loadIndex() throws IOException {
+		if(index == null) {
+			String url = uri + indexRoute;
+			//
+			CloseableHttpClient httpclient = getClient();
+			// NOTE: connection pooling might be a better idea for performance reasons.
+			HttpGet httpget = new HttpGet(url);
+			// Configure get request (if necessary)
+			if(cookie != null) {
+				httpget.addHeader("Cookie", cookie);
+			}
+			// Now perform the request
+			CloseableHttpResponse response = httpclient.execute(httpget);
+			try {
+				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+					// Index file downloaded, so parse it!
+					environment.getLogger().logTimedMessage("Downloaded " + url, 0, 0);
+					index = parseIndexFile(new BufferedReader(new InputStreamReader(response.getEntity().getContent())));
+				} else {
+					environment.getLogger().logTimedMessage("Failed downloading " + url, 0, 0);
+					// Mark the index as empty
+					this.index = Collections.EMPTY_MAP;
+				}
+			} finally {
+				response.close();
+			}
 		}
 	}
 
@@ -171,5 +230,23 @@ public class RemotePackageRepository extends LocalPackageRepository {
 		} else {
 			return HttpClients.createDefault();
 		}
+	}
+
+	private static Map<String, Set<SemanticVersion>> parseIndexFile(BufferedReader reader) throws IOException {
+		HashMap<String, Set<SemanticVersion>> result = new HashMap<>();
+		while (reader.ready()) {
+			String line = reader.readLine();
+			String[] components = line.split("/");
+			if (components.length == 2) {
+				String pkg = components[0];
+				Set<SemanticVersion> versions = result.get(pkg);
+				if (versions == null) {
+					versions = new HashSet<>();
+					result.put(pkg, versions);
+				}
+				versions.add(new SemanticVersion(components[1]));
+			}
+		}
+		return result;
 	}
 }

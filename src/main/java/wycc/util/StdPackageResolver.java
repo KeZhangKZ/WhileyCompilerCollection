@@ -72,7 +72,7 @@ public class StdPackageResolver implements Package.Resolver {
 		// Process current batch of dependencies
 		for (Pair<String, String> dep : batch) {
 			String name = dep.first();
-			SemanticVersion version = new SemanticVersion(dep.second());
+			SemanticVersion version = resolveLatestCompatible(name,new SemanticVersion(dep.second()));
 			Path.Root pkg = repository.get(name, version);
 			if (pkg != null) {
 				// Read package configuration file.
@@ -100,6 +100,31 @@ public class StdPackageResolver implements Package.Resolver {
 		}
 		//
 		return children;
+	}
+
+	/**
+	 * For a given package and version, determine the latest compatible version
+	 * whilst respecting the rules of semantic versioning. Thus, for a given major
+	 * version, the latest minor and micro versions are desired.
+	 *
+	 * @param pkg
+	 * @param version
+	 * @return
+	 * @throws IOException
+	 */
+	private SemanticVersion resolveLatestCompatible(String pkg, SemanticVersion version) throws IOException {
+		// list all possible versions of the given package
+		Set<SemanticVersion> versions = repository.list(pkg);
+		//
+		SemanticVersion latest = version;
+		//
+		for (SemanticVersion v : versions) {
+			if (v.getMajor() == version.getMajor() && v.compareTo(latest) > 0) {
+				latest = v;
+			}
+		}
+		//
+		return latest;
 	}
 
 	private List<Pair<String, String>> extractDependencies(Configuration cf) {

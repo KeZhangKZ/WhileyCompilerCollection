@@ -62,6 +62,35 @@ public final class SemanticVersion implements Comparable<SemanticVersion> {
 		this.micro = Integer.parseInt(components[2]);
 	}
 
+	/**
+	 * Get the major version component (e.g. the <code>X</code> in <code>X.Y.Z</code>)
+	 *
+	 * @return
+	 */
+	public int getMajor() {
+		return major;
+	}
+
+	/**
+	 * Get the minor version component (e.g. the <code>Y</code> in
+	 * <code>X.Y.Z</code>)
+	 *
+	 * @return
+	 */
+	public int getMinor() {
+		return minor;
+	}
+
+	/**
+	 * Get the micro or patch version component (e.g. the <code>Z</code> in
+	 * <code>X.Y.Z</code>)
+	 *
+	 * @return
+	 */
+	public int getMicro() {
+		return micro;
+	}
+
 	@Override
 	public boolean equals(Object o) {
 		if (o instanceof SemanticVersion) {
