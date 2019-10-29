@@ -112,7 +112,10 @@ public abstract class AbstractFolder implements Path.Folder {
 					// In this case, the ID is indicates the item is not
 					// contained in this folder.
 					Path.Folder folder = (Path.Folder) item;
-					return folder.get(eid, ct);
+					Path.Entry<T> entry = folder.get(eid, ct);
+					if(entry != null) {
+						return entry;
+					}
 				}
 			} while (++idx < nentries && (item = contents[idx]).id().equals(eid));
 		}
@@ -151,7 +154,6 @@ public abstract class AbstractFolder implements Path.Folder {
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
 		// potentially largel subtree.
-
 		for (int i = 0; i != nentries; ++i) {
 			Path.Item item = contents[i];
 			if (item instanceof Entry) {
@@ -173,7 +175,6 @@ public abstract class AbstractFolder implements Path.Folder {
 		// at some point, we might know the filter could never match. In which
 		// case, we want to stop the recursion early, rather than exploring a
 		// potentially largel subtree.
-
 		for (int i = 0; i != nentries; ++i) {
 			Path.Item item = contents[i];
 			if (item instanceof Entry) {
@@ -217,7 +218,6 @@ public abstract class AbstractFolder implements Path.Folder {
 			}
 			// Anything remaining is new and therefore should be inserted.
 			while (ni < items.length) {
-				System.out.println("INSERTING: " + items[ni].id());
 				insert(oj++, items[ni++]);
 			}
 			// Recursively refresh everything
