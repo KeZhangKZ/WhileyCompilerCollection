@@ -180,4 +180,60 @@ public interface SyntacticHeap {
 		 */
 		public SyntacticItem allocate(SyntacticItem item);
 	}
+
+	/**
+	 * Abstracts the mechanism for decoding a given heap whilst preserving
+	 * versioning information.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Schema {
+		/**
+		 * Get the minor version of this schema.
+		 *
+		 * @return
+		 */
+		public int getMinorVersion();
+
+		/**
+		 * Get the major version of this schema.
+		 *
+		 * @return
+		 */
+		public int getMajorVersion();
+
+		/**
+		 * Get the appropriate schema for the given version of a file being decoded.
+		 *
+		 * @param major
+		 * @param minor
+		 * @return
+		 */
+		public Schema getVersionedSchema(int major, int minor);
+
+		/**
+		 * Get the schema for a given item based on its opcode. This schema is use to
+		 * decode the instruction.
+		 *
+		 * @param opcode
+		 * @return
+		 */
+		public SyntacticItem.Schema getItemSchema(int opcode);
+
+		/**
+		 * Get the number of sections within this sectioned schema.
+		 *
+		 * @return
+		 */
+		public int numberOfSections();
+
+		/**
+		 * Get the number of opcodes reserved for this section.
+		 *
+		 * @param section
+		 * @return
+		 */
+		public int getSectionSize(int section);
+	}
 }
