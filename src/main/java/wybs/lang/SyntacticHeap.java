@@ -204,13 +204,11 @@ public interface SyntacticHeap {
 		public int getMajorVersion();
 
 		/**
-		 * Get the appropriate schema for the given version of a file being decoded.
+		 * Get the schema from which this schema extends (if any).
 		 *
-		 * @param major
-		 * @param minor
 		 * @return
 		 */
-		public Schema getVersionedSchema(int major, int minor);
+		public Schema getParent();
 
 		/**
 		 * Get the schema for a given item based on its opcode. This schema is use to
@@ -219,21 +217,6 @@ public interface SyntacticHeap {
 		 * @param opcode
 		 * @return
 		 */
-		public SyntacticItem.Schema getItemSchema(int opcode);
-
-		/**
-		 * Get the number of sections within this sectioned schema.
-		 *
-		 * @return
-		 */
-		public int numberOfSections();
-
-		/**
-		 * Get the number of opcodes reserved for this section.
-		 *
-		 * @param section
-		 * @return
-		 */
-		public int getSectionSize(int section);
+		public SyntacticItem.Schema getDescriptor(int opcode);
 	}
 }

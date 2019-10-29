@@ -21,7 +21,102 @@ import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticHeap.Schema;
 import wybs.lang.SyntacticItem;
 
-public class SyntacticHeapSchemas {
+/**
+ * Represents a schema which is divided up into named sections, where the
+ * intention is that each section represents some grouping of opcodes which has
+ * spare capacity that can be filled in subsequent versions.
+ *
+ * @author David J. Pearce
+ *
+ */
+public class SectionedSchema implements SyntacticHeap.Schema {
+	/**
+	 * The base schema with version 0.0 which contains nothing. From this, all
+	 * schemas derive.
+	 */
+	public static final SectionedSchema ROOT = new SectionedSchema(null, 0, 0, new Section[0]);
+
+	private final Schema parent;
+	private final int major;
+	private final int minor;
+	private final Section[] sections;
+	private final Opcode[] opcodes;
+
+	public SectionedSchema(Schema parent, int major, int minor, Section[] sections) {
+		this.parent = parent;
+		this.major = major;
+		this.minor = minor;
+		this.sections = sections;
+		this.opcodes = flattern(sections);
+	}
+
+	@Override
+	public int getMinorVersion() {
+		return minor;
+	}
+
+	@Override
+	public int getMajorVersion() {
+		return major;
+	}
+
+	@Override
+	public Schema getParent() {
+		return parent;
+	}
+
+	/**
+	 * Determine number of sections in this schema.
+	 *
+	 * @return
+	 */
+	public int size() {
+		return sections.length;
+	}
+
+	/**
+	 * Get the ith section of this schema.
+	 *
+	 * @param ith
+	 * @return
+	 */
+	public Section get(int ith) {
+		return sections[ith];
+	}
+
+	/**
+	 * Begin an extension of this schema
+	 *
+	 * @return
+	 */
+	public Builder extend() {
+		return new Builder(this);
+	}
+
+	@Override
+	public wybs.lang.SyntacticItem.Schema getDescriptor(int opcode) {
+		return opcodes[opcode].schema;
+	}
+
+	public static class Section {
+		private final String name;
+		private final Opcode[] opcodes;
+
+		public Section(String name, Opcode[] opcodes) {
+			this.name = name;
+			this.opcodes = opcodes;
+		}
+	}
+
+	public static class Opcode {
+		private final String name;
+		private final SyntacticItem.Schema schema;
+
+		public Opcode(String name, SyntacticItem.Schema schema) {
+			this.name = name;
+			this.schema = schema;
+		}
+	}
 
 	/**
 	 * Construct a base-level schema.
@@ -32,10 +127,10 @@ public class SyntacticHeapSchemas {
 	 * @return
 	 */
 	public static class Builder {
-		private final Schema schema;
+		private final SectionedSchema schema;
 		private final List<Action> delta;
 
-		public Builder(Schema schema) {
+		public Builder(SectionedSchema schema) {
 			this.schema = schema;
 			this.delta = new ArrayList<>();
 		}
@@ -84,7 +179,25 @@ public class SyntacticHeapSchemas {
 		 * @return
 		 */
 		public SyntacticHeap.Schema done() {
-
+			// Determine whether major or minor increment
+			Section[] sections = schema.sections;
+			sections = Arrays.copyOf(sections, sections.length);
+			boolean isMinor = false;
+			for (int i = 0; i != delta.size(); ++i) {
+				Action ith = delta.get(i);
+				isMinor &= ith.isBackwardsCompatible();
+				sections = ith.apply(sections);
+			}
+			int major = schema.getMajorVersion();
+			int minor = schema.getMinorVersion();
+			if (isMinor) {
+				minor = minor + 1;
+			} else {
+				major = major + 1;
+				minor = 0;
+			}
+			//
+			return new SectionedSchema(schema, major, minor, sections);
 		}
 	}
 
@@ -213,24 +326,23 @@ public class SyntacticHeapSchemas {
 		}
 	}
 
-	private static class Section {
-		private final String name;
-		private final Opcode[] opcodes;
 
-		public Section(String name, Opcode[] opcodes) {
-			this.name = name;
-			this.opcodes = opcodes;
+	private static Opcode[] flattern(Section[] sections) {
+		int length = 0;
+		// Determine length
+		for(int i=0;i!=sections.length;++i) {
+			length += sections[i].opcodes.length;
 		}
-	}
-
-	private static class Opcode {
-		private final String name;
-		private final SyntacticItem.Schema schema;
-
-		public Opcode(String name, SyntacticItem.Schema schema) {
-			this.name = name;
-			this.schema = schema;
+		// Flattern map
+		Opcode[] opcodes = new Opcode[length];
+		int start = 0;
+		for(int i=0;i!=sections.length;++i) {
+			Opcode[] ith = sections[i].opcodes;
+			System.arraycopy(ith,0,opcodes,start,ith.length);
+			start += ith.length;
 		}
+		// Done
+		return opcodes;
 	}
 }
 
