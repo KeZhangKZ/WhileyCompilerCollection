@@ -32,9 +32,9 @@ import wyfs.io.BinaryOutputStream;
  */
 public abstract class SyntacticHeapWriter {
 	protected final BinaryOutputStream out;
-	protected final SyntacticItem.Schema[] schema;
+	protected final SyntacticHeap.Schema schema;
 
-	public SyntacticHeapWriter(OutputStream output, SyntacticItem.Schema[] schema) {
+	public SyntacticHeapWriter(OutputStream output, SyntacticHeap.Schema schema) {
 		this.out = new BinaryOutputStream(output);
 		this.schema = schema;
 	}
@@ -73,7 +73,7 @@ public abstract class SyntacticHeapWriter {
 
 	private void writeOperands(SyntacticItem item) throws IOException {
 		// Determine operand layout
-		SyntacticItem.Operands layout = schema[item.getOpcode()].getOperandLayout();
+		SyntacticItem.Operands layout = schema.getDescriptor(item.getOpcode()).getOperandLayout();
 		// Write operands according to layout
 		switch(layout) {
 		case MANY:
@@ -95,7 +95,7 @@ public abstract class SyntacticHeapWriter {
 
 	public void writeData(SyntacticItem item) throws IOException {
 		// Determine data layout
-		SyntacticItem.Data layout = schema[item.getOpcode()].getDataLayout();
+		SyntacticItem.Data layout = schema.getDescriptor(item.getOpcode()).getDataLayout();
 		byte[] bytes = item.getData();
 		// Write data according to layout
 		switch (layout) {

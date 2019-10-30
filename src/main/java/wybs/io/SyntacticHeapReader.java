@@ -34,9 +34,9 @@ import wyfs.io.BinaryInputStream;
  */
 public abstract class SyntacticHeapReader {
 	protected final BinaryInputStream in;
-	protected final SyntacticItem.Schema[] schema;
+	protected final SyntacticHeap.Schema schema;
 
-	public SyntacticHeapReader(InputStream output, SyntacticItem.Schema[] schema) {
+	public SyntacticHeapReader(InputStream output, SyntacticHeap.Schema schema) {
 		this.in = new BinaryInputStream(output);
 		this.schema = schema;
 	}
@@ -88,7 +88,7 @@ public abstract class SyntacticHeapReader {
 
 	protected int[] readOperands(int opcode) throws IOException {
 		// Determine operand layout
-		SyntacticItem.Operands layout = schema[opcode].getOperandLayout();
+		SyntacticItem.Operands layout = schema.getDescriptor(opcode).getOperandLayout();
 		int[] operands;
 		int size;
 		// Determine number of operands according to layout
@@ -111,7 +111,7 @@ public abstract class SyntacticHeapReader {
 
 	protected byte[] readData(int opcode) throws IOException {
 		// Determine operand layout
-		SyntacticItem.Data layout = schema[opcode].getDataLayout();
+		SyntacticItem.Data layout = schema.getDescriptor(opcode).getDataLayout();
 		byte[] bytes;
 		int size;
 		// Determine number of bytes according to layout
@@ -152,7 +152,8 @@ public abstract class SyntacticHeapReader {
 			int[] operands = bytecode.operands;
 			byte[] data = bytecode.data;
 			// Construct empty item
-			SyntacticItem item = schema[bytecode.opcode].construct(opcode, new SyntacticItem[operands.length], data);
+			SyntacticItem item = schema.getDescriptor(bytecode.opcode).construct(opcode,
+					new SyntacticItem[operands.length], data);
 			// Store item so can be accessed recursively
 			items[index] = item;
 			// Recursively construct operands

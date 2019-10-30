@@ -27,7 +27,7 @@ import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
 import wybs.lang.SyntacticItem.Operands;
-import wybs.lang.SyntacticItem.Schema;
+import wybs.lang.SyntacticItem.Descriptor;
 import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
@@ -111,6 +111,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		public SyntacticItem clone(SyntacticItem[] operands) {
 			return new Ref(operands[0]);
 		}
+
+		public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ONE, Data.ZERO,
+				"ITEM_ref") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Ref(operands[0]);
+			}
+		};
 	}
 
 
@@ -145,6 +153,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		public String toString() {
 			return "(" + getFirst() + ", " + getSecond() + ")";
 		}
+
+		public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.TWO, Data.ZERO,
+				"ITEM_pair") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Pair<>(operands[0], operands[1]);
+			}
+		};
 	}
 
 	/**
@@ -275,6 +291,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 
 			};
 		}
+
+		public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.MANY, Data.ZERO,
+				"ITEM_tuple") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Tuple<>(operands);
+			}
+		};
 	}
 
 	/**
@@ -309,6 +333,13 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 		public String toString() {
 			return get();
 		}
+
+		public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ZERO,Data.MANY, "ITEM_ident") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Identifier(data);
+			}
+		};
 	}
 
 	/**
@@ -370,6 +401,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			}
 			return ids;
 		}
+
+		public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.MANY, Data.ZERO,
+				"ITEM_name") {
+			@Override
+			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+				return new Name(ArrayUtils.toArray(Identifier.class, operands));
+			}
+		};
 	}
 
 	/**
@@ -418,6 +457,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			public String toString() {
 				return "null";
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ZERO, Data.ZERO,
+					"ITEM_null") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.Null();
+				}
+			};
 		}
 
 		public static class Bool extends Value {
@@ -443,6 +490,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			public String toString() {
 				return Boolean.toString(get());
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ZERO, Data.ONE,
+					"ITEM_bool") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.Bool(data[0] == 1);
+				}
+			};
 		}
 
 		public static class Byte extends Value {
@@ -463,6 +518,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			public Byte clone(SyntacticItem[] operands) {
 				return new Byte(get());
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ZERO, Data.ONE,
+					"ITEM_byte") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.Byte(data[0]);
+				}
+			};
 		}
 
 
@@ -498,6 +561,13 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			public String toString() {
 				return get().toString();
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ZERO,Data.MANY, "ITEM_int") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.Int(data);
+				}
+			};
 		}
 
 		public static class Decimal extends Value {
@@ -550,6 +620,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				BigInteger m = new BigInteger(Arrays.copyOfRange(data, 4, data.length));
 				return new BigDecimal(m,scale);
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ZERO, Data.MANY,
+					"ITEM_decimal") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.Decimal(data);
+				}
+			};
 		}
 
 
@@ -580,6 +658,13 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			public String toString() {
 				return new String(get());
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.ZERO,Data.MANY, "ITEM_utf8") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.UTF8(data);
+				}
+			};
 		}
 
 		public static class Array extends Value {
@@ -627,6 +712,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				}
 				return r;
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.MANY, Data.ZERO,
+					"ITEM_array") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.Array(ArrayUtils.toArray(Value.class, operands));
+				}
+			};
 		}
 
 		public static class Dictionary extends Value {
@@ -666,6 +759,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 				}
 				return "{" + r + "}";
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.MANY, Data.ZERO,
+					"ITEM_dictionary") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Value.Dictionary(ArrayUtils.toArray(Pair.class, operands));
+				}
+			};
 		}
 	}
 
@@ -732,122 +833,14 @@ public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends
 			public Span clone(SyntacticItem[] operands) {
 				return new Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
 			}
+
+			public static final SyntacticItem.Descriptor DESCRIPTOR_0 = new SyntacticItem.Descriptor(Operands.THREE, Data.ZERO,
+					"ATTR_span") {
+				@Override
+				public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
+					return new Attribute.Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
+				}
+			};
 		}
-	}
-
-	// =========================================================================
-	// Schema
-	// =========================================================================
-
-	private static volatile SyntacticItem.Schema[] SCHEMA = null;
-
-	public static SyntacticItem.Schema[] getSchema() {
-		if(SCHEMA == null) {
-			SCHEMA = createSchema();
-		}
-		return SCHEMA;
-	}
-
-	private static SyntacticItem.Schema[] createSchema() {
-		SyntacticItem.Schema[] schema = new SyntacticItem.Schema[256];
-		// ==========================================================================
-		schema[ITEM_null] = new Schema(Operands.ZERO,Data.ZERO, "ITEM_null") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.Null();
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_bool] = new Schema(Operands.ZERO,Data.ONE, "ITEM_bool") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.Bool(data[0] == 1);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_int] = new Schema(Operands.ZERO,Data.MANY, "ITEM_int") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.Int(data);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_decimal] = new Schema(Operands.ZERO,Data.MANY, "ITEM_decimal") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.Decimal(data);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_utf8] = new Schema(Operands.ZERO,Data.MANY, "ITEM_utf8") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.UTF8(data);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_pair] = new Schema(Operands.TWO,Data.ZERO, "ITEM_pair") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Pair<>(operands[0],operands[1]);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_tuple] = new Schema(Operands.MANY,Data.ZERO, "ITEM_tuple") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Tuple<>(operands);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_array] = new Schema(Operands.MANY,Data.ZERO, "ITEM_array") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.Array(ArrayUtils.toArray(Value.class, operands));
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_dictionary] = new Schema(Operands.MANY,Data.ZERO, "ITEM_dictionary") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.Dictionary(ArrayUtils.toArray(Pair.class, operands));
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_ident] = new Schema(Operands.ZERO,Data.MANY, "ITEM_ident") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Identifier(data);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_name] = new Schema(Operands.MANY,Data.ZERO, "ITEM_name") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Name(ArrayUtils.toArray(Identifier.class, operands));
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_byte] = new Schema(Operands.ZERO,Data.ONE, "ITEM_byte") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Value.Byte(data[0]);
-			}
-		};
-		// ==========================================================================
-		schema[ATTR_span] = new Schema(Operands.THREE, Data.ZERO, "ATTR_span") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Attribute.Span(operands[0], (Value.Int) operands[1], (Value.Int) operands[2]);
-			}
-		};
-		// ==========================================================================
-		schema[ITEM_ref] = new Schema(Operands.ONE,Data.ZERO, "ITEM_ref") {
-			@Override
-			public SyntacticItem construct(int opcode, SyntacticItem[] operands, byte[] data) {
-				return new Ref(operands[0]);
-			}
-		};
-		return schema;
 	}
 }

@@ -217,6 +217,6 @@ public interface SyntacticHeap {
 		 * @param opcode
 		 * @return
 		 */
-		public SyntacticItem.Schema getDescriptor(int opcode);
+		public SyntacticItem.Descriptor getDescriptor(int opcode);
 	}
 }

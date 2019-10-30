@@ -94,25 +94,28 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 	}
 
 	@Override
-	public wybs.lang.SyntacticItem.Schema getDescriptor(int opcode) {
-		return opcodes[opcode].schema;
+	public wybs.lang.SyntacticItem.Descriptor getDescriptor(int opcode) {
+		Opcode d = opcodes[opcode];
+		return d == null ? null : d.schema;
 	}
 
 	public static class Section {
 		private final String name;
 		private final Opcode[] opcodes;
+		private final int size;
 
-		public Section(String name, Opcode[] opcodes) {
+		public Section(String name, int size, Opcode... opcodes) {
 			this.name = name;
+			this.size = size;
 			this.opcodes = opcodes;
 		}
 	}
 
 	public static class Opcode {
 		private final String name;
-		private final SyntacticItem.Schema schema;
+		private final SyntacticItem.Descriptor schema;
 
-		public Opcode(String name, SyntacticItem.Schema schema) {
+		public Opcode(String name, SyntacticItem.Descriptor schema) {
 			this.name = name;
 			this.schema = schema;
 		}
@@ -155,7 +158,7 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 		 * @param schema
 		 * @return
 		 */
-		public void add(String section, String name, wybs.lang.SyntacticItem.Schema schema) {
+		public void add(String section, String name, wybs.lang.SyntacticItem.Descriptor schema) {
 			delta.add(new Action.Add(section, name, schema));
 		}
 
@@ -168,7 +171,7 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 		 * @param schema
 		 * @return
 		 */
-		public void replace(String section, String name, wybs.lang.SyntacticItem.Schema schema) {
+		public void replace(String section, String name, wybs.lang.SyntacticItem.Descriptor schema) {
 			delta.add(new Action.Replace(section, name, schema));
 		}
 
@@ -235,7 +238,7 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 				}
 				// Add the new section to the end
 				sections = Arrays.copyOf(sections, sections.length + 1);
-				sections[sections.length - 1] = new Section(section, new Opcode[size]);
+				sections[sections.length - 1] = new Section(section, size);
 				return sections;
 			}
 		}
@@ -243,9 +246,9 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 		private static class Add extends Action {
 			private final String section;
 			private final String name;
-			private final SyntacticItem.Schema schema;
+			private final SyntacticItem.Descriptor schema;
 
-			public Add(String section, String name, SyntacticItem.Schema schema) {
+			public Add(String section, String name, SyntacticItem.Descriptor schema) {
 				this.section = section;
 				this.name = name;
 				this.schema = schema;
@@ -262,13 +265,13 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 				int i = lookup(sections, section);
 				Section section = sections[i];
 				// Check opcode not already allocate
-				if (lookup(section, name) >= 0) {
-					throw new IllegalArgumentException("duplicate opcode: " + section + ":" + name);
+				if (name != null && lookup(section, name) >= 0) {
+					throw new IllegalArgumentException("duplicate opcode: " + section.name + ":" + name);
 				}
 				//
 				Opcode[] opcodes = Arrays.copyOf(section.opcodes, section.opcodes.length + 1);
 				opcodes[opcodes.length - 1] = new Opcode(name, schema);
-				sections[i] = new Section(section.name, opcodes);
+				sections[i] = new Section(section.name, section.size, opcodes);
 				return sections;
 			}
 		}
@@ -276,9 +279,9 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 		private static class Replace extends Action {
 			protected final String section;
 			protected final String name;
-			protected final SyntacticItem.Schema schema;
+			protected final SyntacticItem.Descriptor schema;
 
-			public Replace(String section, String name, SyntacticItem.Schema schema) {
+			public Replace(String section, String name, SyntacticItem.Descriptor schema) {
 				this.section = section;
 				this.name = name;
 				this.schema = schema;
@@ -318,7 +321,7 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 		private static int lookup(Section section, String name) {
 			for(int i=0;i!=section.opcodes.length;++i) {
 				Opcode opcode = section.opcodes[i];
-				if(opcode.name.equals(name)) {
+				if(opcode != null && name.equals(opcode.name)) {
 					return i;
 				}
 			}
@@ -331,15 +334,15 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 		int length = 0;
 		// Determine length
 		for(int i=0;i!=sections.length;++i) {
-			length += sections[i].opcodes.length;
+			length += sections[i].size;
 		}
 		// Flattern map
 		Opcode[] opcodes = new Opcode[length];
 		int start = 0;
 		for(int i=0;i!=sections.length;++i) {
-			Opcode[] ith = sections[i].opcodes;
-			System.arraycopy(ith,0,opcodes,start,ith.length);
-			start += ith.length;
+			Section ith = sections[i];
+			System.arraycopy(ith.opcodes, 0, opcodes, start, ith.opcodes.length);
+			start += ith.size;
 		}
 		// Done
 		return opcodes;
