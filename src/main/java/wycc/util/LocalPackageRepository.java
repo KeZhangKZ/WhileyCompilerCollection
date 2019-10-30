@@ -14,6 +14,7 @@
 package wycc.util;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Set;
 
 import wybs.util.AbstractCompilationUnit.Value;
@@ -75,8 +76,18 @@ public class LocalPackageRepository implements Package.Repository {
 
 	@Override
 	public Set<SemanticVersion> list(String pkg) throws IOException {
-		// TODO Auto-generated method stub
-		return null;
+		Set<Path.ID> matches = root.match(Content.filter("*", ZipFile.ContentType));
+		HashSet<SemanticVersion> versions = new HashSet<>();
+		String prefix = pkg + "-v";
+		for(Path.ID m : matches) {
+			// FIXME: need for m.last() seems like bug
+			String str = m.last().toString();
+			if(str.startsWith(prefix)) {
+				SemanticVersion v = new SemanticVersion(str.substring(prefix.length()));
+				versions.add(v);
+			}
+		}
+		return versions;
 	}
 
 	@Override

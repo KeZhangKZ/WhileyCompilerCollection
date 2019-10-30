@@ -185,16 +185,16 @@ public interface SyntacticItem extends Comparable<SyntacticItem> {
 		MANY
 	}
 
-	public static abstract class Schema {
+	public static abstract class Descriptor {
 		private final Operands operands;
 		private final Data data;
 		private final String mnemonic;
 
-		public Schema(Operands operands, Data data) {
+		public Descriptor(Operands operands, Data data) {
 			this(operands,data,"unknown");
 		}
 
-		public Schema(Operands operands, Data data, String mnemonic) {
+		public Descriptor(Operands operands, Data data, String mnemonic) {
 			this.operands = operands;
 			this.data = data;
 			this.mnemonic = mnemonic;
