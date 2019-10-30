@@ -180,4 +180,43 @@ public interface SyntacticHeap {
 		 */
 		public SyntacticItem allocate(SyntacticItem item);
 	}
+
+	/**
+	 * Abstracts the mechanism for decoding a given heap whilst preserving
+	 * versioning information.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Schema {
+		/**
+		 * Get the minor version of this schema.
+		 *
+		 * @return
+		 */
+		public int getMinorVersion();
+
+		/**
+		 * Get the major version of this schema.
+		 *
+		 * @return
+		 */
+		public int getMajorVersion();
+
+		/**
+		 * Get the schema from which this schema extends (if any).
+		 *
+		 * @return
+		 */
+		public Schema getParent();
+
+		/**
+		 * Get the schema for a given item based on its opcode. This schema is use to
+		 * decode the instruction.
+		 *
+		 * @param opcode
+		 * @return
+		 */
+		public SyntacticItem.Descriptor getDescriptor(int opcode);
+	}
 }
