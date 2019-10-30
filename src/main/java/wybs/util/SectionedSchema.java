@@ -101,13 +101,53 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 
 	public static class Section {
 		private final String name;
-		private final Opcode[] opcodes;
 		private final int size;
+		private final Opcode[] opcodes;
 
 		public Section(String name, int size, Opcode... opcodes) {
 			this.name = name;
 			this.size = size;
 			this.opcodes = opcodes;
+		}
+
+		public int size() {
+			return opcodes.length;
+		}
+
+		public int lookup(String name) {
+			for(int i=0;i!=opcodes.length;++i) {
+				Opcode opcode = opcodes[i];
+				if(opcode != null && name.equals(opcode.name)) {
+					return i;
+				}
+			}
+			return -1;
+		}
+
+		public Section add(Opcode opcode) {
+			if(opcode.name != null) {
+				// NOTE: name can be null when adding blank
+				int index = lookup(opcode.name);
+				// Check opcode not already allocate
+				if (index >= 0) {
+					throw new IllegalArgumentException("duplicate opcode: " + name + ":" + opcode.name);
+				} else if(size <= opcodes.length) {
+					throw new IllegalArgumentException("section \"" + name + "\" full");
+				}
+			}
+			Opcode[] nopcodes = Arrays.copyOf(opcodes,opcodes.length+1);
+			nopcodes[opcodes.length] = opcode;
+			return new Section(name,size,nopcodes);
+		}
+
+		public Section update(Opcode opcode) {
+			int index = lookup(opcode.name);
+			if(index < 0) {
+				throw new IllegalArgumentException("invalid opcode \"" + opcode.name + "\"");
+			}
+			Opcode[] nopcodes = Arrays.copyOf(opcodes,opcodes.length);
+			nopcodes[index] = opcode;
+			return new Section(name,size,nopcodes);
 		}
 	}
 
@@ -181,11 +221,11 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 		 *
 		 * @return
 		 */
-		public SyntacticHeap.Schema done() {
+		public SectionedSchema done() {
 			// Determine whether major or minor increment
 			Section[] sections = schema.sections;
 			sections = Arrays.copyOf(sections, sections.length);
-			boolean isMinor = false;
+			boolean isMinor = true;
 			for (int i = 0; i != delta.size(); ++i) {
 				Action ith = delta.get(i);
 				isMinor &= ith.isBackwardsCompatible();
@@ -263,15 +303,9 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 			public Section[] apply(Section[] sections) {
 				// Find section in question
 				int i = lookup(sections, section);
-				Section section = sections[i];
-				// Check opcode not already allocate
-				if (name != null && lookup(section, name) >= 0) {
-					throw new IllegalArgumentException("duplicate opcode: " + section.name + ":" + name);
-				}
-				//
-				Opcode[] opcodes = Arrays.copyOf(section.opcodes, section.opcodes.length + 1);
-				opcodes[opcodes.length - 1] = new Opcode(name, schema);
-				sections[i] = new Section(section.name, section.size, opcodes);
+				// Apply operation
+				sections[i] = sections[i].add(new Opcode(name, schema));
+				// Done
 				return sections;
 			}
 		}
@@ -289,7 +323,7 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 
 			@Override
 			public boolean isBackwardsCompatible() {
-				return false;
+				return true;
 			}
 
 			@Override
@@ -297,15 +331,14 @@ public class SectionedSchema implements SyntacticHeap.Schema {
 				// Find section in question
 				int i = lookup(sections, section);
 				Section section = sections[i];
-				// Check opcode not already allocate
-				if (lookup(section, name) < 0) {
+				// Check opcode exists
+				if (section.lookup(name) < 0) {
 					throw new IllegalArgumentException("missing opcode: " + section + ":" + name);
 				}
-				//
-				section.opcodes[i] = new Opcode(name, schema);
+				// Perform operation
+				sections[i] = section.update(new Opcode(name, schema));
 				return sections;
 			}
-
 		}
 
 		private static int lookup(Section[] sections, String section) {

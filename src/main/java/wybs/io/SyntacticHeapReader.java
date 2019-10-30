@@ -18,6 +18,7 @@ import java.math.BigInteger;
 import java.util.Arrays;
 
 import wybs.lang.SyntacticHeap;
+import wybs.lang.SyntacticHeap.Schema;
 import wybs.lang.SyntacticItem;
 import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
@@ -34,11 +35,9 @@ import wyfs.io.BinaryInputStream;
  */
 public abstract class SyntacticHeapReader {
 	protected final BinaryInputStream in;
-	protected final SyntacticHeap.Schema schema;
 
-	public SyntacticHeapReader(InputStream output, SyntacticHeap.Schema schema) {
+	public SyntacticHeapReader(InputStream output) {
 		this.in = new BinaryInputStream(output);
-		this.schema = schema;
 	}
 
 	public void close() throws IOException {
@@ -56,7 +55,7 @@ public abstract class SyntacticHeapReader {
 	 */
 	protected Pair<Integer, SyntacticItem[]> readItems() throws IOException {
 		// first, write magic number
-		checkHeader();
+		Schema schema = checkHeader();
 		// second, determine number of items
 		int size = in.read_uv();
 		// third, determine the root item
@@ -65,28 +64,35 @@ public abstract class SyntacticHeapReader {
 		Bytecode[] items = new Bytecode[size];
 		// third, read abstract syntactic items
 		for (int i = 0; i != items.length; ++i) {
-			items[i] = readItem();
+			items[i] = readItem(schema);
 		}
 		//
-		return new Pair<>(root, constructItems(items));
+		return new Pair<>(root, constructItems(schema, items));
 	}
 
-	protected abstract void checkHeader() throws IOException;
+	/**
+	 * Check the header of this syntactic heap and, based on this, select the most
+	 * appropriate schema for decoding it.
+	 *
+	 * @return
+	 * @throws IOException
+	 */
+	protected abstract Schema checkHeader() throws IOException;
 
-	protected Bytecode readItem() throws IOException {
+	protected Bytecode readItem(Schema schema) throws IOException {
 		// read opcode
 		int opcode = in.read_u8();
 		// Write operands
-		int[] operands = readOperands(opcode);
+		int[] operands = readOperands(schema,opcode);
 		// Write data (if any)
-		byte[] data = readData(opcode);
+		byte[] data = readData(schema,opcode);
 		// Pad to next byte boundary
 		in.pad_u8();
 		//
 		return new Bytecode(opcode,operands,data);
 	}
 
-	protected int[] readOperands(int opcode) throws IOException {
+	protected int[] readOperands(Schema schema, int opcode) throws IOException {
 		// Determine operand layout
 		SyntacticItem.Operands layout = schema.getDescriptor(opcode).getOperandLayout();
 		int[] operands;
@@ -109,7 +115,7 @@ public abstract class SyntacticHeapReader {
 		return operands;
 	}
 
-	protected byte[] readData(int opcode) throws IOException {
+	protected byte[] readData(Schema schema, int opcode) throws IOException {
 		// Determine operand layout
 		SyntacticItem.Data layout = schema.getDescriptor(opcode).getDataLayout();
 		byte[] bytes;
@@ -132,17 +138,17 @@ public abstract class SyntacticHeapReader {
 		return bytes;
 	}
 
-	protected SyntacticItem[] constructItems(Bytecode[] bytecodes) {
+	protected SyntacticItem[] constructItems(Schema schema, Bytecode[] bytecodes) {
 		SyntacticItem[] items = new SyntacticItem[bytecodes.length];
 		//
 		for(int i=0;i!=items.length;++i) {
-			constructItem(i,bytecodes,items);
+			constructItem(i,schema,bytecodes,items);
 		}
 		//
 		return items;
 	}
 
-	protected void constructItem(int index, Bytecode[] bytecodes, SyntacticItem[] items) {
+	protected void constructItem(int index, Schema schema, Bytecode[] bytecodes, SyntacticItem[] items) {
 		// FIXME: this fails in the presence of truly recursive items.
 		if (items[index] == null) {
 			// This item not yet constructed, therefore construct it!
@@ -158,7 +164,7 @@ public abstract class SyntacticHeapReader {
 			items[index] = item;
 			// Recursively construct operands
 			for (int i = 0; i != operands.length; ++i) {
-				constructItem(operands[i], bytecodes, items);
+				constructItem(operands[i], schema, bytecodes, items);
 				item.setOperand(i, items[operands[i]]);
 			}
 		}
