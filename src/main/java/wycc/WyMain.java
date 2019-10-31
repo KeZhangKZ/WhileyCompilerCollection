@@ -162,8 +162,10 @@ public class WyMain extends AbstractWorkspace {
 			}
 			System.exit(1);
 		} catch (Exception e) {
-			// FIXME: do something here??
-			e.printStackTrace();
+			System.err.println("Internal failure: " + e.getMessage());
+			if(verbose) {
+				e.printStackTrace();
+			}
 			System.exit(2);
 		}
 	}
