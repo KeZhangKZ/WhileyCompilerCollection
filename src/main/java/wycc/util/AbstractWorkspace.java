@@ -113,34 +113,21 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 					@Override
 					public boolean execute(Project project, Template template) throws Exception {
 						boolean verbose = template.getOptions().get("verbose", Boolean.class);
-						try {
+						//
+						if (template.getChild() != null) {
+							// Execute a subcommand
+							template = template.getChild();
+							// Access the descriptor
+							Command.Descriptor descriptor = template.getCommandDescriptor();
+							// Construct an instance of the command
+							Command command = descriptor.initialise(environment);
 							//
-							if (template.getChild() != null) {
-								// Execute a subcommand
-								template = template.getChild();
-								// Access the descriptor
-								Command.Descriptor descriptor = template.getCommandDescriptor();
-								// Construct an instance of the command
-								Command command = descriptor.initialise(environment);
-								//
-								return command.execute(project,template);
-							} else {
-								// Initialise command
-								Command cmd = Help.DESCRIPTOR.initialise(environment);
-								// Execute command
-								return cmd.execute(project, template);
-							}
-						} catch (SyntacticException e) {
-							SyntacticItem element = e.getElement();
-							e.outputSourceError(System.err, false);
-							if (verbose) {
-								printStackTrace(System.err, e);
-							}
-							return false;
-						} catch (Exception e) {
-							// FIXME: do something here??
-							e.printStackTrace();
-							return false;
+							return command.execute(project,template);
+						} else {
+							// Initialise command
+							Command cmd = Help.DESCRIPTOR.initialise(environment);
+							// Execute command
+							return cmd.execute(project, template);
 						}
 					}
 				};
@@ -177,7 +164,7 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 	// ========================================================================
 
 	public AbstractWorkspace(Configuration configuration) throws IOException {
-		super(configuration,new Logger.Default(System.err), ForkJoinPool.commonPool());
+		super(configuration,Logger.NULL, ForkJoinPool.commonPool());
 		// Add default commands
 		commandDescriptors.addAll(Arrays.asList(DESCRIPTORS));
 		// Add default content types
@@ -371,23 +358,6 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 		@Override
 		public Root getRoot() {
 			return root;
-		}
-	}
-	/**
-	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
-	 * in that it always prints all of the trace.
-	 *
-	 * @param out
-	 * @param err
-	 */
-	private static void printStackTrace(PrintStream out, Throwable err) {
-		out.println(err.getClass().getName() + ": " + err.getMessage());
-		for (StackTraceElement ste : err.getStackTrace()) {
-			out.println("\tat " + ste.toString());
-		}
-		if (err.getCause() != null) {
-			out.print("Caused by: ");
-			printStackTrace(out, err.getCause());
 		}
 	}
 }
