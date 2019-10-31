@@ -108,7 +108,7 @@ public class SyntacticException extends RuntimeException {
 	public void outputSourceError(PrintStream output, boolean brief) {
 		Attribute.Span span;
 		if (entry == null || element == null) {
-			output.println("syntax error: " + getMessage());
+			output.println("Internal failure: " + getMessage());
 			return;
 		} else if(element instanceof Attribute.Span) {
 			span = (Attribute.Span) element;
@@ -119,7 +119,7 @@ public class SyntacticException extends RuntimeException {
 		//
 		EnclosingLine enclosing = (span == null) ? null : readEnclosingLine(entry, span);
 		if(enclosing == null) {
-			output.println("syntax error: " + getMessage());
+			output.println("Internal failure: " + getMessage());
 		} else if(brief) {
 			printBriefError(output,entry,enclosing,getMessage());
 		} else {
