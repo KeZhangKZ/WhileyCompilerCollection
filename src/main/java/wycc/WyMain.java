@@ -54,7 +54,7 @@ public class WyMain extends AbstractWorkspace {
 	/**
 	 * Path to the dependency repository within the global root.
 	 */
-	private static final Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
+	public static final Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
 
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
@@ -252,7 +252,7 @@ public class WyMain extends AbstractWorkspace {
 	 * Used for reading the various configuration files prior to instantiating the
 	 * main tool itself.
 	 */
-	private static Content.Registry BOOT_REGISTRY = new DefaultContentRegistry()
+	public static Content.Registry BOOT_REGISTRY = new DefaultContentRegistry()
 			.register(ConfigFile.ContentType, "toml").register(ZipFile.ContentType, "zip");
 
 	/**
@@ -263,7 +263,7 @@ public class WyMain extends AbstractWorkspace {
 	 * @return
 	 * @throws IOException
 	 */
-	private static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema... schemas) throws IOException {
+	public static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema... schemas) throws IOException {
 		Configuration.Schema schema = Configuration.toCombinedSchema(schemas);
 		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
 		if (config == null) {
