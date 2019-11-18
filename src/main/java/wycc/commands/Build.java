@@ -135,7 +135,7 @@ public class Build implements Command {
 
 	private boolean execute(wybs.lang.Build.Project project) throws Exception {
 		// Build the project
-		boolean r = project.build(environment.getExecutor()).get();
+		boolean r = project.build(environment.getExecutor(), environment.getMeter()).get();
 		// Look for error messages
 		for (wybs.lang.Build.Task task : project.getTasks()) {
 			printSyntacticMarkers(syserr, task.getSources(), task.getTarget());

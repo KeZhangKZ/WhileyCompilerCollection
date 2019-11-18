@@ -20,6 +20,7 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import wybs.util.ResolveError;
@@ -80,9 +81,10 @@ public interface Build {
 		 * within the project to be submitted for execution within the executor.
 		 *
 		 * @param executor
+		 * @param meter    used for profiling
 		 * @return
 		 */
-		public Future<Boolean> build(ExecutorService executor);
+		public Future<Boolean> build(ExecutorService executor, Meter meter);
 
 		/**
 		 * Refresh the project according to the latest system state. For example,
@@ -188,7 +190,7 @@ public interface Build {
 		 *
 		 * @return
 		 */
-		public Callable<Boolean> initialise() throws IOException;
+		public Function<Meter,Boolean> initialise() throws IOException;
 
 		/**
 		 * Get the project this build task instance is operating on.
@@ -210,6 +212,36 @@ public interface Build {
 		 * @return
 		 */
 		public Path.Entry<?> getTarget();
+	}
+
+	/**
+	 * Responsible for recording detailed progress of a given task for both
+	 * informational and profiling purposes. For example, providing feedback on
+	 * expected time to completion in an IDE. Or, providing detailed feedback on
+	 * number of steps executed by key components in a given task, etc.
+	 *
+	 * @author David J. Pearce
+	 *
+	 */
+	public interface Meter {
+		/**
+		 * Create subtask of current task with a given name.
+		 *
+		 * @return
+		 */
+		public Meter fork(String name);
+
+		/**
+		 * Record an arbitrary step taking during this subtask for profiling purposes.
+		 *
+		 * @param tag
+		 */
+		public void step(String tag);
+
+		/**
+		 * Current (sub)task has completed.
+		 */
+		public void done();
 	}
 
 	public interface Stage {
@@ -345,8 +377,33 @@ public interface Build {
 		public ExecutorService getExecutor();
 
 		/**
+		 * Get the top-level meter for this environment.
+		 *
+		 * @return
+		 */
+		public Meter getMeter();
+
+		/**
 		 * Get the default logger used in this environment.
 		 */
 		public Logger getLogger();
 	}
+
+	public static final Build.Meter NULL_METER = new Build.Meter() {
+
+		@Override
+		public Meter fork(String name) {
+			return NULL_METER;
+		}
+
+		@Override
+		public void step(String tag) {
+
+		}
+
+		@Override
+		public void done() {
+		}
+
+	};
 }

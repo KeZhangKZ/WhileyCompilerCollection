@@ -21,6 +21,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.function.Function;
 
 import wybs.lang.*;
 import wybs.lang.Build.Environment;
@@ -72,7 +73,7 @@ public class SequentialBuildProject implements Build.Project {
 	/**
 	 * The set of task instances for each task.
 	 */
-	protected Callable<Boolean>[] instances;
+	protected Function<Build.Meter,Boolean>[] instances;
 
 	public SequentialBuildProject(Build.Environment environment, Path.Root root) {
 		this.root = root;
@@ -184,8 +185,8 @@ public class SequentialBuildProject implements Build.Project {
 	 * @throws Exception
 	 */
 	@Override
-	public Future<Boolean> build(ExecutorService executor) {
-		return executor.submit(() -> execute(executor, instances));
+	public Future<Boolean> build(ExecutorService executor, Build.Meter meter) {
+		return executor.submit(() -> execute(executor, meter, instances));
 	}
 
 	// ======================================================================
@@ -203,13 +204,15 @@ public class SequentialBuildProject implements Build.Project {
 	 * @throws InterruptedException
 	 * @throws ExecutionException
 	 */
-	private static boolean execute(ExecutorService executor, Callable<Boolean>... callables)
+	private static boolean execute(ExecutorService executor, Build.Meter meter, Function<Build.Meter,Boolean>... callables)
 			throws InterruptedException, ExecutionException {
 		// Execute each task in sequential order. Since tasks are topologically sorted,
 		// we know tasks are executed in the correct order.
 		for (int i = 0; i != callables.length; ++i) {
-			//
-			Future<Boolean> f = executor.submit(callables[i]);
+			// Extract ith task instance
+			Function<Build.Meter,Boolean> ith = callables[i];
+			// Execute it!
+			Future<Boolean> f = executor.submit(() -> ith.apply(meter));
 			if (!f.get()) {
 				return false;
 			}
@@ -217,8 +220,8 @@ public class SequentialBuildProject implements Build.Project {
 		return true;
 	}
 
-	private static Callable<Boolean>[] initialiseAll(Build.Task... tasks) throws IOException {
-		Callable<Boolean>[] instances = new Callable[tasks.length];
+	private static Function<Build.Meter,Boolean>[] initialiseAll(Build.Task... tasks) throws IOException {
+		Function<Build.Meter,Boolean>[] instances = new Function[tasks.length];
 		for(int i=0;i!=tasks.length;++i) {
 			instances[i] = tasks[i].initialise();
 		}

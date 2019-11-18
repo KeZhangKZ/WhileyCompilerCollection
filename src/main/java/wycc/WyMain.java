@@ -16,7 +16,13 @@ package wycc;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
+import wybs.lang.Build;
+import wybs.lang.Build.Meter;
 import wybs.lang.SyntacticException;
 import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Value;
@@ -107,6 +113,11 @@ public class WyMain extends AbstractWorkspace {
 	@Override
 	public Package.Resolver getPackageResolver() {
 		return resolver;
+	}
+
+	@Override
+	public Build.Meter getMeter() {
+		return new Meter("Build",getLogger());
 	}
 
 	// ==================================================================
@@ -296,6 +307,55 @@ public class WyMain extends AbstractWorkspace {
 		if (err.getCause() != null) {
 			out.print("Caused by: ");
 			printStackTrace(out, err.getCause());
+		}
+	}
+
+
+	public static class Meter implements Build.Meter {
+		private final String name;
+		private final Logger logger;
+		private Meter parent;
+		private final long time;
+		private final long memory;
+		private final Map<String,Integer> counts;
+
+		public Meter(String name, Logger logger) {
+			this.name = name;
+			this.logger = logger;
+			this.parent = null;
+			this.time = System.currentTimeMillis();
+			this.memory = Runtime.getRuntime().freeMemory();
+			this.counts = new HashMap<>();
+		}
+
+		@Override
+		public Meter fork(String name) {
+			Meter r = new Meter(name,logger);
+			r.parent = this;
+			return r;
+		}
+
+		@Override
+		public void step(String tag) {
+			Integer i = counts.get(tag);
+			if (i == null) {
+				i = 1;
+			} else {
+				i = i + 1;
+			}
+			counts.put(tag, i);
+		}
+
+		@Override
+		public void done() {
+			long t = System.currentTimeMillis();
+			long m = Runtime.getRuntime().freeMemory();
+			logger.logTimedMessage(name, t - time, m - memory);
+			ArrayList<String> keys = new ArrayList<>(counts.keySet());
+			Collections.sort(keys);
+			for(String key : keys) {
+				logger.logTimedMessage(name + "@" + key + "(" + counts.get(key) + " steps)", 0, 0);
+			}
 		}
 	}
 }
