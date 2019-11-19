@@ -115,11 +115,6 @@ public class WyMain extends AbstractWorkspace {
 		return resolver;
 	}
 
-	@Override
-	public Build.Meter getMeter() {
-		return new Meter("Build",getLogger());
-	}
-
 	// ==================================================================
 	// Main Method
 	// ==================================================================
@@ -151,8 +146,11 @@ public class WyMain extends AbstractWorkspace {
 		Command.Template template = new CommandParser(descriptor).parse(args);
 		// Apply verbose setting
 		boolean verbose = template.getOptions().get("verbose", Boolean.class);
-		if(verbose) {
-			workspace.setLogger(new Logger.Default(System.err));
+		int profile = template.getOptions().get("profile", Integer.class);
+		if(verbose || profile > 0) {
+			Logger logger = new Logger.Default(System.err);
+			workspace.setLogger(logger);
+			workspace.setMeter(new Meter("Build",logger,profile));
 		}
 		// Done
 		try {
@@ -314,14 +312,16 @@ public class WyMain extends AbstractWorkspace {
 	public static class Meter implements Build.Meter {
 		private final String name;
 		private final Logger logger;
+		private final int depth;
 		private Meter parent;
 		private final long time;
 		private final long memory;
 		private final Map<String,Integer> counts;
 
-		public Meter(String name, Logger logger) {
+		public Meter(String name, Logger logger, int depth) {
 			this.name = name;
 			this.logger = logger;
+			this.depth = depth;
 			this.parent = null;
 			this.time = System.currentTimeMillis();
 			this.memory = Runtime.getRuntime().freeMemory();
@@ -329,10 +329,14 @@ public class WyMain extends AbstractWorkspace {
 		}
 
 		@Override
-		public Meter fork(String name) {
-			Meter r = new Meter(name,logger);
-			r.parent = this;
-			return r;
+		public Build.Meter fork(String name) {
+			if(depth > 0) {
+				Meter r = new Meter(name,logger,depth-1);
+				r.parent = this;
+				return r;
+			} else {
+				return wybs.lang.Build.NULL_METER;
+			}
 		}
 
 		@Override

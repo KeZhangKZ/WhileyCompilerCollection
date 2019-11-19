@@ -90,6 +90,7 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 			public List<Option.Descriptor> getOptionDescriptors() {
 				return Arrays.asList(
 						Command.OPTION_FLAG("verbose", "generate verbose information about the build", false),
+						Command.OPTION_POSITIVE_INTEGER("profile", "generate profiling information about the build", 0),
 						Command.OPTION_FLAG("brief", "generate brief output for syntax errors", false));
 			}
 
@@ -156,6 +157,11 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 	// ========================================================================
 
 	/**
+	 * Meter used for reporting profiling metrics
+	 */
+	private wybs.lang.Build.Meter meter;
+
+	/**
 	 * List of active projects.
 	 */
 	private HashMap<Path.ID, AbstractProject> projects = new HashMap<>();
@@ -166,6 +172,8 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 
 	public AbstractWorkspace(Configuration configuration) throws IOException {
 		super(configuration,Logger.NULL, ForkJoinPool.commonPool());
+		// Set default meter
+		this.meter = wybs.lang.Build.NULL_METER;
 		// Add default commands
 		commandDescriptors.addAll(Arrays.asList(DESCRIPTORS));
 		// Add default content types
@@ -174,6 +182,15 @@ public abstract class AbstractWorkspace extends AbstractPluginEnvironment {
 
 	public Command.Descriptor getCommandRoot() {
 		return ROOT_DESCRIPTOR(this);
+	}
+
+	@Override
+	public wybs.lang.Build.Meter getMeter() {
+		return meter;
+	}
+
+	public void setMeter(wybs.lang.Build.Meter meter) {
+		this.meter = meter;
 	}
 
 	/**

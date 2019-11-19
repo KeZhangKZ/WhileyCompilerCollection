@@ -21,6 +21,8 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 
 import wybs.lang.*;
@@ -186,7 +188,44 @@ public class SequentialBuildProject implements Build.Project {
 	 */
 	@Override
 	public Future<Boolean> build(ExecutorService executor, Build.Meter meter) {
-		return executor.submit(() -> execute(executor, meter, instances));
+		Future<Boolean> r = executor.submit(() -> execute(executor, meter, instances));
+		return new Future<Boolean>() {
+
+			@Override
+			public boolean cancel(boolean mayInterruptIfRunning) {
+				return r.cancel(mayInterruptIfRunning);
+			}
+
+			@Override
+			public boolean isCancelled() {
+				return r.isCancelled();
+			}
+
+			@Override
+			public boolean isDone() {
+				return r.isDone();
+			}
+
+			@Override
+			public Boolean get() throws InterruptedException, ExecutionException {
+				Boolean b = r.get();
+				if(b != null && b) {
+					meter.done();
+				}
+				return b;
+			}
+
+			@Override
+			public Boolean get(long timeout, TimeUnit unit)
+					throws InterruptedException, ExecutionException, TimeoutException {
+				Boolean b = r.get(timeout, unit);
+				if (b != null && b) {
+					meter.done();
+				}
+				return b;
+			}
+
+		};
 	}
 
 	// ======================================================================
