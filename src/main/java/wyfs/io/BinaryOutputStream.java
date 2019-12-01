@@ -19,6 +19,7 @@ public class BinaryOutputStream extends OutputStream {
 	protected OutputStream output;
 	protected int value;
 	protected int count;
+	protected int length;
 
 	/**
 	 * Write out data in big-endian format.
@@ -26,6 +27,14 @@ public class BinaryOutputStream extends OutputStream {
 	 */
 	public BinaryOutputStream(OutputStream output) {
 		this.output = output;
+	}
+
+	/**
+	 * Get number of bytes written.
+	 * @return
+	 */
+	public int length() {
+		return length;
 	}
 
 	/**
@@ -38,6 +47,7 @@ public class BinaryOutputStream extends OutputStream {
 	public void write(int i) throws IOException {
 		if(count == 0) {
 			output.write(i & 0xFF);
+			length++;
 		} else {
 			write_un(i & 0xFF,8);
 		}
@@ -66,6 +76,7 @@ public class BinaryOutputStream extends OutputStream {
 	public void write_u8(int w) throws IOException {
 		if(count == 0) {
 			output.write(w & 0xFF);
+			length++;
 		} else {
 			write_un(w & 0xFF,8);
 		}
@@ -145,6 +156,7 @@ public class BinaryOutputStream extends OutputStream {
 		if(count == 8) {
 			count = 0;
 			output.write(value);
+			length++;
 			value = 0;
 		}
 	}
@@ -156,6 +168,7 @@ public class BinaryOutputStream extends OutputStream {
 	public void pad_u8() throws IOException {
 		if (count > 0) {
 			output.write(value >>> (8-count));
+			length++;
 			value = 0;
 			count = 0;
 		}
@@ -178,6 +191,7 @@ public class BinaryOutputStream extends OutputStream {
 			int mask = 0xff & ((~0) << count);
 			value = value | mask;
 			output.write(value);
+			length++;
 		}
 	}
 
