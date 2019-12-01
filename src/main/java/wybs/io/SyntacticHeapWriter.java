@@ -15,9 +15,16 @@ package wybs.io;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
+import wycc.util.Pair;
 import wyfs.io.BinaryOutputStream;
 
 /**
@@ -61,12 +68,16 @@ public abstract class SyntacticHeapWriter {
 	public abstract void writeHeader() throws IOException;
 
 	public void writeSyntacticItem(SyntacticItem item) throws IOException {
+		int d = out.length();
 		// Write opcode
 		out.write_u8(item.getOpcode());
 		// Write operands
 		writeOperands(item);
 		// Write data (if any)
 		writeData(item);
+		//
+		int size = out.length() - d;
+		record(item.getOpcode(),size);
 		// Pad to next byte boundary
 		out.pad_u8();
 	}
@@ -118,5 +129,69 @@ public abstract class SyntacticHeapWriter {
 				out.write_u8(bytes[i]);
 			}
 		}
+	}
+
+	public static final Map<Integer,Metric> metrics = new HashMap<>();
+
+	private static class Metric {
+		public int bytes;
+		public int count;
+
+		public Metric record(int size) {
+			count++;
+			bytes += size;
+			return this;
+		}
+
+		@Override
+		public int hashCode() {
+			return bytes+count;
+		}
+
+		@Override
+		public boolean equals(Object o) {
+			if(o instanceof Metric) {
+				Metric m = (Metric) o;
+				return bytes == m.bytes && count == m.count;
+			}
+			return false;
+		}
+	}
+
+	public static void record(int opcode, int size) {
+		Metric old = metrics.get(opcode);
+		old = old == null ? new Metric() : old;
+		metrics.put(opcode, old.record(size));
+	}
+
+	public static void printMetrics(SyntacticHeap.Schema schema) {
+		List<Pair<Integer,Metric>> items = new ArrayList();
+		for(int i=0;i!=255;++i) {
+			Metric c = metrics.get(i);
+			if(c != null) {
+				items.add(new Pair<>(i,c));
+			}
+		}
+		Collections.sort(items, new Comparator<Pair<Integer,Metric>>() {
+
+			@Override
+			public int compare(Pair<Integer, Metric> o1, Pair<Integer, Metric> o2) {
+				int c = Integer.compare(o1.second().bytes, o2.second().bytes);
+				if(c == 0) {
+					return o1.first().compareTo(o2.first());
+				} else {
+					return c;
+				}
+			}
+
+		});
+		int total = 0;
+		for(Pair<Integer,Metric> p : items) {
+			String n = schema.getDescriptor(p.first()).getMnemonic();
+			total += p.second().bytes;
+			System.out.println(n + ": " + p.second().bytes + " bytes (" + p.second().count + " items)");
+		}
+		System.out.println();
+		System.out.println(total + " bytes");
 	}
 }

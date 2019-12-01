@@ -138,6 +138,10 @@ public abstract class AbstractCommandEnvironment implements Command.Environment 
 		return logger;
 	}
 
+	public void setLogger(Logger logger) {
+		this.logger = logger;
+	}
+
 	@Override
 	public Schema getConfigurationSchema() {
 		return configuration.getConfigurationSchema();

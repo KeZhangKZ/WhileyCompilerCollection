@@ -15,7 +15,16 @@ package wycc;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import wybs.lang.Build;
+import wybs.lang.Build.Meter;
 import wybs.lang.SyntacticException;
+import wybs.lang.SyntacticItem;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.ConfigFile;
 import wycc.cfg.Configuration;
@@ -25,6 +34,7 @@ import wycc.lang.Package;
 import wycc.util.AbstractWorkspace;
 import wycc.util.CommandParser;
 import wycc.util.LocalPackageRepository;
+import wycc.util.Logger;
 import wycc.util.Pair;
 import wycc.util.RemotePackageRepository;
 import wycc.util.StdPackageResolver;
@@ -50,7 +60,7 @@ public class WyMain extends AbstractWorkspace {
 	/**
 	 * Path to the dependency repository within the global root.
 	 */
-	private static final Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
+	public static final Path.ID DEFAULT_REPOSITORY_PATH = Trie.fromString("repository");
 
 	/**
 	 * Schema for system configuration (i.e. which applies to all users).
@@ -130,20 +140,43 @@ public class WyMain extends AbstractWorkspace {
 		Configuration config = new ConfigurationCombinator(local, global, system);
 		// Construct the workspace
 		WyMain workspace = new WyMain(config, localRoot.toString(), repository);
-		// Select project (if applicable)
-		Command.Project project = workspace.open(pid);
 		// Construct environment and execute arguments
 		Command.Descriptor descriptor = ROOT_DESCRIPTOR(workspace);
 		// Parse the given command-line
 		Command.Template template = new CommandParser(descriptor).parse(args);
-		// Create command instance
-		Command instance = descriptor.initialise(workspace);
-		// Execute command
-		instance.execute(project,template);
-		// Flush all modified files to disk
-		workspace.closeAll();
+		// Apply verbose setting
+		boolean verbose = template.getOptions().get("verbose", Boolean.class);
+		int profile = template.getOptions().get("profile", Integer.class);
+		if(verbose || profile > 0) {
+			Logger logger = new Logger.Default(System.err);
+			workspace.setLogger(logger);
+			workspace.setMeter(new Meter("Build",logger,profile));
+		}
 		// Done
-		System.exit(0);
+		try {
+			// Select project (if applicable)
+			Command.Project project = workspace.open(pid);
+			// Create command instance
+			Command instance = descriptor.initialise(workspace);
+			// Execute command
+			instance.execute(project,template);
+			// Flush all modified files to disk
+			workspace.closeAll();
+			// Done
+			System.exit(0);
+		} catch(SyntacticException e) {
+			e.outputSourceError(System.err, false);
+			if (verbose) {
+				printStackTrace(System.err, e);
+			}
+			System.exit(1);
+		} catch (Exception e) {
+			System.err.println("Internal failure: " + e.getMessage());
+			if(verbose) {
+				e.printStackTrace();
+			}
+			System.exit(2);
+		}
 	}
 
 	// ==================================================================
@@ -228,7 +261,7 @@ public class WyMain extends AbstractWorkspace {
 	 * Used for reading the various configuration files prior to instantiating the
 	 * main tool itself.
 	 */
-	private static Content.Registry BOOT_REGISTRY = new DefaultContentRegistry()
+	public static Content.Registry BOOT_REGISTRY = new DefaultContentRegistry()
 			.register(ConfigFile.ContentType, "toml").register(ZipFile.ContentType, "zip");
 
 	/**
@@ -239,7 +272,7 @@ public class WyMain extends AbstractWorkspace {
 	 * @return
 	 * @throws IOException
 	 */
-	private static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema... schemas) throws IOException {
+	public static Configuration readConfigFile(String name, Path.Root root, Configuration.Schema... schemas) throws IOException {
 		Configuration.Schema schema = Configuration.toCombinedSchema(schemas);
 		Path.Entry<ConfigFile> config = root.get(Trie.fromString(name), ConfigFile.ContentType);
 		if (config == null) {
@@ -254,6 +287,79 @@ public class WyMain extends AbstractWorkspace {
 			e.outputSourceError(System.out, false);
 			System.exit(-1);
 			return null;
+		}
+	}
+
+	/**
+	 * Print a complete stack trace. This differs from Throwable.printStackTrace()
+	 * in that it always prints all of the trace.
+	 *
+	 * @param out
+	 * @param err
+	 */
+	private static void printStackTrace(PrintStream out, Throwable err) {
+		out.println(err.getClass().getName() + ": " + err.getMessage());
+		for (StackTraceElement ste : err.getStackTrace()) {
+			out.println("\tat " + ste.toString());
+		}
+		if (err.getCause() != null) {
+			out.print("Caused by: ");
+			printStackTrace(out, err.getCause());
+		}
+	}
+
+
+	public static class Meter implements Build.Meter {
+		private final String name;
+		private final Logger logger;
+		private final int depth;
+		private Meter parent;
+		private final long time;
+		private final long memory;
+		private final Map<String,Integer> counts;
+
+		public Meter(String name, Logger logger, int depth) {
+			this.name = name;
+			this.logger = logger;
+			this.depth = depth;
+			this.parent = null;
+			this.time = System.currentTimeMillis();
+			this.memory = Runtime.getRuntime().freeMemory();
+			this.counts = new HashMap<>();
+		}
+
+		@Override
+		public Build.Meter fork(String name) {
+			if(depth > 0) {
+				Meter r = new Meter(name,logger,depth-1);
+				r.parent = this;
+				return r;
+			} else {
+				return wybs.lang.Build.NULL_METER;
+			}
+		}
+
+		@Override
+		public void step(String tag) {
+			Integer i = counts.get(tag);
+			if (i == null) {
+				i = 1;
+			} else {
+				i = i + 1;
+			}
+			counts.put(tag, i);
+		}
+
+		@Override
+		public void done() {
+			long t = System.currentTimeMillis();
+			long m = Runtime.getRuntime().freeMemory();
+			logger.logTimedMessage(name, t - time, m - memory);
+			ArrayList<String> keys = new ArrayList<>(counts.keySet());
+			Collections.sort(keys);
+			for(String key : keys) {
+				logger.logTimedMessage(name + "@" + key + "(" + counts.get(key) + " steps)", 0, 0);
+			}
 		}
 	}
 }
