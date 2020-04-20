@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
@@ -180,30 +181,37 @@ public class RemotePackageRepository extends LocalPackageRepository {
 	 * @throws ClientProtocolException
 	 */
 	private void loadIndex() throws IOException {
-		if(index == null) {
+		if (index == null) {
 			String url = uri + indexRoute;
-			//
-			CloseableHttpClient httpclient = getClient();
-			// NOTE: connection pooling might be a better idea for performance reasons.
-			HttpGet httpget = new HttpGet(url);
-			// Configure get request (if necessary)
-			if(cookie != null) {
-				httpget.addHeader("Cookie", cookie);
-			}
-			// Now perform the request
-			CloseableHttpResponse response = httpclient.execute(httpget);
 			try {
-				if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
-					// Index file downloaded, so parse it!
-					environment.getLogger().logTimedMessage("Downloaded " + url, 0, 0);
-					index = parseIndexFile(new BufferedReader(new InputStreamReader(response.getEntity().getContent())));
-				} else {
-					environment.getLogger().logTimedMessage("Failed downloading " + url, 0, 0);
-					// Mark the index as empty
-					this.index = Collections.EMPTY_MAP;
+				//
+				CloseableHttpClient httpclient = getClient();
+				// NOTE: connection pooling might be a better idea for performance reasons.
+				HttpGet httpget = new HttpGet(url);
+				// Configure get request (if necessary)
+				if (cookie != null) {
+					httpget.addHeader("Cookie", cookie);
 				}
-			} finally {
-				response.close();
+				// Now perform the request
+				CloseableHttpResponse response = httpclient.execute(httpget);
+				try {
+					if (response.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+						// Index file downloaded, so parse it!
+						environment.getLogger().logTimedMessage("Downloaded " + url, 0, 0);
+						index = parseIndexFile(
+								new BufferedReader(new InputStreamReader(response.getEntity().getContent())));
+					} else {
+						environment.getLogger().logTimedMessage("Failed downloading " + url, 0, 0);
+						// Mark the index as empty
+						this.index = Collections.EMPTY_MAP;
+					}
+				} finally {
+					response.close();
+				}
+			} catch (UnknownHostException e) {
+				environment.getLogger().logTimedMessage("Failed downloading " + url, 0, 0);
+				// Mark the index as empty
+				this.index = Collections.EMPTY_MAP;
 			}
 		}
 	}
