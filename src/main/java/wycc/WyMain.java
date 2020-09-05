@@ -159,11 +159,11 @@ public class WyMain extends AbstractWorkspace {
 			// Create command instance
 			Command instance = descriptor.initialise(workspace);
 			// Execute command
-			instance.execute(project,template);
+			boolean ec = instance.execute(project,template);
 			// Flush all modified files to disk
 			workspace.closeAll();
 			// Done
-			System.exit(0);
+			System.exit(ec ? 0 : 1);
 		} catch(SyntacticException e) {
 			e.outputSourceError(System.err, false);
 			if (verbose) {
