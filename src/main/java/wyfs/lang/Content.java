@@ -17,12 +17,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 
-import wycc.lang.Feature;
 import wyfs.lang.Path.Entry;
-import wyfs.lang.Path.Filter;
-import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 
 public class Content {
@@ -36,7 +32,7 @@ public class Content {
 	 *
 	 * @param <T>
 	 */
-	public interface Type<T> extends Feature {
+	public interface Type<T> {
 
 		/**
 		 * Get the suffix associated with this content type
