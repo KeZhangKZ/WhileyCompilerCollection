@@ -11,9 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-package wycc.util;
+package wyfs.util;
 
-import wycc.util.Pair;
+import wyfs.util.Pair;
 
 /**
  * This class represents a pair of items

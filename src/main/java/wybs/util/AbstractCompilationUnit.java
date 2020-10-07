@@ -28,9 +28,9 @@ import wybs.lang.SyntacticItem;
 import wybs.lang.SyntacticItem.Data;
 import wybs.lang.SyntacticItem.Operands;
 import wybs.lang.SyntacticItem.Descriptor;
-import wycc.util.ArrayUtils;
 import wyfs.lang.Path;
 import wyfs.lang.Path.Entry;
+import wyfs.util.ArrayUtils;
 
 public abstract class AbstractCompilationUnit<T extends CompilationUnit> extends AbstractSyntacticHeap
 		implements CompilationUnit {

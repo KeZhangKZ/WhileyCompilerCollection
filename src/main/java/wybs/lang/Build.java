@@ -23,14 +23,14 @@ import java.util.concurrent.Future;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import wybs.util.Logger;
 import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Value;
 import wycc.cfg.Configuration;
 import wycc.lang.Feature;
-import wycc.util.Logger;
-import wycc.util.Pair;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
+import wyfs.util.Pair;
 
 public interface Build {
 

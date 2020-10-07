@@ -27,7 +27,6 @@ import java.util.function.Function;
 
 import wybs.lang.*;
 import wybs.lang.Build.Environment;
-import wycc.util.Logger;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
 
