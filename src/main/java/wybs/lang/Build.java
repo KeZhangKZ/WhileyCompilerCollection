@@ -16,19 +16,13 @@ package wybs.lang;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-import wybs.util.Logger;
-import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Value;
-import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.Pair;
+import wyfs.util.Trie;
 
 public interface Build {
 
@@ -249,6 +243,11 @@ public interface Build {
 	 *
 	 */
 	public interface Package {
+		/**
+		 * Get a parameter from the configuration of this package.
+		 * @return
+		 */
+		public <T extends Value> T get(Class<T> kind, Trie key);
 		/**
 		 * Get the root associated with this package. This might be, for example, a
 		 * ZipFile.
