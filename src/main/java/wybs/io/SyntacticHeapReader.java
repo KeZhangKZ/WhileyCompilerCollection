@@ -20,8 +20,8 @@ import java.util.Arrays;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticHeap.Schema;
 import wybs.lang.SyntacticItem;
-import wycc.util.Pair;
 import wyfs.io.BinaryInputStream;
+import wyfs.util.Pair;
 
 /**
  * <p>

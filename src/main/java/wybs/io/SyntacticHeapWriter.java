@@ -24,8 +24,8 @@ import java.util.Map;
 
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
-import wycc.util.Pair;
 import wyfs.io.BinaryOutputStream;
+import wyfs.util.Pair;
 
 /**
  * <p>

@@ -19,7 +19,7 @@ import java.util.List;
 
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
-import wycc.util.ArrayUtils;
+import wyfs.util.ArrayUtils;
 
 public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
 	// Constants;
