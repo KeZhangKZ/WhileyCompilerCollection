@@ -16,21 +16,13 @@ package wybs.lang;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-import wybs.util.Logger;
-import wybs.util.ResolveError;
 import wybs.util.AbstractCompilationUnit.Value;
-import wycc.cfg.Configuration;
-import wycc.lang.Feature;
-import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.util.Pair;
+import wyfs.util.Trie;
 
 public interface Build {
 
@@ -100,11 +92,6 @@ public interface Build {
 		 * @return
 		 */
 		public List<Package> getPackages();
-
-		/**
-		 * Get the environment in which this project is running.
-		 */
-		public Environment getEnvironment();
 
 		/**
 		 * Get the build rules associated with this project.
@@ -249,64 +236,6 @@ public interface Build {
 	}
 
 	/**
-	 * Provides a high-level concept of a target platform. These are registered by
-	 * various backends to support different compilation targets.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Platform extends Feature {
-		/**
-		 * Get the unique name identifying this platform.
-		 *
-		 * @return
-		 */
-		public String getName();
-
-		/**
-		 * Get the configuration schema for this build platform. This specifies the
-		 * permitted set of options for the platform, including their types, etc.
-		 *
-		 * @return
-		 */
-		public Configuration.Schema getConfigurationSchema();
-
-		/**
-		 * Initialise this platform to produce a build task which can be used for
-		 * compiling.
-		 *
-		 * @param project
-		 *            Enclosing project for this build task
-		 * @return
-		 */
-		public void initialise(Configuration configuration, Build.Project project) throws IOException;
-
-		/**
-		 * Get the source type for this build platform.
-		 *
-		 * @return
-		 */
-		public Content.Type<?> getSourceType();
-
-		/**
-		 * Get the target type for this build platform.
-		 *
-		 * @return
-		 */
-		public Content.Type<?> getTargetType();
-
-		/**
-		 * Execute a given function in the generated code for this platform.
-		 *
-		 * @param project
-		 * @param path
-		 * @param name
-		 * @param args
-		 */
-		public void execute(Build.Project project, Path.ID path, String name, Value... args) throws IOException;
-	}
-
-	/**
 	 * Represents an external dependency for a project, which is typically a
 	 * ZipFileRoot.
 	 *
@@ -315,13 +244,10 @@ public interface Build {
 	 */
 	public interface Package {
 		/**
-		 * Get the configuration associated with this package. This is determined by the
-		 * <code>wy.toml</code>.
-		 *
+		 * Get a parameter from the configuration of this package.
 		 * @return
 		 */
-		public Configuration getConfiguration();
-
+		public <T extends Value> T get(Class<T> kind, Trie key);
 		/**
 		 * Get the root associated with this package. This might be, for example, a
 		 * ZipFile.
@@ -330,63 +256,6 @@ public interface Build {
 		 */
 		public Path.Root getRoot();
 
-	}
-
-	/**
-	 * Represents the enclosing environment in which one or more projects are built.
-	 *
-	 * @author David J. Pearce
-	 *
-	 */
-	public interface Environment {
-
-		/**
-		 * Get the top-level root for this environment which includes all active
-		 * projects in this environment.
-		 *
-		 * @return
-		 */
-		public Path.Root getRoot();
-
-		/**
-		 * Get the registry used for resolving content types in this environment.
-		 *
-		 * @return
-		 */
-		public Content.Registry getContentRegistry();
-
-		/**
-		 * Get the set of build platforms which are active in this environment.
-		 *
-		 * @return
-		 */
-		public List<Platform> getBuildPlatforms();
-
-		/**
-		 * Get the list of all projects active within this environment.
-		 *
-		 * @return
-		 */
-		public List<Build.Project> getProjects();
-
-		/**
-		 * Get the executor service available in this environment
-		 *
-		 * @return
-		 */
-		public ExecutorService getExecutor();
-
-		/**
-		 * Get the top-level meter for this environment.
-		 *
-		 * @return
-		 */
-		public Meter getMeter();
-
-		/**
-		 * Get the default logger used in this environment.
-		 */
-		public Logger getLogger();
 	}
 
 	public static final Build.Meter NULL_METER = new Build.Meter() {
