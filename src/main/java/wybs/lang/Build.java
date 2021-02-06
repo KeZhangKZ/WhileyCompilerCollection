@@ -19,12 +19,35 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import wybs.util.AbstractCompilationUnit.Value;
+import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.util.Trie;
 
 public interface Build {
+
+	public interface System<T extends State> {
+		public void apply(Function<T, T> transformer);
+	}
+
+	public interface Entry<T> {
+		public Path.ID getID();
+
+		public T getContent();
+
+		public Content.Type<T> getContentType();
+	}
+
+	public interface State<S> {
+
+		public <T> List<Entry<T>> selectAll(Content.Type<T> type);
+
+		public <T> Entry<T> get(Content.Type<T> type, Path.ID id);
+
+		public <T> S put(Content.Type<T> type, Path.ID id, T contents);
+	}
 
 	/**
 	 * <p>
