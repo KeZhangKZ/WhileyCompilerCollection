@@ -24,9 +24,9 @@ public class SimpleBuildSystem implements Build.System<SimpleBuildSystem.State> 
 	}
 	
 	public static class State implements Build.State<State> {
-		private final ArrayList<Entry<?>> items = new ArrayList<>();
+		private final ArrayList<Build.Entry> items = new ArrayList<>();
 
-		public State(Entry<?>... entries) {
+		public State(Build.Entry... entries) {
 			for (int i = 0; i != entries.length; ++i) {
 				items.add(entries[i]);
 			}
@@ -46,71 +46,42 @@ public class SimpleBuildSystem implements Build.System<SimpleBuildSystem.State> 
 //			return es;
 //		}
 		
-		public <T> List<Build.Entry<T>> selectAll(Content.Type<T> ct) {
-			ArrayList<Build.Entry<T>> es = new ArrayList<>();
-			for (Entry<?> e : items) {
+		public <T extends Build.Entry> List<T> selectAll(Content.Type<T> ct) {
+			ArrayList<T> es = new ArrayList<>();
+			for (Build.Entry e : items) {
 				if (e.getContentType().equals(ct)) {
-					es.add((Build.Entry<T>) e);
+					es.add((T) e);
 				}
 			}
 			return es;
 		}
 		
-		public <T> Build.Entry<T> get(Content.Type<T> ct, Path.ID id) {
-			for (Entry<?> e : items) {
+		public <T extends Build.Entry> T get(Content.Type<T> ct, Path.ID id) {
+			for (Build.Entry e : items) {
 				if (e.getContentType().equals(ct) && e.getID().equals(id)) {
-					return (Build.Entry<T>) e;
+					return (T) e;
 				}
 			}
 			return null;
 		}
 		
 		@Override
-		public <T> State put(Content.Type<T> ct, Path.ID id,T contents) {
-			// Construct new internal entry
-			Entry<T> ne = new Entry<T>(ct,id,contents);
+		public State put(Build.Entry entry) {
 			// Clone state
 			State s = new State(this);
 			// Update state
-			for (int i=0;i!=items.size();++i) {
-				Entry<?> e = items.get(i);
-				if (e.getContentType().equals(ct) && e.getID().equals(id)) {
+			for (int i = 0; i != items.size(); ++i) {
+				Build.Entry e = items.get(i);
+				if (e.getContentType().equals(entry.getContentType()) && e.getID().equals(entry.getID())) {
 					// Overwrite existing entry
-					s.items.set(i, ne);
+					s.items.set(i, entry);
 					return s;
 				}
 			}
 			// Create new entry
-			s.items.add(ne);
+			s.items.add(entry);
 			// Done
 			return s;
 		}
-	}
-	
-	public static class Entry<T> implements Build.Entry<T> {
-		private final Content.Type<T> type;
-		private final Path.ID id;
-		private final T contents;
-		
-		public Entry(Content.Type<T> ct, Path.ID id, T item) {
-			this.id = id;
-			this.type = ct;
-			this.contents = item;
-		}
-		
-		@Override
-		public ID getID() {
-			return id;
-		}
-
-		@Override
-		public Content.Type<T> getContentType() {
-			return type;
-		}
-		
-		@Override
-		public T getContent() {
-			return contents;
-		}
-	}
+	}	
 }

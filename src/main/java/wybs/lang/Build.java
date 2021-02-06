@@ -32,21 +32,19 @@ public interface Build {
 		public void apply(Function<T, T> transformer);
 	}
 
-	public interface Entry<T> {
+	public interface Entry {
 		public Path.ID getID();
 
-		public T getContent();
-
-		public Content.Type<T> getContentType();
+		public Content.Type<?> getContentType();
 	}
 
 	public interface State<S> {
 
-		public <T> List<Entry<T>> selectAll(Content.Type<T> type);
+		public <T extends Entry> List<T> selectAll(Content.Type<T> type);
 
-		public <T> Entry<T> get(Content.Type<T> type, Path.ID id);
+		public <T extends Entry> T get(Content.Type<T> type, Path.ID id);
 
-		public <T> S put(Content.Type<T> type, Path.ID id, T contents);
+		public <T extends Entry> S put(T entry);
 	}
 
 	/**
