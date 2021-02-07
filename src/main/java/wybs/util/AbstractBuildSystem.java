@@ -10,11 +10,15 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 
-public class SimpleBuildSystem implements Build.System<SimpleBuildSystem.State> {
+public class AbstractBuildSystem implements Build.System<AbstractBuildSystem.State> {
 	private State state;
 		
-	public SimpleBuildSystem(State state) {
+	public AbstractBuildSystem(State state) {
 		this.state = state;
+	}
+	
+	public State get() {
+		return state;
 	}
 	
 	@Override

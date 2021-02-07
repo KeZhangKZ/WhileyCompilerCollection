@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 
 import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.ID;
 import wyfs.util.Trie;
 
 public class Content {
@@ -52,6 +53,17 @@ public class Content {
 		 */
 		public T read(Path.Entry<T> e, InputStream input) throws IOException;
 
+		/**
+		 * Physically read the raw bytes from a given input stream and convert into the
+		 * format described by this content type.
+		 *
+		 * @param id    Name of this entry.
+		 * @param input Input stream representing in the format described by this
+		 *              content type.
+		 * @return
+		 */
+		public T read(Path.ID id, InputStream input) throws IOException;
+		
 		/**
 		 * Convert an object in the format described by this content type into
 		 * an appropriate byte stream and write it to an output stream
@@ -100,6 +112,11 @@ public class Content {
 		@Override
 		public void write(OutputStream output, byte[] bytes) throws IOException {
 			output.write(bytes);
+		}
+
+		@Override
+		public byte[] read(ID id, InputStream input) throws IOException {
+			throw new UnsupportedOperationException();
 		}
 
 	};

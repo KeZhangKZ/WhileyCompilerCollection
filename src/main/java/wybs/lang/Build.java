@@ -30,6 +30,13 @@ public interface Build {
 
 	public interface System<T extends State> {
 		public void apply(Function<T, T> transformer);
+		
+		/**
+		 * Get current state of the build system
+		 * 
+		 * @return
+		 */
+		public T get();
 	}
 
 	public interface Entry {
