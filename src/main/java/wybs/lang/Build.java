@@ -28,9 +28,9 @@ import wyfs.util.Trie;
 
 public interface Build {
 
-	public interface System<T extends State> {
+	public interface Repository<T extends State<T>> {
 		public void apply(Function<T, T> transformer);
-		
+
 		/**
 		 * Get current state of the build system
 		 * 

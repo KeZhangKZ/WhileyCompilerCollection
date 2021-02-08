@@ -5,16 +5,23 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.BitSet;
+import java.util.HashSet;
 import java.util.List;
 
 import wybs.lang.Build;
 import wyfs.lang.Content;
+import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
+import wyfs.lang.Path.Entry;
+import wyfs.lang.Path.ID;
 import wyfs.util.ArrayUtils;
 import wyfs.util.Trie;
 
-public class FileBuildSystem extends AbstractBuildSystem {
+public class FileBuildSystem extends AbstractBuildRepository {
 
 	public final static FileFilter NULL_FILTER = new FileFilter() {
 		@Override
@@ -26,6 +33,7 @@ public class FileBuildSystem extends AbstractBuildSystem {
 	private final FileFilter filter;
 	private final Content.Registry registry;
 	private final File dir;
+	private final HashSet<ID> dirty;
 	
 	public FileBuildSystem(Content.Registry registry, File dir) throws IOException {
 		this(registry, dir, NULL_FILTER);
@@ -36,6 +44,7 @@ public class FileBuildSystem extends AbstractBuildSystem {
 		this.filter = filter;
 		this.registry = registry;
 		this.dir = dir;
+		this.dirty = new HashSet<>();
 	}
 	
 	/**
@@ -84,13 +93,14 @@ public class FileBuildSystem extends AbstractBuildSystem {
 			suffix = filename.substring(pos + 1);
 		}
 		// Compute ID
-		Path.ID id = Trie.fromString(filename.substring(0, filename.length() - suffix.length()));
+		Path.ID id = Trie.fromString(filename.substring(0, filename.length() - (suffix.length() + 1)));
 		// Extract appropriate content type (if applicable)
 		Content.Type<?> type = registry.contentType(suffix);
 		// Read entry (if applicable)
 		if (type == null) {
 			return null;
 		} else {
+			System.out.println("READING: " + file.getAbsolutePath());
 			// FIXME: this cast should not be necessary!
 			return (Build.Entry) type.read(id, new FileInputStream(file));
 		}
@@ -103,7 +113,7 @@ public class FileBuildSystem extends AbstractBuildSystem {
 	 * @return
 	 */
 	private static List<File> findAll(int n, File dir, FileFilter filter, List<File> files) {
-		if (n != 0 && dir.exists() && dir.isDirectory()) {
+		if (n > 0 && dir.exists() && dir.isDirectory()) {
 			File[] contents = dir.listFiles(filter);
 			for (int i = 0; i != contents.length; ++i) {
 				File ith = contents[i];
@@ -116,9 +126,5 @@ public class FileBuildSystem extends AbstractBuildSystem {
 			}
 		}
 		return files;
-	}
-	
-	public static main(String[] args) {
-		// Need to test this!
-	}
+	}	
 }

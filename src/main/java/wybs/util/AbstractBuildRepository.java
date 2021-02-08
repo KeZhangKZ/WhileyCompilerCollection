@@ -10,10 +10,10 @@ import wyfs.lang.Content;
 import wyfs.lang.Path;
 import wyfs.lang.Path.ID;
 
-public class AbstractBuildSystem implements Build.System<AbstractBuildSystem.State> {
+public class AbstractBuildRepository implements Build.Repository<AbstractBuildRepository.State> {
 	private State state;
 		
-	public AbstractBuildSystem(State state) {
+	public AbstractBuildRepository(State state) {
 		this.state = state;
 	}
 	
