@@ -49,6 +49,11 @@ public class ZipFile {
 		}
 
 		@Override
+		public ZipFile read(Path.ID id, InputStream input) throws IOException {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
 		public void write(OutputStream output, ZipFile zf) throws IOException {
 			ZipOutputStream zout = new ZipOutputStream(output);
 			for (int i = 0; i != zf.size(); ++i) {

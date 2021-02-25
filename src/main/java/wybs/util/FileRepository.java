@@ -1,27 +1,18 @@
 package wybs.util;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 
 import wybs.lang.Build;
 import wyfs.lang.Content;
-import wyfs.lang.Content.Type;
 import wyfs.lang.Path;
-import wyfs.lang.Path.Entry;
 import wyfs.lang.Path.ID;
 import wyfs.util.ArrayUtils;
 import wyfs.util.Trie;
 
-public class FileBuildSystem extends AbstractBuildRepository {
+public class FileRepository extends AbstractRepository {
 
 	public final static FileFilter NULL_FILTER = new FileFilter() {
 		@Override
@@ -35,18 +26,28 @@ public class FileBuildSystem extends AbstractBuildRepository {
 	private final File dir;
 	private final HashSet<ID> dirty;
 	
-	public FileBuildSystem(Content.Registry registry, File dir) throws IOException {
+	public FileRepository(Content.Registry registry, File dir) throws IOException {
 		this(registry, dir, NULL_FILTER);
 	}
 	
-	public FileBuildSystem(Content.Registry registry, File dir, FileFilter filter) throws IOException {
+	public FileRepository(Content.Registry registry, File dir, FileFilter filter) throws IOException {
 		super(initialise(registry, dir, filter));
 		this.filter = filter;
 		this.registry = registry;
 		this.dir = dir;
 		this.dirty = new HashSet<>();
 	}
-	
+
+	/**
+	 * Flush all files to disk
+	 */
+	public void flush() throws IOException {
+		State st = get();
+		for(Build.Entry e : st) {
+			flush(dir,e);
+		}
+	}
+
 	/**
 	 * Construct the initial state from the contents of the build directory.
 	 * @param registry
@@ -100,7 +101,6 @@ public class FileBuildSystem extends AbstractBuildRepository {
 		if (type == null) {
 			return null;
 		} else {
-			System.out.println("READING: " + file.getAbsolutePath());
 			// FIXME: this cast should not be necessary!
 			return (Build.Entry) type.read(id, new FileInputStream(file));
 		}
@@ -126,5 +126,23 @@ public class FileBuildSystem extends AbstractBuildRepository {
 			}
 		}
 		return files;
-	}	
+	}
+
+	private static <T extends Build.Entry> boolean flush(File dir, T e) throws IOException {
+		Content.Type<T> ct = (Content.Type<T>) e.getContentType();
+		// Convert ID into filesystem path
+		String filename = e.getID().toString().replace("/", File.separator) + "." + e.getContentType().getSuffix();
+		// Done.
+		File f = new File(dir, filename);
+		//
+		if (!f.exists() && !f.createNewFile()) {
+			// Error creating file occurred
+			return false;
+		} else {
+			FileOutputStream fout = new FileOutputStream(f);
+			ct.write(fout, e);
+			fout.close();
+			return true;
+		}
+	}
 }

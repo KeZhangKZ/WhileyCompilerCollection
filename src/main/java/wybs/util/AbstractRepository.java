@@ -1,19 +1,19 @@
 package wybs.util;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import wybs.lang.Build;
-import wybs.lang.SyntacticHeap;
 import wyfs.lang.Content;
 import wyfs.lang.Path;
-import wyfs.lang.Path.ID;
 
-public class AbstractBuildRepository implements Build.Repository<AbstractBuildRepository.State> {
+public class AbstractRepository implements Build.Repository<AbstractRepository.State> {
 	private State state;
 		
-	public AbstractBuildRepository(State state) {
+	public AbstractRepository(State state) {
 		this.state = state;
 	}
 	
@@ -27,7 +27,7 @@ public class AbstractBuildRepository implements Build.Repository<AbstractBuildRe
 		state = transformer.apply(state);
 	}
 	
-	public static class State implements Build.State<State> {
+	public static class State implements Build.State<State>, Iterable<Build.Entry> {
 		private final ArrayList<Build.Entry> items = new ArrayList<>();
 
 		public State(Build.Entry... entries) {
@@ -39,17 +39,17 @@ public class AbstractBuildRepository implements Build.Repository<AbstractBuildRe
 		private State(State s) {
 			this.items.addAll(s.items);
 		}
-		
-//		public <T> List<Build.Entry<T>> selectAll(Predicate<Entry> query) {
-//			ArrayList<Entry> es = new ArrayList<>();
-//			for (Entry e : items) {
-//				if (query.test(e)) {
-//					es.add(e);
-//				}
-//			}
-//			return es;
-//		}
-		
+
+		public <T extends Build.Entry> List<T> selectAll(Content.Type<T> ct, Predicate<T> query) {
+			ArrayList<T> es = new ArrayList<>();
+			for (Build.Entry e : items) {
+				if (e.getContentType().equals(ct) && query.test((T) e)) {
+					es.add((T) e);
+				}
+			}
+			return es;
+		}
+
 		public <T extends Build.Entry> List<T> selectAll(Content.Type<T> ct) {
 			ArrayList<T> es = new ArrayList<>();
 			for (Build.Entry e : items) {
@@ -87,5 +87,10 @@ public class AbstractBuildRepository implements Build.Repository<AbstractBuildRe
 			// Done
 			return s;
 		}
-	}	
+
+		@Override
+		public Iterator<Build.Entry> iterator() {
+			return items.iterator();
+		}
+	}
 }
