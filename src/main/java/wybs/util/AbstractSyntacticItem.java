@@ -17,16 +17,18 @@ import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 
+import com.oracle.truffle.api.nodes.Node;
 import wybs.lang.SyntacticHeap;
 import wybs.lang.SyntacticItem;
 import wyfs.util.ArrayUtils;
 
-public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
+public abstract class AbstractSyntacticItem extends Node implements Comparable<SyntacticItem>, SyntacticItem, Cloneable {
 	// Constants;
 	private SyntacticHeap parent;
 	private int index; // index in the parent
 	protected int opcode;
-	protected SyntacticItem[] operands;
+	@Children
+	protected AbstractSyntacticItem[] operands;
 	protected byte[] data;
 
 	public AbstractSyntacticItem(int opcode) {
@@ -38,14 +40,27 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 
 	public AbstractSyntacticItem(int opcode, SyntacticItem... operands) {
 		this.opcode = opcode;
-		this.operands = operands;
+		this.operands = this.casting(operands);
 		this.data = null;
 	}
 
 	protected AbstractSyntacticItem(int opcode, byte[] data, SyntacticItem... operands) {
 		this.opcode = opcode;
-		this.operands = operands;
+		this.operands = this.casting(operands);
 		this.data = data;
+	}
+	private AbstractSyntacticItem[] casting(SyntacticItem[] syntacticItems) {
+		AbstractSyntacticItem[] result = new AbstractSyntacticItem[syntacticItems.length];
+		for (int i = 0; i < syntacticItems.length; i++) {
+			if (syntacticItems[i] instanceof AbstractSyntacticItem)
+				result[i] = (AbstractSyntacticItem) syntacticItems[i];
+			else if (syntacticItems[i] == null){
+				result[i] = null;
+			} else {
+				System.out.println("wrong node:" + syntacticItems[i].getClass());
+			}
+		}
+		return result;
 	}
 
 	@Override
@@ -125,7 +140,7 @@ public abstract class AbstractSyntacticItem implements Comparable<SyntacticItem>
 
 	@Override
 	public void setOperand(int ith, SyntacticItem child) {
-		operands[ith] = child;
+		operands[ith] = (AbstractSyntacticItem) child;
 	}
 
 	public <T> T[] toArray(Class<T> elementKind) {
